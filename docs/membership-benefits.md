@@ -1,0 +1,10 @@
+      - Up to 5 people
+      - 2 people
+      - 1 person
+      - Pool use for season
+      - Lakefront and Dock
+      - Playground
+      - Tennis/Pickleball Court
+      - Dog Run
+      - Pavilion
+      - Membership Voting Rights

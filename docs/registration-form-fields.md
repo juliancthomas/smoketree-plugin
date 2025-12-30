@@ -1,0 +1,22 @@
+- New Member registration Form
+  - Captcha to stop spammer
+  - First name
+  - Last name
+  - Email
+  - Street 1
+  - Street 2
+  - City
+  - State
+  - Zip
+  - Country
+  - Phone
+  - Email
+  - Membership selection
+  - Password
+  - Confirm password
+  - Referral
+  - Waiver Full Name
+  - Waiver Signed Date
+  - Payment Type
+    - If by Card or Bank account we send them to Stripe to finish paying. We can send stripe the exact amount. We add 3% if paying by card. Stripe sends a webhook back to let us know if it was successful or not.
+    - If paying by Zelle, Check, or Pay Later (special cases only) then we just send an email to the admin to let them know a user has requested that option. Also send an email to the new member's email on file.
