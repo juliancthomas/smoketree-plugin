@@ -1,0 +1,645 @@
+/**
+ * Admin-specific styles for Smoketree Plugin
+ *
+ * @package    Smoketree_Plugin
+ * @subpackage Smoketree_Plugin/admin/css
+ */
+
+/* ==========================================================================
+   General Styles
+   ========================================================================== */
+
+.stsrc-admin-page {
+	max-width: 1400px;
+}
+
+.stsrc-admin-page h1 {
+	margin-bottom: 20px;
+}
+
+.stsrc-admin-page .notice {
+	margin: 15px 0;
+}
+
+/* ==========================================================================
+   Form Styles
+   ========================================================================== */
+
+.stsrc-form-section {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	margin: 20px 0;
+	padding: 20px;
+}
+
+.stsrc-form-section h2 {
+	margin-top: 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #ddd;
+}
+
+.stsrc-form-section .form-table {
+	margin-top: 0;
+}
+
+.stsrc-form-section .form-table th {
+	padding: 20px 10px 20px 0;
+	width: 200px;
+	font-weight: 600;
+}
+
+.stsrc-form-section .form-table td {
+	padding: 15px 10px;
+}
+
+.stsrc-form-section .form-table input[type="text"],
+.stsrc-form-section .form-table input[type="email"],
+.stsrc-form-section .form-table input[type="password"],
+.stsrc-form-section .form-table input[type="date"],
+.stsrc-form-section .form-table input[type="number"],
+.stsrc-form-section .form-table select,
+.stsrc-form-section .form-table textarea {
+	width: 100%;
+	max-width: 400px;
+}
+
+.stsrc-form-section .form-table textarea {
+	min-height: 100px;
+}
+
+.stsrc-form-section .description {
+	color: #646970;
+	font-style: italic;
+	margin-top: 5px;
+}
+
+/* ==========================================================================
+   Bulk Status & Season Reset
+   ========================================================================== */
+
+.stsrc-bulk-status-box,
+.stsrc-season-reset-box {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.stsrc-bulk-status-box h2,
+.stsrc-season-reset-box h2 {
+	margin-top: 0;
+}
+
+.stsrc-bulk-status-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: center;
+	margin-top: 12px;
+}
+
+.stsrc-bulk-status-fields select {
+	min-width: 180px;
+}
+
+.stsrc-inline-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 500;
+	margin-right: 12px;
+}
+
+.stsrc-bulk-status-actions {
+	margin-top: 16px;
+}
+
+/* ==========================================================================
+   Button Styles
+   ========================================================================== */
+
+.stsrc-button {
+	display: inline-block;
+	padding: 8px 16px;
+	margin: 5px;
+	border: 1px solid #2271b1;
+	background: #2271b1;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 3px;
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 2.15384615;
+	transition: all 0.2s ease;
+}
+
+.stsrc-button:hover {
+	background: #135e96;
+	border-color: #135e96;
+	color: #fff;
+}
+
+.stsrc-button:focus {
+	box-shadow: 0 0 0 1px #fff, 0 0 0 3px #2271b1;
+	outline: 2px solid transparent;
+}
+
+.stsrc-button:disabled,
+.stsrc-button.disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.stsrc-button-secondary {
+	background: #f6f7f7;
+	border-color: #dcdcde;
+	color: #2c3338;
+}
+
+.stsrc-button-secondary:hover {
+	background: #f0f0f1;
+	border-color: #8c8f94;
+	color: #2c3338;
+}
+
+.stsrc-button-danger {
+	background: #d63638;
+	border-color: #d63638;
+}
+
+.stsrc-button-danger:hover {
+	background: #b32d2e;
+	border-color: #b32d2e;
+}
+
+.stsrc-button-success {
+	background: #00a32a;
+	border-color: #00a32a;
+}
+
+.stsrc-button-success:hover {
+	background: #008a20;
+	border-color: #008a20;
+}
+
+/* ==========================================================================
+   Table Styles
+   ========================================================================== */
+
+.stsrc-table-wrapper {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	margin: 20px 0;
+}
+
+.stsrc-table-wrapper .tablenav {
+	padding: 10px;
+	border-bottom: 1px solid #ccd0d4;
+	background: #f6f7f7;
+}
+
+.stsrc-table-wrapper .tablenav .alignleft {
+	float: left;
+}
+
+.stsrc-table-wrapper .tablenav .alignright {
+	float: right;
+}
+
+.stsrc-table-wrapper .tablenav::after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.stsrc-table-wrapper table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.stsrc-table-wrapper table thead th {
+	background: #f6f7f7;
+	border-bottom: 2px solid #ccd0d4;
+	padding: 10px;
+	text-align: left;
+	font-weight: 600;
+}
+
+.stsrc-table-wrapper table tbody td {
+	padding: 10px;
+	border-bottom: 1px solid #ccd0d4;
+	vertical-align: middle;
+}
+
+.stsrc-table-wrapper table tbody tr:hover {
+	background: #f6f7f7;
+}
+
+.stsrc-table-wrapper table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Status badges */
+.stsrc-status-badge {
+	display: inline-block;
+	padding: 4px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.stsrc-status-badge.active {
+	background: #00a32a;
+	color: #fff;
+}
+
+.stsrc-status-badge.pending {
+	background: #f0b849;
+	color: #1d2327;
+}
+
+.stsrc-status-badge.cancelled,
+.stsrc-status-badge.inactive,
+.stsrc-status-badge.expired {
+	background: #d63638;
+	color: #fff;
+}
+
+/* Status pill styles used in tables */
+.stsrc-status {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #fff;
+}
+
+.stsrc-status-active {
+	background: #00a32a;
+}
+
+.stsrc-status-inactive {
+	background: #8c8f94;
+}
+
+.stsrc-status-expired {
+	background: #d63638;
+}
+
+.stsrc-status-premium {
+	background: #6f42c1;
+}
+
+.stsrc-status-standard {
+	background: #2271b1;
+}
+
+/* ==========================================================================
+   Filter Styles
+   ========================================================================== */
+
+.stsrc-filters {
+	background: #f6f7f7;
+	border: 1px solid #ccd0d4;
+	padding: 15px;
+	margin: 20px 0;
+}
+
+.stsrc-filters .filter-group {
+	display: inline-block;
+	margin-right: 15px;
+	margin-bottom: 10px;
+	vertical-align: top;
+}
+
+.stsrc-filters .filter-group label {
+	display: block;
+	margin-bottom: 5px;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.stsrc-filters .filter-group select,
+.stsrc-filters .filter-group input[type="text"],
+.stsrc-filters .filter-group input[type="date"] {
+	min-width: 150px;
+}
+
+.stsrc-filters .filter-actions {
+	display: inline-block;
+	vertical-align: bottom;
+	margin-left: 10px;
+}
+
+/* ==========================================================================
+   Search Styles
+   ========================================================================== */
+
+.stsrc-search-box {
+	margin: 20px 0;
+}
+
+.stsrc-search-box input[type="search"] {
+	width: 300px;
+	padding: 5px 10px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+}
+
+/* ==========================================================================
+   Bulk Actions
+   ========================================================================== */
+
+.stsrc-bulk-actions {
+	margin: 20px 0;
+	padding: 10px;
+	background: #f6f7f7;
+	border: 1px solid #ccd0d4;
+}
+
+.stsrc-bulk-actions select {
+	margin-right: 10px;
+}
+
+/* ==========================================================================
+   Dashboard Widgets
+   ========================================================================== */
+
+.stsrc-dashboard-widgets {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 20px;
+	margin: 20px 0;
+}
+
+.stsrc-widget {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 20px;
+}
+
+.stsrc-widget h3 {
+	margin-top: 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #ddd;
+}
+
+.stsrc-widget .widget-value {
+	font-size: 32px;
+	font-weight: 600;
+	color: #2271b1;
+	margin: 15px 0;
+}
+
+.stsrc-widget .widget-label {
+	color: #646970;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Progress Bar
+   ========================================================================== */
+
+.stsrc-progress {
+	width: 100%;
+	height: 30px;
+	background: #f0f0f1;
+	border: 1px solid #ccd0d4;
+	border-radius: 3px;
+	overflow: hidden;
+	margin: 10px 0;
+}
+
+.stsrc-progress-bar {
+	height: 100%;
+	background: #2271b1;
+	transition: width 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.stsrc-progress-text {
+	margin-top: 5px;
+	font-size: 13px;
+	color: #646970;
+}
+
+/* ==========================================================================
+   Modal Styles
+   ========================================================================== */
+
+.stsrc-modal-overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+	z-index: 100000;
+	align-items: center;
+	justify-content: center;
+}
+
+.stsrc-modal-overlay.active {
+	display: flex;
+}
+
+.stsrc-modal {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	max-width: 500px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+.stsrc-modal-header {
+	padding: 20px;
+	border-bottom: 1px solid #ccd0d4;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.stsrc-modal-header h2 {
+	margin: 0;
+}
+
+.stsrc-modal-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #646970;
+	padding: 0;
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+}
+
+.stsrc-modal-close:hover {
+	color: #2c3338;
+}
+
+.stsrc-modal-body {
+	padding: 20px;
+}
+
+.stsrc-modal-footer {
+	padding: 20px;
+	border-top: 1px solid #ccd0d4;
+	text-align: right;
+}
+
+/* ==========================================================================
+   Loading States
+   ========================================================================== */
+
+.stsrc-loading {
+	opacity: 0.6;
+	pointer-events: none;
+	position: relative;
+}
+
+.stsrc-loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 20px;
+	height: 20px;
+	margin: -10px 0 0 -10px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #2271b1;
+	border-radius: 50%;
+	animation: stsrc-spin 1s linear infinite;
+}
+
+@keyframes stsrc-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+.stsrc-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #f3f3f3;
+	border-top: 2px solid #2271b1;
+	border-radius: 50%;
+	animation: stsrc-spin 1s linear infinite;
+	margin-left: 5px;
+	vertical-align: middle;
+}
+
+/* ==========================================================================
+   Notifications
+   ========================================================================== */
+
+.stsrc-notice {
+	padding: 12px;
+	margin: 15px 0;
+	border-left: 4px solid #2271b1;
+	background: #fff;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.stsrc-notice.success {
+	border-left-color: #00a32a;
+}
+
+.stsrc-notice.error {
+	border-left-color: #d63638;
+}
+
+.stsrc-notice.warning {
+	border-left-color: #f0b849;
+}
+
+.stsrc-notice.info {
+	border-left-color: #2271b1;
+}
+
+/* ==========================================================================
+   Responsive Styles
+   ========================================================================== */
+
+@media screen and (max-width: 782px) {
+	.stsrc-dashboard-widgets {
+		grid-template-columns: 1fr;
+	}
+
+	.stsrc-filters .filter-group {
+		display: block;
+		width: 100%;
+		margin-right: 0;
+	}
+
+	.stsrc-table-wrapper {
+		overflow-x: auto;
+	}
+
+	.stsrc-table-wrapper table {
+		min-width: 800px;
+	}
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+.stsrc-clearfix::after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.stsrc-text-center {
+	text-align: center;
+}
+
+.stsrc-text-right {
+	text-align: right;
+}
+
+.stsrc-mt-10 {
+	margin-top: 10px;
+}
+
+.stsrc-mt-20 {
+	margin-top: 20px;
+}
+
+.stsrc-mb-10 {
+	margin-bottom: 10px;
+}
+
+.stsrc-mb-20 {
+	margin-bottom: 20px;
+}
+
+.stsrc-hidden {
+	display: none !important;
+}
+
+.stsrc-inline-block {
+	display: inline-block;
+}
