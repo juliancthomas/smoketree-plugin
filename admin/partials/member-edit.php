@@ -230,6 +230,29 @@ $member_id = $member['member_id'] ?? 0;
 					</tr>
 				</table>
 			</div>
+
+			<?php if ( $is_edit ) : ?>
+				<!-- Change Password -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Change Password', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Leave blank to keep the current password.', 'smoketree-plugin' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="new_password"><?php echo esc_html__( 'New Password', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="new_password" id="new_password" autocomplete="new-password">
+								<p class="description"><?php echo esc_html__( 'Minimum 8 characters recommended.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="confirm_password"><?php echo esc_html__( 'Confirm Password', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="confirm_password" id="confirm_password" autocomplete="new-password">
+							</td>
+						</tr>
+					</table>
+				</div>
+			<?php endif; ?>
 		</div>
 
 		<p class="submit">

@@ -2312,14 +2312,6 @@ class STSRC_Ajax_Handler {
 			}
 		}
 
-		// Check for duplicate email
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$existing = STSRC_Member_DB::get_member_by_email( sanitize_email( $post_data['email'] ) );
-		if ( $existing ) {
-			wp_send_json_error( array( 'message' => 'A member with this email already exists.' ) );
-			return;
-		}
-
 		// Prepare member data
 		$member_data = array(
 			'first_name'        => sanitize_text_field( $post_data['first_name'] ),
@@ -2338,21 +2330,49 @@ class STSRC_Ajax_Handler {
 			'waiver_full_name'  => sanitize_text_field( $post_data['waiver_full_name'] ),
 			'waiver_signed_date'=> sanitize_text_field( $post_data['waiver_signed_date'] ),
 			'referral_source'   => sanitize_text_field( $post_data['referral_source'] ?? '' ),
+			'password'          => wp_generate_password( 12, true, true ), // Generate secure password
 		);
 
-		// Create member
-		$member_id = STSRC_Member_DB::create_member( $member_data );
+		// Create member account (WordPress user + member record)
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
+		$member_service = new STSRC_Member_Service();
+		$member_id = $member_service->create_member_account( $member_data );
 
 		if ( ! $member_id ) {
-			wp_send_json_error( array( 'message' => 'Failed to create member.' ) );
+			wp_send_json_error( array( 'message' => 'Failed to create member. Email may already be in use.' ) );
 			return;
+		}
+
+		// Send password reset email to new member
+		$user = get_user_by( 'email', $member_data['email'] );
+		if ( $user ) {
+			$reset_key = get_password_reset_key( $user );
+			if ( ! is_wp_error( $reset_key ) ) {
+				// Send email with reset link
+				$reset_url = network_site_url( "wp-login.php?action=rp&key=$reset_key&login=" . rawurlencode( $user->user_login ), 'login' );
+				
+				$subject = 'Welcome to Smoketree Swim and Recreation Club - Set Your Password';
+				$message = sprintf(
+					"Hello %s,\n\n" .
+					"An account has been created for you at Smoketree Swim and Recreation Club.\n\n" .
+					"To set your password and access your account, please click the link below:\n\n" .
+					"%s\n\n" .
+					"If you did not request this account, please ignore this email.\n\n" .
+					"Best regards,\n" .
+					"Smoketree Swim and Recreation Club",
+					$member_data['first_name'],
+					$reset_url
+				);
+				
+				wp_mail( $member_data['email'], $subject, $message );
+			}
 		}
 
 		wp_send_json_success(
 			array(
-				'message'    => 'Member created successfully.',
+				'message'    => 'Member created successfully. A password setup email has been sent to ' . $member_data['email'],
 				'member_id'  => $member_id,
-				'redirect_url' => admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $member_id ),
+				'redirect_url' => admin_url( 'admin.php?page=stsrc-members' ),
 			)
 		);
 	}
@@ -2439,10 +2459,42 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
+		// Handle password change if provided
+		$new_password = $post_data['new_password'] ?? '';
+		$confirm_password = $post_data['confirm_password'] ?? '';
+
+		if ( ! empty( $new_password ) || ! empty( $confirm_password ) ) {
+			// Validate passwords match
+			if ( $new_password !== $confirm_password ) {
+				wp_send_json_error( array( 'message' => 'Passwords do not match.' ) );
+				return;
+			}
+
+			// Validate password length
+			if ( strlen( $new_password ) < 8 ) {
+				wp_send_json_error( array( 'message' => 'Password must be at least 8 characters long.' ) );
+				return;
+			}
+
+			// Update password without sending email
+			if ( ! empty( $current_member['user_id'] ) ) {
+				// Prevent WordPress from sending password change email
+				add_filter( 'send_password_change_email', '__return_false' );
+				add_filter( 'send_email_change_email', '__return_false' );
+				
+				wp_set_password( $new_password, $current_member['user_id'] );
+				
+				// Re-enable email filters for other operations
+				remove_filter( 'send_password_change_email', '__return_false' );
+				remove_filter( 'send_email_change_email', '__return_false' );
+			}
+		}
+
 		wp_send_json_success(
 			array(
-				'message' => 'Member updated successfully.',
+				'message' => 'Member updated successfully.' . ( ! empty( $new_password ) ? ' Password has been changed.' : '' ),
 				'member_id' => $member_id,
+				'redirect_url' => admin_url( 'admin.php?page=stsrc-members' ),
 			)
 		);
 	}

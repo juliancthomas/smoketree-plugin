@@ -577,7 +577,28 @@
 		 * Initialize member form
 		 */
 		initMemberForm: function() {
-			// Add any member-specific form handlers here
+			// Password validation
+			$('#new_password, #confirm_password').on('input', function() {
+				const newPassword = $('#new_password').val();
+				const confirmPassword = $('#confirm_password').val();
+				
+				if (newPassword && confirmPassword) {
+					if (newPassword !== confirmPassword) {
+						$('#confirm_password')[0].setCustomValidity('Passwords do not match');
+					} else {
+						$('#confirm_password')[0].setCustomValidity('');
+					}
+				}
+			});
+
+			// Require confirm password if new password is filled
+			$('#new_password').on('input', function() {
+				if ($(this).val()) {
+					$('#confirm_password').attr('required', true);
+				} else {
+					$('#confirm_password').removeAttr('required');
+				}
+			});
 		},
 
 		/**
