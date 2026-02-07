@@ -3250,5 +3250,75 @@ class STSRC_Ajax_Handler {
 		);
 	}
 
+	/**
+	 * Reactivate member (admin).
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function reactivate_member_admin(): void {
+		// Check admin capability
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+
+		// Verify nonce
+		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		// Get current member
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		// Check if member is cancelled
+		if ( 'cancelled' !== $member['status'] ) {
+			wp_send_json_error( array( 'message' => 'Only cancelled members can be reactivated.' ) );
+			return;
+		}
+
+		// Reactivate by setting status to pending
+		$result = STSRC_Member_DB::update_member(
+			$member_id,
+			array( 'status' => 'pending' )
+		);
+
+		if ( ! $result ) {
+			wp_send_json_error( array( 'message' => 'Failed to reactivate member.' ) );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Member reactivated by admin.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $member_id,
+				'admin_id'  => get_current_user_id(),
+			)
+		);
+
+		wp_send_json_success(
+			array(
+				'message' => 'Member reactivated successfully. Status set to pending.',
+			)
+		);
+	}
+
 }
 

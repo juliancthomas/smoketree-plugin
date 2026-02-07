@@ -30,6 +30,15 @@ $member_id = $member['member_id'] ?? 0;
 		?>
 	</h1>
 
+	<?php if ( $is_edit && 'cancelled' === ( $member['status'] ?? '' ) ) : ?>
+		<div class="notice notice-warning" style="margin: 15px 0;">
+			<p>
+				<strong><?php echo esc_html__( 'This member account is cancelled.', 'smoketree-plugin' ); ?></strong>
+				<?php echo esc_html__( 'The member can reactivate by registering again, or you can reactivate them using the button below.', 'smoketree-plugin' ); ?>
+			</p>
+		</div>
+	<?php endif; ?>
+
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-member-edit-form" class="stsrc-member-form stsrc-ajax-form">
 		<input type="hidden" name="action" value="<?php echo $is_edit ? 'stsrc_update_member' : 'stsrc_create_member'; ?>">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
@@ -322,9 +331,15 @@ $member_id = $member['member_id'] ?? 0;
 				<?php echo esc_html__( 'Cancel', 'smoketree-plugin' ); ?>
 			</a>
 			<?php if ( $is_edit ) : ?>
-				<button type="button" class="button button-link-delete" id="delete-member-btn" style="margin-left: 20px; color: #b32d2e;">
-					<?php echo esc_html__( 'Delete Member', 'smoketree-plugin' ); ?>
-				</button>
+				<?php if ( 'cancelled' === ( $member['status'] ?? '' ) ) : ?>
+					<button type="button" class="button" id="reactivate-member-btn" style="margin-left: 20px; color: #007cba;">
+						<?php echo esc_html__( 'Reactivate Member', 'smoketree-plugin' ); ?>
+					</button>
+				<?php else : ?>
+					<button type="button" class="button button-link-delete" id="delete-member-btn" style="margin-left: 20px; color: #b32d2e;">
+						<?php echo esc_html__( 'Delete Member', 'smoketree-plugin' ); ?>
+					</button>
+				<?php endif; ?>
 			<?php endif; ?>
 		</p>
 	</form>
@@ -367,6 +382,41 @@ jQuery(document).ready(function($) {
 			error: function() {
 				alert('An error occurred. Please try again.');
 				$button.prop('disabled', false).text('Delete Member');
+			}
+		});
+	});
+
+	// Reactivate member
+	$('#reactivate-member-btn').on('click', function(e) {
+		e.preventDefault();
+		
+		if (!confirm('Are you sure you want to reactivate this member? Their status will be set to pending.')) {
+			return;
+		}
+		
+		const $button = $(this);
+		$button.prop('disabled', true).text('Reactivating...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_reactivate_member',
+				nonce: nonce,
+				member_id: memberId
+			},
+			success: function(response) {
+				if (response.success) {
+					alert(response.data.message || 'Member reactivated successfully.');
+					location.reload();
+				} else {
+					alert(response.data.message || 'Failed to reactivate member.');
+					$button.prop('disabled', false).text('Reactivate Member');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Reactivate Member');
 			}
 		});
 	});
