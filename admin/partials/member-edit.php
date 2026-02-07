@@ -150,53 +150,114 @@ $member_id = $member['member_id'] ?? 0;
 				<!-- Family Members -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Family members are included FREE with Household and Duo memberships. No additional payment required.', 'smoketree-plugin' ); ?></p>
+					
 					<?php if ( ! empty( $family_members ) ) : ?>
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
-									<th><?php echo esc_html__( 'Name', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'First Name', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'Last Name', 'smoketree-plugin' ); ?></th>
 									<th><?php echo esc_html__( 'Email', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'Actions', 'smoketree-plugin' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
 								<?php foreach ( $family_members as $family_member ) : ?>
-									<tr>
-										<td><?php echo esc_html( $family_member['first_name'] . ' ' . $family_member['last_name'] ); ?></td>
+									<tr data-family-member-id="<?php echo esc_attr( $family_member['family_member_id'] ); ?>">
+										<td><?php echo esc_html( $family_member['first_name'] ); ?></td>
+										<td><?php echo esc_html( $family_member['last_name'] ); ?></td>
 										<td><?php echo esc_html( $family_member['email'] ?? '' ); ?></td>
+										<td>
+											<button type="button" class="button button-small delete-family-member" data-id="<?php echo esc_attr( $family_member['family_member_id'] ); ?>">
+												<?php echo esc_html__( 'Delete', 'smoketree-plugin' ); ?>
+											</button>
+										</td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
 						</table>
 					<?php else : ?>
-						<p><?php echo esc_html__( 'No family members.', 'smoketree-plugin' ); ?></p>
+						<p class="no-family-members"><?php echo esc_html__( 'No family members.', 'smoketree-plugin' ); ?></p>
 					<?php endif; ?>
+
+					<div style="margin-top: 15px;">
+						<h3><?php echo esc_html__( 'Add Family Member', 'smoketree-plugin' ); ?></h3>
+						<table class="form-table">
+							<tr>
+								<th><label for="family_first_name"><?php echo esc_html__( 'First Name', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="text" id="family_first_name" class="regular-text"></td>
+							</tr>
+							<tr>
+								<th><label for="family_last_name"><?php echo esc_html__( 'Last Name', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="text" id="family_last_name" class="regular-text"></td>
+							</tr>
+							<tr>
+								<th><label for="family_email"><?php echo esc_html__( 'Email (Optional)', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="email" id="family_email" class="regular-text"></td>
+							</tr>
+						</table>
+						<button type="button" class="button" id="add-family-member-btn">
+							<?php echo esc_html__( 'Add Family Member', 'smoketree-plugin' ); ?>
+						</button>
+					</div>
 				</div>
 
 				<!-- Extra Members -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Extra Members', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Extra members cost $50 each, paid by the main account holder. Available for Household memberships only.', 'smoketree-plugin' ); ?></p>
+					
 					<?php if ( ! empty( $extra_members ) ) : ?>
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
-									<th><?php echo esc_html__( 'Name', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'First Name', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'Last Name', 'smoketree-plugin' ); ?></th>
 									<th><?php echo esc_html__( 'Email', 'smoketree-plugin' ); ?></th>
-									<th><?php echo esc_html__( 'Payment Status', 'smoketree-plugin' ); ?></th>
+									<th><?php echo esc_html__( 'Actions', 'smoketree-plugin' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
 								<?php foreach ( $extra_members as $extra_member ) : ?>
-									<tr>
-										<td><?php echo esc_html( $extra_member['first_name'] . ' ' . $extra_member['last_name'] ); ?></td>
+									<tr data-extra-member-id="<?php echo esc_attr( $extra_member['extra_member_id'] ); ?>">
+										<td><?php echo esc_html( $extra_member['first_name'] ); ?></td>
+										<td><?php echo esc_html( $extra_member['last_name'] ); ?></td>
 										<td><?php echo esc_html( $extra_member['email'] ?? '' ); ?></td>
-										<td><?php echo esc_html( ucfirst( $extra_member['payment_status'] ) ); ?></td>
+										<td>
+											<button type="button" class="button button-small delete-extra-member" data-id="<?php echo esc_attr( $extra_member['extra_member_id'] ); ?>">
+												<?php echo esc_html__( 'Delete', 'smoketree-plugin' ); ?>
+											</button>
+										</td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
 						</table>
 					<?php else : ?>
-						<p><?php echo esc_html__( 'No extra members.', 'smoketree-plugin' ); ?></p>
+						<p class="no-extra-members"><?php echo esc_html__( 'No extra members.', 'smoketree-plugin' ); ?></p>
 					<?php endif; ?>
+
+					<div style="margin-top: 15px;">
+						<h3><?php echo esc_html__( 'Add Extra Member', 'smoketree-plugin' ); ?></h3>
+						<p class="description"><?php echo esc_html__( 'When you add an extra member here, it will be marked as paid (assuming payment was received offline).', 'smoketree-plugin' ); ?></p>
+						<table class="form-table">
+							<tr>
+								<th><label for="extra_first_name"><?php echo esc_html__( 'First Name', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="text" id="extra_first_name" class="regular-text"></td>
+							</tr>
+							<tr>
+								<th><label for="extra_last_name"><?php echo esc_html__( 'Last Name', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="text" id="extra_last_name" class="regular-text"></td>
+							</tr>
+							<tr>
+								<th><label for="extra_email"><?php echo esc_html__( 'Email (Optional)', 'smoketree-plugin' ); ?></label></th>
+								<td><input type="email" id="extra_email" class="regular-text"></td>
+							</tr>
+						</table>
+						<button type="button" class="button" id="add-extra-member-btn">
+							<?php echo esc_html__( 'Add Extra Member', 'smoketree-plugin' ); ?>
+						</button>
+					</div>
 				</div>
 			<?php endif; ?>
 
@@ -272,6 +333,10 @@ $member_id = $member['member_id'] ?? 0;
 <?php if ( $is_edit ) : ?>
 <script>
 jQuery(document).ready(function($) {
+	const memberId = <?php echo intval( $member_id ); ?>;
+	const nonce = '<?php echo wp_create_nonce( 'stsrc_admin_nonce' ); ?>';
+
+	// Delete member
 	$('#delete-member-btn').on('click', function(e) {
 		e.preventDefault();
 		
@@ -287,8 +352,8 @@ jQuery(document).ready(function($) {
 			type: 'POST',
 			data: {
 				action: 'stsrc_delete_member',
-				nonce: '<?php echo wp_create_nonce( 'stsrc_admin_nonce' ); ?>',
-				member_id: <?php echo intval( $member_id ); ?>
+				nonce: nonce,
+				member_id: memberId
 			},
 			success: function(response) {
 				if (response.success) {
@@ -302,6 +367,178 @@ jQuery(document).ready(function($) {
 			error: function() {
 				alert('An error occurred. Please try again.');
 				$button.prop('disabled', false).text('Delete Member');
+			}
+		});
+	});
+
+	// Add family member
+	$('#add-family-member-btn').on('click', function(e) {
+		e.preventDefault();
+		
+		const firstName = $('#family_first_name').val().trim();
+		const lastName = $('#family_last_name').val().trim();
+		const email = $('#family_email').val().trim();
+		
+		if (!firstName || !lastName) {
+			alert('First name and last name are required.');
+			return;
+		}
+		
+		const $button = $(this);
+		$button.prop('disabled', true).text('Adding...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_add_family_member',
+				nonce: nonce,
+				member_id: memberId,
+				first_name: firstName,
+				last_name: lastName,
+				email: email
+			},
+			success: function(response) {
+				if (response.success) {
+					alert(response.data.message || 'Family member added successfully.');
+					location.reload();
+				} else {
+					alert(response.data.message || 'Failed to add family member.');
+					$button.prop('disabled', false).text('Add Family Member');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Add Family Member');
+			}
+		});
+	});
+
+	// Delete family member
+	$(document).on('click', '.delete-family-member', function(e) {
+		e.preventDefault();
+		
+		if (!confirm('Are you sure you want to delete this family member?')) {
+			return;
+		}
+		
+		const familyMemberId = $(this).data('id');
+		const $button = $(this);
+		const $row = $button.closest('tr');
+		
+		$button.prop('disabled', true).text('Deleting...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_delete_family_member',
+				nonce: nonce,
+				family_member_id: familyMemberId
+			},
+			success: function(response) {
+				if (response.success) {
+					$row.fadeOut(300, function() {
+						$(this).remove();
+						// Check if table is now empty
+						if ($('.stsrc-form-section table tbody tr[data-family-member-id]').length === 0) {
+							location.reload();
+						}
+					});
+				} else {
+					alert(response.data.message || 'Failed to delete family member.');
+					$button.prop('disabled', false).text('Delete');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Delete');
+			}
+		});
+	});
+
+	// Add extra member
+	$('#add-extra-member-btn').on('click', function(e) {
+		e.preventDefault();
+		
+		const firstName = $('#extra_first_name').val().trim();
+		const lastName = $('#extra_last_name').val().trim();
+		const email = $('#extra_email').val().trim();
+		
+		if (!firstName || !lastName) {
+			alert('First name and last name are required.');
+			return;
+		}
+		
+		const $button = $(this);
+		$button.prop('disabled', true).text('Adding...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_add_extra_member',
+				nonce: nonce,
+				member_id: memberId,
+				first_name: firstName,
+				last_name: lastName,
+				email: email
+			},
+			success: function(response) {
+				if (response.success) {
+					alert(response.data.message || 'Extra member added successfully.');
+					location.reload();
+				} else {
+					alert(response.data.message || 'Failed to add extra member.');
+					$button.prop('disabled', false).text('Add Extra Member');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Add Extra Member');
+			}
+		});
+	});
+
+	// Delete extra member
+	$(document).on('click', '.delete-extra-member', function(e) {
+		e.preventDefault();
+		
+		if (!confirm('Are you sure you want to delete this extra member?')) {
+			return;
+		}
+		
+		const extraMemberId = $(this).data('id');
+		const $button = $(this);
+		const $row = $button.closest('tr');
+		
+		$button.prop('disabled', true).text('Deleting...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_delete_extra_member',
+				nonce: nonce,
+				extra_member_id: extraMemberId
+			},
+			success: function(response) {
+				if (response.success) {
+					$row.fadeOut(300, function() {
+						$(this).remove();
+						// Check if table is now empty
+						if ($('.stsrc-form-section table tbody tr[data-extra-member-id]').length === 0) {
+							location.reload();
+						}
+					});
+				} else {
+					alert(response.data.message || 'Failed to delete extra member.');
+					$button.prop('disabled', false).text('Delete');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Delete');
 			}
 		});
 	});

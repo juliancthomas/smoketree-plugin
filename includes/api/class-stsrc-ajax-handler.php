@@ -967,25 +967,38 @@ class STSRC_Ajax_Handler {
 		}
 
 		$post_data = wp_unslash( $_POST );
+		$is_admin = current_user_can( 'manage_options' );
 
-		// Verify nonce
+		// Verify nonce (different nonce for admin vs member portal)
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
-		if ( ! wp_verify_nonce( $nonce, 'stsrc_family_member_nonce' ) ) {
+		$nonce_action = $is_admin ? 'stsrc_admin_nonce' : 'stsrc_family_member_nonce';
+		
+		if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
 			return;
 		}
 
-		// Get member
-		$user_id = get_current_user_id();
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
 
-		if ( ! $member || (int) $member['user_id'] !== $user_id ) {
-			wp_send_json_error( array( 'message' => 'Member not found.' ) );
-			return;
+		// Get member ID (either from POST for admin or from current user for member portal)
+		if ( $is_admin ) {
+			$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
+			if ( $member_id <= 0 ) {
+				wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+				return;
+			}
+		} else {
+			// Member portal: get member from current user
+			$user_id = get_current_user_id();
+			$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+
+			if ( ! $member || (int) $member['user_id'] !== $user_id ) {
+				wp_send_json_error( array( 'message' => 'Member not found.' ) );
+				return;
+			}
+
+			$member_id = (int) $member['member_id'];
 		}
-
-		$member_id = (int) $member['member_id'];
 
 		// Validate input
 		$first_name = sanitize_text_field( $post_data['first_name'] ?? '' );
@@ -1103,22 +1116,28 @@ class STSRC_Ajax_Handler {
 		}
 
 		$post_data = wp_unslash( $_POST );
+		$is_admin = current_user_can( 'manage_options' );
 
-		// Verify nonce
+		// Verify nonce (different nonce for admin vs member portal)
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
-		if ( ! wp_verify_nonce( $nonce, 'stsrc_family_member_nonce' ) ) {
+		$nonce_action = $is_admin ? 'stsrc_admin_nonce' : 'stsrc_family_member_nonce';
+		
+		if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
 			return;
 		}
 
-		// Get member
-		$user_id = get_current_user_id();
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
 
-		if ( ! $member ) {
-			wp_send_json_error( array( 'message' => 'Member not found.' ) );
-			return;
+		// For non-admin users, verify they own the family member
+		if ( ! $is_admin ) {
+			$user_id = get_current_user_id();
+			$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+
+			if ( ! $member ) {
+				wp_send_json_error( array( 'message' => 'Member not found.' ) );
+				return;
+			}
 		}
 
 		$family_member_id = intval( $post_data['family_member_id'] ?? 0 );
@@ -1157,25 +1176,43 @@ class STSRC_Ajax_Handler {
 		}
 
 		$post_data = wp_unslash( $_POST );
+		$is_admin = current_user_can( 'manage_options' );
 
-		// Verify nonce
+		// Verify nonce (different nonce for admin vs member portal)
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
-		if ( ! wp_verify_nonce( $nonce, 'stsrc_extra_member_nonce' ) ) {
+		$nonce_action = $is_admin ? 'stsrc_admin_nonce' : 'stsrc_extra_member_nonce';
+		
+		if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
 			return;
 		}
 
-		// Get member
-		$user_id = get_current_user_id();
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
 
-		if ( ! $member ) {
-			wp_send_json_error( array( 'message' => 'Member not found.' ) );
-			return;
+		// Get member ID (either from POST for admin or from current user for member portal)
+		if ( $is_admin ) {
+			$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
+			if ( $member_id <= 0 ) {
+				wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+				return;
+			}
+			$member = STSRC_Member_DB::get_member( $member_id );
+			if ( ! $member ) {
+				wp_send_json_error( array( 'message' => 'Member not found.' ) );
+				return;
+			}
+		} else {
+			// Member portal: get member from current user
+			$user_id = get_current_user_id();
+			$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+
+			if ( ! $member ) {
+				wp_send_json_error( array( 'message' => 'Member not found.' ) );
+				return;
+			}
+
+			$member_id = (int) $member['member_id'];
 		}
-
-		$member_id = (int) $member['member_id'];
 
 		// Validate input
 		$first_name = sanitize_text_field( $post_data['first_name'] ?? '' );
@@ -1195,7 +1232,33 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		// Create Stripe checkout for $50
+		// Admin bypass: directly add extra member without Stripe payment
+		// Default to "paid" status since admin would have verified offline payment
+		if ( $is_admin ) {
+			$extra_member_id = STSRC_Extra_Member_DB::add_extra_member(
+				$member_id,
+				array(
+					'first_name'     => $first_name,
+					'last_name'      => $last_name,
+					'email'          => $email,
+					'payment_status' => 'paid', // Admin-added members default to paid
+				)
+			);
+
+			if ( false === $extra_member_id ) {
+				wp_send_json_error( array( 'message' => 'Failed to add extra member. Name may already exist.' ) );
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => 'Extra member added successfully (marked as paid).',
+				)
+			);
+			return;
+		}
+
+		// Member portal: Create Stripe checkout for $50
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		$payment_service = new STSRC_Payment_Service();
 
@@ -1318,22 +1381,28 @@ class STSRC_Ajax_Handler {
 		}
 
 		$post_data = wp_unslash( $_POST );
+		$is_admin = current_user_can( 'manage_options' );
 
-		// Verify nonce
+		// Verify nonce (different nonce for admin vs member portal)
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
-		if ( ! wp_verify_nonce( $nonce, 'stsrc_extra_member_nonce' ) ) {
+		$nonce_action = $is_admin ? 'stsrc_admin_nonce' : 'stsrc_extra_member_nonce';
+		
+		if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
 			return;
 		}
 
-		// Get member
-		$user_id = get_current_user_id();
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
 
-		if ( ! $member ) {
-			wp_send_json_error( array( 'message' => 'Member not found.' ) );
-			return;
+		// For non-admin users, verify they own the extra member
+		if ( ! $is_admin ) {
+			$user_id = get_current_user_id();
+			$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+
+			if ( ! $member ) {
+				wp_send_json_error( array( 'message' => 'Member not found.' ) );
+				return;
+			}
 		}
 
 		$extra_member_id = intval( $post_data['extra_member_id'] ?? 0 );
