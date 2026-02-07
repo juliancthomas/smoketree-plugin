@@ -243,6 +243,36 @@ class Smoketree_Plugin_Public {
 	}
 
 	/**
+	 * Handle login redirect.
+	 *
+	 * @since    1.0.0
+	 * @param    string         $redirect_to           The redirect destination URL.
+	 * @param    string         $requested_redirect_to The requested redirect destination URL passed as a parameter.
+	 * @param    WP_User|WP_Error $user                WP_User object if login was successful, WP_Error object otherwise.
+	 * @return   string                                The redirect URL.
+	 */
+	public function handle_login_redirect( $redirect_to, $requested_redirect_to, $user ) {
+		// If login failed, return original redirect
+		if ( is_wp_error( $user ) ) {
+			return $redirect_to;
+		}
+
+		// If a specific redirect was requested, honor it
+		if ( ! empty( $requested_redirect_to ) && $requested_redirect_to !== admin_url() ) {
+			return $requested_redirect_to;
+		}
+
+		// Check if user has admin capabilities
+		if ( isset( $user->ID ) && user_can( $user, 'manage_options' ) ) {
+			// Admins go to wp-admin
+			return admin_url();
+		}
+
+		// All other users (members) go to member portal
+		return home_url( '/member-portal' );
+	}
+
+	/**
 	 * Handle logout redirect.
 	 *
 	 * @since    1.0.0

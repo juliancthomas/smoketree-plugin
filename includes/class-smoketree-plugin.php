@@ -187,6 +187,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 		$this->loader->add_action( 'plugins_loaded', $plugin_public, 'register_page_templates' );
+		$this->loader->add_filter( 'login_redirect', $plugin_public, 'handle_login_redirect', 10, 3 );
 		$this->loader->add_action( 'init', $plugin_public, 'handle_logout_redirect' );
 
 	}
