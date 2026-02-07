@@ -76,6 +76,8 @@ class STSRC_Member_DB {
 		$result = $wpdb->insert( $table_name, $data, $format_array );
 
 		if ( false === $result ) {
+			error_log( 'STSRC Member Insert Failed: ' . $wpdb->last_error );
+			error_log( 'Data: ' . print_r( $data, true ) );
 			return false;
 		}
 

@@ -41,7 +41,7 @@ class STSRC_Database {
 		$table_members = $wpdb->prefix . 'stsrc_members';
 		$sql_members = "CREATE TABLE $table_members (
 			member_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-			user_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED DEFAULT NULL,
 			membership_type_id BIGINT(20) UNSIGNED NOT NULL,
 			status VARCHAR(20) NOT NULL DEFAULT 'pending',
 			payment_type VARCHAR(20) NOT NULL,

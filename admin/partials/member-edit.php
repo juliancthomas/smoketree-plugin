@@ -30,7 +30,7 @@ $member_id = $member['member_id'] ?? 0;
 		?>
 	</h1>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-member-edit-form" class="stsrc-member-form">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-member-edit-form" class="stsrc-member-form stsrc-ajax-form">
 		<input type="hidden" name="action" value="<?php echo $is_edit ? 'stsrc_update_member' : 'stsrc_create_member'; ?>">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
 		<?php if ( $is_edit ) : ?>

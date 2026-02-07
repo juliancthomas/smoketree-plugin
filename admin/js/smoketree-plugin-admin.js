@@ -140,25 +140,32 @@
 				data: formData,
 				success: function(response) {
 					if (response.success) {
-						STSRCAdmin.showNotice(response.data.message || 'Operation completed successfully.', 'success');
-						
-						// Reload page if specified
+						const data = response.data || {};
+						STSRCAdmin.showNotice(data.message || 'Operation completed successfully.', 'success');
+
+						if (data.redirect_url) {
+							setTimeout(function() {
+								window.location.href = data.redirect_url;
+							}, 1000);
+							return;
+						}
+
 						if ($form.data('reload') === true) {
 							setTimeout(function() {
 								location.reload();
 							}, 1000);
+							return;
 						}
 					} else {
 						STSRCAdmin.showNotice(response.data.message || 'An error occurred.', 'error');
-						$submitBtn.prop('disabled', false).removeClass('disabled');
 					}
 				},
 				error: function() {
 					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
-					$submitBtn.prop('disabled', false).removeClass('disabled');
 				},
 				complete: function() {
 					$form.removeClass('stsrc-loading');
+					$submitBtn.prop('disabled', false).removeClass('disabled');
 				}
 			});
 		},
