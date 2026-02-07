@@ -85,6 +85,17 @@ class STSRC_Settings_Page {
 		$settings['payment_plan_enabled'] = function_exists( 'get_field' ) ? get_field( 'stsrc_payment_plan_enabled', 'option' ) : get_option( 'stsrc_payment_plan_enabled', '0' );
 		$settings['secretary_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_secretary_email', 'option' ) : get_option( 'stsrc_secretary_email', '' );
 		$settings['season_renewal_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_season_renewal_date', 'option' ) : get_option( 'stsrc_season_renewal_date', '' );
+		$settings['tax_rate'] = function_exists( 'get_field' ) ? get_field( 'stsrc_tax_rate', 'option' ) : get_option( 'stsrc_tax_rate', '0' );
+
+		// Waiver Settings
+		$settings['waiver_text'] = function_exists( 'get_field' ) ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
+
+		// Transaction Fee Settings
+		$settings['fee_card'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_card', 'option' ) : get_option( 'stsrc_fee_card', '' );
+		$settings['fee_bank_account'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_bank_account', 'option' ) : get_option( 'stsrc_fee_bank_account', '' );
+		$settings['fee_zelle'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_zelle', 'option' ) : get_option( 'stsrc_fee_zelle', '' );
+		$settings['fee_check'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_check', 'option' ) : get_option( 'stsrc_fee_check', '' );
+		$settings['fee_pay_later'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_pay_later', 'option' ) : get_option( 'stsrc_fee_pay_later', '' );
 
 		return $settings;
 	}

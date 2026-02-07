@@ -2298,6 +2298,31 @@ class STSRC_Ajax_Handler {
 		if ( isset( $post_data['season_renewal_date'] ) ) {
 			update_option( 'stsrc_season_renewal_date', sanitize_text_field( $post_data['season_renewal_date'] ) );
 		}
+		if ( isset( $post_data['tax_rate'] ) ) {
+			update_option( 'stsrc_tax_rate', sanitize_text_field( $post_data['tax_rate'] ) );
+		}
+
+		// Save waiver text
+		if ( isset( $post_data['waiver_text'] ) ) {
+			update_option( 'stsrc_waiver_text', wp_kses_post( $post_data['waiver_text'] ) );
+		}
+
+		// Save transaction fees
+		if ( isset( $post_data['fee_card'] ) ) {
+			update_option( 'stsrc_fee_card', sanitize_text_field( $post_data['fee_card'] ) );
+		}
+		if ( isset( $post_data['fee_bank_account'] ) ) {
+			update_option( 'stsrc_fee_bank_account', sanitize_text_field( $post_data['fee_bank_account'] ) );
+		}
+		if ( isset( $post_data['fee_zelle'] ) ) {
+			update_option( 'stsrc_fee_zelle', sanitize_text_field( $post_data['fee_zelle'] ) );
+		}
+		if ( isset( $post_data['fee_check'] ) ) {
+			update_option( 'stsrc_fee_check', sanitize_text_field( $post_data['fee_check'] ) );
+		}
+		if ( isset( $post_data['fee_pay_later'] ) ) {
+			update_option( 'stsrc_fee_pay_later', sanitize_text_field( $post_data['fee_pay_later'] ) );
+		}
 
 		// If ACF is available, also save to ACF options
 		if ( function_exists( 'update_field' ) ) {

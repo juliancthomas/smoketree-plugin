@@ -179,6 +179,70 @@ $acf_available = $data['acf_available'] ?? false;
 								<p class="description"><?php echo esc_html__( 'Date for season-wide auto-renewal (YYYY-MM-DD)', 'smoketree-plugin' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th><label for="tax_rate"><?php echo esc_html__( 'Tax Rate (%)', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="number" name="tax_rate" id="tax_rate" value="<?php echo esc_attr( $settings['tax_rate'] ?? '0' ); ?>" class="regular-text" step="0.01" min="0" max="100">
+								<p class="description"><?php echo esc_html__( 'Tax percentage to apply to membership fees (e.g., 7.5 for 7.5%)', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<!-- Waiver Settings -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Waiver Agreement', 'smoketree-plugin' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="waiver_text"><?php echo esc_html__( 'Waiver Agreement Text', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<textarea name="waiver_text" id="waiver_text" rows="10" class="large-text"><?php echo esc_textarea( $settings['waiver_text'] ?? '' ); ?></textarea>
+								<p class="description"><?php echo esc_html__( 'This text will be displayed in a read-only field on the registration form. Members must sign and date to agree.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<!-- Transaction Fees Settings -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Transaction Fees', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Configure transaction fees for each payment method. These will be displayed to users during registration.', 'smoketree-plugin' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="fee_card"><?php echo esc_html__( 'Credit/Debit Card Fee', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="fee_card" id="fee_card" value="<?php echo esc_attr( $settings['fee_card'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Transaction fee description for card payments (e.g., "2.9% + $0.30")', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="fee_bank_account"><?php echo esc_html__( 'Bank Account Fee', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="fee_bank_account" id="fee_bank_account" value="<?php echo esc_attr( $settings['fee_bank_account'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Transaction fee description for bank account payments (e.g., "0.8%")', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="fee_zelle"><?php echo esc_html__( 'Zelle Fee', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="fee_zelle" id="fee_zelle" value="<?php echo esc_attr( $settings['fee_zelle'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Transaction fee description for Zelle payments (e.g., "No fee")', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="fee_check"><?php echo esc_html__( 'Check Fee', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="fee_check" id="fee_check" value="<?php echo esc_attr( $settings['fee_check'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Transaction fee description for check payments (e.g., "No fee")', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="fee_pay_later"><?php echo esc_html__( 'Pay Later Fee', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="fee_pay_later" id="fee_pay_later" value="<?php echo esc_attr( $settings['fee_pay_later'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Transaction fee description for pay later option (e.g., "No fee")', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
 					</table>
 				</div>
 			</div>

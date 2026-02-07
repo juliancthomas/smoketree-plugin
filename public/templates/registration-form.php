@@ -30,6 +30,18 @@ $captcha_enabled = $captcha_service->is_enabled();
 $captcha_site_key = $captcha_service->get_site_key();
 $captcha_provider = $captcha_service->get_provider();
 
+// Get settings for waiver and fees
+$waiver_text = get_option( 'stsrc_waiver_text', '' );
+$tax_rate = floatval( get_option( 'stsrc_tax_rate', '0' ) );
+$transaction_fees = array(
+	'card' => get_option( 'stsrc_fee_card', '' ),
+	'bank_account' => get_option( 'stsrc_fee_bank_account', '' ),
+	'zelle' => get_option( 'stsrc_fee_zelle', '' ),
+	'check' => get_option( 'stsrc_fee_check', '' ),
+	'pay_later' => get_option( 'stsrc_fee_pay_later', '' ),
+);
+$extra_member_fee = 50.00; // Fee per extra member
+
 $request_params = wp_unslash( $_GET );
 $payment_flag   = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
 
