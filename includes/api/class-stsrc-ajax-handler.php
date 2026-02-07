@@ -163,15 +163,31 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		// Check for duplicate email
+		// Check for duplicate email or cancelled account
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
-		$member_service = new STSRC_Member_Service();
-		if ( $member_service->check_duplicate_email( $data['email'] ) ) {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		
+		$existing_member = STSRC_Member_DB::get_member_by_email( $data['email'] );
+		
+		if ( $existing_member ) {
+			// If member is cancelled, send reactivation email instead
+			if ( 'cancelled' === $existing_member['status'] ) {
+				$this->send_reactivation_email( $existing_member, $data );
+				wp_send_json_success(
+					array(
+						'message' => 'A previous account was found. We\'ve sent a reactivation link to ' . $data['email'] . '. Please check your email to reactivate your account.',
+					)
+				);
+				return;
+			}
+			
+			// If member is active or pending, block registration
 			STSRC_Logger::info(
 				'Registration attempt blocked due to duplicate email.',
 				array(
 					'method' => __METHOD__,
 					'email'  => $data['email'],
+					'status' => $existing_member['status'],
 					'ip'     => $this->get_client_ip(),
 				)
 			);
@@ -331,7 +347,7 @@ class STSRC_Ajax_Handler {
 	 * @param    array    $data    Registration data
 	 * @return   string|WP_Error   Checkout URL or WP_Error on failure
 	 */
-	private function process_stripe_payment( array $data ): string|WP_Error {
+	private function process_stripe_payment( array $data, int $member_id = 0 ): string|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 
@@ -358,6 +374,11 @@ class STSRC_Ajax_Handler {
 		$registration_key = 'reg_' . md5( $data['email'] . time() . wp_rand() );
 		$transient_key = 'stsrc_registration_' . $registration_key;
 
+		// If member_id is provided (reactivation), add it to data
+		if ( $member_id > 0 ) {
+			$data['member_id'] = $member_id;
+		}
+
 		// Store registration data in transient (will be retrieved by webhook using metadata)
 		set_transient( $transient_key, $data, HOUR_IN_SECONDS * 2 ); // 2 hours
 
@@ -374,6 +395,7 @@ class STSRC_Ajax_Handler {
 					'membership_type_id' => $data['membership_type_id'],
 					'payment_type' => 'registration',
 					'registration_key' => $registration_key,
+					'member_id' => $member_id,
 				),
 			)
 		);
@@ -2945,5 +2967,219 @@ class STSRC_Ajax_Handler {
 
 		return $user->ID;
 	}
+
+	/**
+	 * Send reactivation email for cancelled account.
+	 *
+	 * @since    1.0.0
+	 * @param    array    $existing_member    Existing member data
+	 * @param    array    $new_data          New registration data
+	 * @return   void
+	 */
+	private function send_reactivation_email( array $existing_member, array $new_data ): void {
+		// Generate reactivation token
+		$token = bin2hex( random_bytes( 32 ) );
+		$expiration = time() + ( 24 * HOUR_IN_SECONDS ); // 24 hours
+
+		// Store token and new registration data in transient
+		set_transient(
+			'stsrc_reactivation_' . $token,
+			array(
+				'member_id' => $existing_member['member_id'],
+				'new_data'  => $new_data,
+			),
+			24 * HOUR_IN_SECONDS
+		);
+
+		// Build reactivation URL
+		$reactivation_url = add_query_arg(
+			array(
+				'action' => 'stsrc_reactivate',
+				'token'  => $token,
+			),
+			home_url()
+		);
+
+		// Send email
+		$subject = 'Reactivate Your Smoketree Membership';
+		$message = sprintf(
+			"Hello %s,\n\n" .
+			"You recently tried to register for Smoketree Swim and Recreation Club with an email address that was previously used for a cancelled membership.\n\n" .
+			"To reactivate your account and complete your registration, please click the link below:\n\n" .
+			"%s\n\n" .
+			"This link will expire in 24 hours. If you did not make this request, you can safely ignore this email.\n\n" .
+			"Best regards,\n" .
+			"Smoketree Swim and Recreation Club",
+			$existing_member['first_name'],
+			$reactivation_url
+		);
+
+		wp_mail( $existing_member['email'], $subject, $message );
+
+		STSRC_Logger::info(
+			'Reactivation email sent for cancelled member.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $existing_member['member_id'],
+				'email'     => $existing_member['email'],
+			)
+		);
+	}
+
+	/**
+	 * Handle init hook to check for reactivation request.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function handle_reactivation_request(): void {
+		if ( isset( $_GET['action'] ) && 'stsrc_reactivate' === $_GET['action'] ) {
+			$this->reactivate_member();
+		}
+	}
+
+	/**
+	 * Handle member reactivation from email link.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	private function reactivate_member(): void {
+		$token = sanitize_text_field( $_GET['token'] ?? '' );
+
+		if ( empty( $token ) ) {
+			wp_die( 'Invalid reactivation link.' );
+		}
+
+		// Get reactivation data
+		$reactivation_data = get_transient( 'stsrc_reactivation_' . $token );
+
+		if ( false === $reactivation_data ) {
+			wp_die( 'This reactivation link has expired or is invalid. Please try registering again.' );
+		}
+
+		$member_id = $reactivation_data['member_id'];
+		$new_data = $reactivation_data['new_data'];
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		
+		// Get current member data
+		$member = STSRC_Member_DB::get_member( $member_id );
+		
+		if ( ! $member || 'cancelled' !== $member['status'] ) {
+			wp_die( 'This account cannot be reactivated. Please contact support.' );
+		}
+
+		// Update member with new registration data and set to pending
+		$update_data = array(
+			'first_name'        => $new_data['first_name'],
+			'last_name'         => $new_data['last_name'],
+			'phone'             => $new_data['phone'],
+			'street_1'          => $new_data['street_1'],
+			'street_2'          => $new_data['street_2'] ?? '',
+			'city'              => $new_data['city'],
+			'state'             => $new_data['state'],
+			'zip'               => $new_data['zip'],
+			'country'           => $new_data['country'],
+			'membership_type_id'=> $new_data['membership_type_id'],
+			'status'            => 'pending',
+			'payment_type'      => $new_data['payment_type'],
+			'waiver_full_name'  => $new_data['waiver_full_name'],
+			'waiver_signed_date'=> $new_data['waiver_signed_date'],
+			'referral_source'   => $new_data['referral_source'] ?? '',
+		);
+
+		$result = STSRC_Member_DB::update_member( $member_id, $update_data );
+
+		if ( ! $result ) {
+			wp_die( 'Failed to reactivate account. Please try again or contact support.' );
+		}
+
+		// Update WordPress user password if provided
+		if ( ! empty( $new_data['password'] ) && ! empty( $member['user_id'] ) ) {
+			wp_set_password( $new_data['password'], $member['user_id'] );
+		}
+
+		// Delete the reactivation token
+		delete_transient( 'stsrc_reactivation_' . $token );
+
+		STSRC_Logger::info(
+			'Member account reactivated successfully.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $member_id,
+				'email'     => $member['email'],
+			)
+		);
+
+		// Process payment based on payment type
+		if ( in_array( $new_data['payment_type'], array( 'card', 'bank_account' ), true ) ) {
+			// Redirect to Stripe for payment
+			$result = $this->process_stripe_payment( $new_data, $member_id );
+			if ( ! is_wp_error( $result ) ) {
+				wp_redirect( $result );
+				exit;
+			}
+		}
+
+		// Redirect to success page for manual payments
+		wp_redirect( home_url( '/?registration=success&reactivated=true' ) );
+		exit;
+	}
+
+	/**
+	 * Delete member (soft delete).
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function delete_member(): void {
+		// Check admin capability
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+
+		// Verify nonce
+		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		// Soft delete (set status to cancelled)
+		$result = STSRC_Member_DB::delete_member( $member_id, false );
+
+		if ( ! $result ) {
+			wp_send_json_error( array( 'message' => 'Failed to delete member.' ) );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Member soft deleted by admin.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $member_id,
+				'admin_id'  => get_current_user_id(),
+			)
+		);
+
+		wp_send_json_success(
+			array(
+				'message' => 'Member deleted successfully. They can reactivate by registering again with the same email.',
+			)
+		);
+	}
+
 }
 

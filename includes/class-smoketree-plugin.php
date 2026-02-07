@@ -272,6 +272,7 @@ class Smoketree_Plugin {
 		// Admin endpoints (admin capability required)
 		$this->loader->add_action( 'wp_ajax_stsrc_create_member', $ajax_handler, 'create_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_member', $ajax_handler, 'update_member' );
+		$this->loader->add_action( 'wp_ajax_stsrc_delete_member', $ajax_handler, 'delete_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_create_membership_type', $ajax_handler, 'create_membership_type' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_membership_type', $ajax_handler, 'update_membership_type' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_membership_type', $ajax_handler, 'delete_membership_type' );
@@ -290,6 +291,9 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_forgot_password', $ajax_handler, 'forgot_password' );
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_reset_password', $ajax_handler, 'reset_password' );
 		$this->loader->add_action( 'wp_ajax_stsrc_reset_password', $ajax_handler, 'reset_password' );
+
+		// Public reactivation endpoint
+		$this->loader->add_action( 'init', $ajax_handler, 'handle_reactivation_request' );
 	}
 
 	/**

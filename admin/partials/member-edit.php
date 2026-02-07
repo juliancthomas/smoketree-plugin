@@ -260,7 +260,52 @@ $member_id = $member['member_id'] ?? 0;
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members' ) ); ?>" class="button">
 				<?php echo esc_html__( 'Cancel', 'smoketree-plugin' ); ?>
 			</a>
+			<?php if ( $is_edit ) : ?>
+				<button type="button" class="button button-link-delete" id="delete-member-btn" style="margin-left: 20px; color: #b32d2e;">
+					<?php echo esc_html__( 'Delete Member', 'smoketree-plugin' ); ?>
+				</button>
+			<?php endif; ?>
 		</p>
 	</form>
 </div>
+
+<?php if ( $is_edit ) : ?>
+<script>
+jQuery(document).ready(function($) {
+	$('#delete-member-btn').on('click', function(e) {
+		e.preventDefault();
+		
+		if (!confirm('Are you sure you want to delete this member? They can reactivate their account by registering again with the same email address.')) {
+			return;
+		}
+		
+		const $button = $(this);
+		$button.prop('disabled', true).text('Deleting...');
+		
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_delete_member',
+				nonce: '<?php echo wp_create_nonce( 'stsrc_admin_nonce' ); ?>',
+				member_id: <?php echo intval( $member_id ); ?>
+			},
+			success: function(response) {
+				if (response.success) {
+					alert(response.data.message || 'Member deleted successfully.');
+					window.location.href = '<?php echo admin_url( 'admin.php?page=stsrc-members' ); ?>';
+				} else {
+					alert(response.data.message || 'Failed to delete member.');
+					$button.prop('disabled', false).text('Delete Member');
+				}
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Delete Member');
+			}
+		});
+	});
+});
+</script>
+<?php endif; ?>
 
