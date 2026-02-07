@@ -166,6 +166,7 @@ class STSRC_Ajax_Handler {
 		// Check for duplicate email or cancelled account
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		
 		$existing_member = STSRC_Member_DB::get_member_by_email( $data['email'] );
 		
@@ -195,19 +196,88 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
+		// Create Stripe customer for all payment types
+		$payment_service = new STSRC_Payment_Service();
+		$stripe_customer_id = $payment_service->create_customer(
+			array(
+				'email' => $data['email'],
+				'name'  => $data['first_name'] . ' ' . $data['last_name'],
+				'metadata' => array(
+					'source' => 'registration',
+				),
+			)
+		);
+
+		if ( $stripe_customer_id ) {
+			$data['stripe_customer_id'] = $stripe_customer_id;
+			STSRC_Logger::info(
+				'Stripe customer created during registration.',
+				array(
+					'method'             => __METHOD__,
+					'email'              => $data['email'],
+					'stripe_customer_id' => $stripe_customer_id,
+				)
+			);
+		} else {
+			// Log warning but don't fail registration
+			STSRC_Logger::warning(
+				'Failed to create Stripe customer during registration. Proceeding without Stripe customer ID.',
+				array(
+					'method' => __METHOD__,
+					'email'  => $data['email'],
+				)
+			);
+		}
+
+		// Create member account (WordPress user + member record) with pending status
+		$member_service = new STSRC_Member_Service();
+		$member_id = $member_service->create_member_account( $data );
+
+		if ( false === $member_id ) {
+			STSRC_Logger::error(
+				'Failed to create member account during registration.',
+				array(
+					'method' => __METHOD__,
+					'email'  => $data['email'] ?? '',
+				)
+			);
+			wp_send_json_error( array( 'message' => 'Failed to create account. Please try again.' ) );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Member account created during registration.',
+			array(
+				'method'    => __METHOD__,
+				'email'     => $data['email'],
+				'member_id' => $member_id,
+			)
+		);
+
+		// Create family members if provided (for all payment types)
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+		if ( ! empty( $data['family_members'] ) && is_array( $data['family_members'] ) ) {
+			foreach ( $data['family_members'] as $family_member ) {
+				if ( ! empty( $family_member['first_name'] ) && ! empty( $family_member['last_name'] ) ) {
+					STSRC_Family_Member_DB::add_family_member( $member_id, $family_member );
+				}
+			}
+		}
+
 		// Process payment based on payment type
 		$payment_type = $data['payment_type'] ?? '';
 
 		if ( in_array( $payment_type, array( 'card', 'bank_account' ), true ) ) {
-			// Stripe payment flow
-			$result = $this->process_stripe_payment( $data );
+			// Stripe payment flow - redirect to checkout
+			$result = $this->process_stripe_payment( $data, $member_id );
 			if ( is_wp_error( $result ) ) {
 				STSRC_Logger::error(
 					'Stripe checkout session creation failed during registration.',
 					array(
-						'method' => __METHOD__,
-						'email'  => $data['email'],
-						'error'  => $result->get_error_code(),
+						'method'    => __METHOD__,
+						'email'     => $data['email'],
+						'member_id' => $member_id,
+						'error'     => $result->get_error_code(),
 					)
 				);
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -222,14 +292,15 @@ class STSRC_Ajax_Handler {
 			);
 		} else {
 			// Manual payment flow (Zelle, Check, Pay Later)
-			$result = $this->process_manual_payment( $data );
+			$result = $this->process_manual_payment( $data, $member_id );
 			if ( is_wp_error( $result ) ) {
 				STSRC_Logger::error(
 					'Manual registration payment handling failed.',
 					array(
-						'method' => __METHOD__,
-						'email'  => $data['email'],
-						'error'  => $result->get_error_code(),
+						'method'    => __METHOD__,
+						'email'     => $data['email'],
+						'member_id' => $member_id,
+						'error'     => $result->get_error_code(),
 					)
 				);
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -344,10 +415,11 @@ class STSRC_Ajax_Handler {
 	 * Process Stripe payment for registration.
 	 *
 	 * @since    1.0.0
-	 * @param    array    $data    Registration data
-	 * @return   string|WP_Error   Checkout URL or WP_Error on failure
+	 * @param    array    $data       Registration data
+	 * @param    int      $member_id  Member ID (required - account created before payment)
+	 * @return   string|WP_Error      Checkout URL or WP_Error on failure
 	 */
-	private function process_stripe_payment( array $data, int $member_id = 0 ): string|WP_Error {
+	private function process_stripe_payment( array $data, int $member_id ): string|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 
@@ -360,6 +432,7 @@ class STSRC_Ajax_Handler {
 					'method'              => __METHOD__,
 					'membership_type_id'  => $data['membership_type_id'] ?? null,
 					'email'               => $data['email'] ?? '',
+					'member_id'           => $member_id,
 				)
 			);
 			return new WP_Error( 'invalid_membership', 'Invalid membership type selected.' );
@@ -370,17 +443,8 @@ class STSRC_Ajax_Handler {
 		$membership_slug = strtolower( str_replace( ' ', '-', $membership_type['name'] ) );
 		$total = $payment_service->calculate_total_with_fee( (float) $membership_type['price'], $membership_slug );
 
-		// Generate unique key for registration data
-		$registration_key = 'reg_' . md5( $data['email'] . time() . wp_rand() );
-		$transient_key = 'stsrc_registration_' . $registration_key;
-
-		// If member_id is provided (reactivation), add it to data
-		if ( $member_id > 0 ) {
-			$data['member_id'] = $member_id;
-		}
-
-		// Store registration data in transient (will be retrieved by webhook using metadata)
-		set_transient( $transient_key, $data, HOUR_IN_SECONDS * 2 ); // 2 hours
+		// Get Stripe customer ID from data (already created)
+		$stripe_customer_id = $data['stripe_customer_id'] ?? null;
 
 		// Create checkout session
 		$checkout_url = $payment_service->create_checkout_session(
@@ -389,26 +453,25 @@ class STSRC_Ajax_Handler {
 				'product_name'   => $membership_type['name'] . ' Membership',
 				'customer_email' => $data['email'],
 				'customer_name'  => $data['first_name'] . ' ' . $data['last_name'],
+				'customer_id'    => $stripe_customer_id, // Use existing Stripe customer
 				'success_url'    => home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' ),
 				'cancel_url'     => home_url( '/register?payment=cancelled' ),
 				'metadata'       => array(
 					'membership_type_id' => $data['membership_type_id'],
-					'payment_type' => 'registration',
-					'registration_key' => $registration_key,
-					'member_id' => $member_id,
+					'payment_type'       => 'registration',
+					'member_id'          => $member_id, // Pass existing member_id to webhook
 				),
 			)
 		);
 
 		if ( ! $checkout_url ) {
-			// Clean up transient on failure
-			delete_transient( $transient_key );
 			STSRC_Logger::error(
 				'Stripe checkout session creation returned empty URL during registration.',
 				array(
 					'method'             => __METHOD__,
 					'membership_type_id' => $data['membership_type_id'],
 					'email'              => $data['email'],
+					'member_id'          => $member_id,
 				)
 			);
 			return new WP_Error( 'stripe_error', 'Failed to create payment session. Please try again.' );
@@ -421,28 +484,13 @@ class STSRC_Ajax_Handler {
 	 * Process manual payment for registration.
 	 *
 	 * @since    1.0.0
-	 * @param    array    $data    Registration data
-	 * @return   bool|WP_Error     True on success, WP_Error on failure
+	 * @param    array    $data       Registration data
+	 * @param    int      $member_id  Member ID (account already created)
+	 * @return   bool|WP_Error        True on success, WP_Error on failure
 	 */
-	private function process_manual_payment( array $data ): bool|WP_Error {
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
+	private function process_manual_payment( array $data, int $member_id ): bool|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
-
-		// Create member account with pending status
-		$member_service = new STSRC_Member_Service();
-		$member_id = $member_service->create_member_account( $data );
-
-		if ( false === $member_id ) {
-			STSRC_Logger::error(
-				'Manual registration failed to create member account.',
-				array(
-					'method' => __METHOD__,
-					'email'  => $data['email'] ?? '',
-				)
-			);
-			return new WP_Error( 'creation_failed', 'Failed to create member account. Please try again.' );
-		}
 
 		// Get membership type for amount
 		$membership_type = STSRC_Membership_DB::get_membership_type( $data['membership_type_id'] );
@@ -455,10 +503,10 @@ class STSRC_Ajax_Handler {
 		$email_service->send_email(
 			'thank-you-pay-later.php',
 			array(
-				'first_name'          => $data['first_name'],
-				'last_name'           => $data['last_name'],
-				'email'               => $data['email'],
-				'amount_due'          => '$' . number_format( $amount_due, 2 ),
+				'first_name'           => $data['first_name'],
+				'last_name'            => $data['last_name'],
+				'email'                => $data['email'],
+				'amount_due'           => '$' . number_format( $amount_due, 2 ),
 				'payment_instructions' => $this->get_payment_instructions( $data['payment_type'] ),
 			),
 			$data['email'],

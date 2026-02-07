@@ -164,6 +164,17 @@ class Smoketree_Stripe_Webhooks {
 			return false;
 		}
 
+		// Check if this is a member registration (member_id in metadata)
+		$metadata = $session['metadata'] ?? array();
+		$member_id = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
+		$payment_type = $metadata['payment_type'] ?? '';
+
+		if ( $member_id > 0 && 'registration' === $payment_type ) {
+			// New flow: Update existing member account
+			return self::handle_registration_payment_for_existing_member( $session, $event, $member_id );
+		}
+
+		// Legacy flow or other payment types (guest passes, extra members, etc.)
 		// Get registration data from transient
 		$transient_key = 'stsrc_registration_' . $session_id;
 		$registration_data = get_transient( $transient_key );
@@ -173,7 +184,137 @@ class Smoketree_Stripe_Webhooks {
 			return self::handle_other_payment( $session, $event['id'] ?? '' );
 		}
 
-		// Process new member registration
+		// Legacy: Process new member registration (backward compatibility)
+		return self::handle_legacy_registration_payment( $session, $event, $registration_data );
+	}
+
+	/**
+	 * Handle registration payment for existing member account.
+	 *
+	 * @since    1.0.0
+	 * @param    array    $session    Stripe session data
+	 * @param    array    $event      Stripe event data
+	 * @param    int      $member_id  Existing member ID
+	 * @return   bool                 True on success, false on failure
+	 */
+	private static function handle_registration_payment_for_existing_member( array $session, array $event, int $member_id ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-payment-log-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$member_service = new STSRC_Member_Service();
+		$email_service = new STSRC_Email_Service();
+
+		// Verify member exists
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			error_log( 'Webhook received for non-existent member_id: ' . $member_id );
+			return false;
+		}
+
+		// Get Stripe customer ID from session
+		$stripe_customer_id = $session['customer'] ?? '';
+
+		// Update member with Stripe customer ID if not already set
+		if ( ! empty( $stripe_customer_id ) && empty( $member['stripe_customer_id'] ) ) {
+			STSRC_Member_DB::update_member(
+				$member_id,
+				array( 'stripe_customer_id' => $stripe_customer_id )
+			);
+		}
+
+		// Get payment amount from session
+		$amount_total = ( $session['amount_total'] ?? 0 ) / 100; // Convert from cents
+		$amount_subtotal = ( $session['amount_subtotal'] ?? 0 ) / 100;
+		$fee_amount = $amount_total - $amount_subtotal;
+
+		// Get payment intent ID if available
+		$payment_intent_id = $session['payment_intent'] ?? '';
+		$session_id = $session['id'] ?? '';
+
+		// Log payment transaction
+		STSRC_Payment_Log_DB::log_payment(
+			array(
+				'member_id'                  => $member_id,
+				'stripe_payment_intent_id'   => $payment_intent_id,
+				'stripe_checkout_session_id' => $session_id,
+				'amount'                     => $amount_total,
+				'fee_amount'                 => $fee_amount,
+				'payment_type'               => $member['payment_type'] ?? 'card',
+				'status'                     => 'succeeded',
+				'stripe_event_id'            => $event['id'] ?? '',
+				'metadata'                   => array(
+					'session_id'  => $session_id,
+					'event_id'    => $event['id'] ?? '',
+					'payment_for' => 'registration',
+				),
+			)
+		);
+
+		// Activate member
+		$activation_result = $member_service->activate_member( $member_id );
+
+		if ( ! $activation_result ) {
+			error_log( 'Failed to activate member after payment: ' . $member_id );
+			// Don't return false - payment was logged, just activation failed
+		}
+
+		// Get updated member data for emails
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			error_log( 'Failed to retrieve member data after payment: ' . $member_id );
+			return false;
+		}
+
+		// Get membership type for email
+		$membership_type = STSRC_Membership_DB::get_membership_type( $member['membership_type_id'] );
+		$membership_type_name = $membership_type['name'] ?? '';
+
+		// Send admin notifications (to all admins + secretary)
+		$admin_email = get_option( 'admin_email' );
+		$secretary_email = get_option( 'stsrc_secretary_email', '' );
+		$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+
+		// Also get all admin users
+		$admin_users = get_users( array( 'role' => 'administrator' ) );
+		foreach ( $admin_users as $admin_user ) {
+			if ( ! empty( $admin_user->user_email ) && ! in_array( $admin_user->user_email, $admin_emails, true ) ) {
+				$admin_emails[] = $admin_user->user_email;
+			}
+		}
+
+		// Send notification to each admin
+		foreach ( $admin_emails as $admin_email_address ) {
+			$email_service->send_email(
+				'notify-admin-of-member.php',
+				array(
+					'first_name'      => $member['first_name'],
+					'last_name'       => $member['last_name'],
+					'email'           => $member['email'],
+					'membership_type' => $membership_type_name,
+					'status'          => $member['status'],
+					'member'          => $member,
+				),
+				$admin_email_address,
+				'New Member Registration - Smoketree Swim and Recreation Club'
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Handle legacy registration payment (backward compatibility).
+	 *
+	 * @since    1.0.0
+	 * @param    array    $session            Stripe session data
+	 * @param    array    $event              Stripe event data
+	 * @param    array    $registration_data  Registration data from transient
+	 * @return   bool                         True on success, false on failure
+	 */
+	private static function handle_legacy_registration_payment( array $session, array $event, array $registration_data ): bool {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
@@ -182,6 +323,7 @@ class Smoketree_Stripe_Webhooks {
 
 		$member_service = new STSRC_Member_Service();
 		$email_service = new STSRC_Email_Service();
+		$session_id = $session['id'] ?? '';
 
 		// Get Stripe customer ID from session
 		$stripe_customer_id = $session['customer'] ?? '';
@@ -212,6 +354,7 @@ class Smoketree_Stripe_Webhooks {
 		if ( false === $member_id ) {
 			error_log( 'Failed to create member account for session: ' . $session_id );
 			// Clear transient even on failure
+			$transient_key = 'stsrc_registration_' . $session_id;
 			delete_transient( $transient_key );
 			return false;
 		}
@@ -240,13 +383,13 @@ class Smoketree_Stripe_Webhooks {
 				'stripe_payment_intent_id'   => $payment_intent_id,
 				'stripe_checkout_session_id' => $session_id,
 				'amount'                     => $amount_total,
-				'fee_amount'                => $fee_amount,
+				'fee_amount'                 => $fee_amount,
 				'payment_type'               => $registration_data['payment_type'] ?? 'card',
 				'status'                     => 'succeeded',
-				'stripe_event_id'           => $event['id'] ?? '',
-				'metadata'                  => array(
+				'stripe_event_id'            => $event['id'] ?? '',
+				'metadata'                   => array(
 					'session_id' => $session_id,
-					'event_id'  => $event['id'] ?? '',
+					'event_id'   => $event['id'] ?? '',
 				),
 			)
 		);
@@ -263,6 +406,7 @@ class Smoketree_Stripe_Webhooks {
 		$member = $member_service->get_member_data( $member_id );
 		if ( ! $member ) {
 			error_log( 'Failed to retrieve member data: ' . $member_id );
+			$transient_key = 'stsrc_registration_' . $session_id;
 			delete_transient( $transient_key );
 			return false;
 		}
@@ -289,12 +433,12 @@ class Smoketree_Stripe_Webhooks {
 			$email_service->send_email(
 				'notify-admin-of-member.php',
 				array(
-					'first_name'     => $member['first_name'],
-					'last_name'      => $member['last_name'],
-					'email'          => $member['email'],
+					'first_name'      => $member['first_name'],
+					'last_name'       => $member['last_name'],
+					'email'           => $member['email'],
 					'membership_type' => $membership_type_name,
-					'status'         => $member['status'],
-					'member'         => $member,
+					'status'          => $member['status'],
+					'member'          => $member,
 				),
 				$admin_email_address,
 				'New Member Registration - Smoketree Swim and Recreation Club'
@@ -302,6 +446,7 @@ class Smoketree_Stripe_Webhooks {
 		}
 
 		// Clear transient
+		$transient_key = 'stsrc_registration_' . $session_id;
 		delete_transient( $transient_key );
 
 		return true;
