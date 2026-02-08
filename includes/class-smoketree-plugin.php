@@ -189,6 +189,8 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'plugins_loaded', $plugin_public, 'register_page_templates' );
 		$this->loader->add_filter( 'login_redirect', $plugin_public, 'handle_login_redirect', 10, 3 );
 		$this->loader->add_action( 'init', $plugin_public, 'handle_logout_redirect' );
+		$this->loader->add_action( 'init', $plugin_public, 'redirect_wp_login' );
+		$this->loader->add_filter( 'retrieve_password_message', $plugin_public, 'custom_password_reset_email', 10, 4 );
 
 	}
 

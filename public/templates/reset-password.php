@@ -54,7 +54,7 @@ get_header();
 				<p><?php echo esc_html( $token_error ); ?></p>
 			</div>
 			<div class="stsrc-form-group">
-				<a href="<?php echo esc_url( home_url( '/forgot-password' ) ); ?>" class="stsrc-button stsrc-button-primary">
+				<a href="<?php echo esc_url( home_url( '/forgot-password' ) ); ?>" class="stsrc-button stsrc-button-primary stsrc-button-full">
 					<?php echo esc_html__( 'Request New Reset Link', 'smoketree-plugin' ); ?>
 				</a>
 			</div>
@@ -79,7 +79,7 @@ get_header();
 				</div>
 
 				<div class="stsrc-form-group">
-					<button type="submit" class="stsrc-button stsrc-button-primary" id="stsrc-submit-reset-password">
+					<button type="submit" class="stsrc-button stsrc-button-primary stsrc-button-full" id="stsrc-submit-reset-password">
 						<?php echo esc_html__( 'Reset Password', 'smoketree-plugin' ); ?>
 					</button>
 				</div>
@@ -89,13 +89,13 @@ get_header();
 				<p><?php echo esc_html__( 'Invalid reset link. Please request a new password reset.', 'smoketree-plugin' ); ?></p>
 			</div>
 			<div class="stsrc-form-group">
-				<a href="<?php echo esc_url( home_url( '/forgot-password' ) ); ?>" class="stsrc-button stsrc-button-primary">
+				<a href="<?php echo esc_url( home_url( '/forgot-password' ) ); ?>" class="stsrc-button stsrc-button-primary stsrc-button-full">
 					<?php echo esc_html__( 'Request New Reset Link', 'smoketree-plugin' ); ?>
 				</a>
 			</div>
 		<?php endif; ?>
 
-		<div class="stsrc-form-group">
+		<div class="stsrc-login-links">
 			<a href="<?php echo esc_url( home_url( '/login' ) ); ?>">
 				<?php echo esc_html__( 'Back to Login', 'smoketree-plugin' ); ?>
 			</a>

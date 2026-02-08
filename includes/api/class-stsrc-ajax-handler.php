@@ -74,25 +74,35 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		// Check if user is a member
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
-		$member = STSRC_Member_DB::get_member_by_email( $user->user_email );
-		if ( ! $member ) {
-			STSRC_Logger::warning(
-				'Authenticated WordPress user is not linked to a member record.',
-				array(
-					'method'  => __METHOD__,
-					'user_id' => $user->ID,
-					'email'   => $user->user_email,
-				)
-			);
-			wp_send_json_error( array( 'message' => 'This account is not associated with a membership.' ) );
-			return;
+		// Check if user is a member (skip check for admins)
+		$is_admin = user_can( $user, 'manage_options' );
+		
+		if ( ! $is_admin ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+			$member = STSRC_Member_DB::get_member_by_email( $user->user_email );
+			if ( ! $member ) {
+				STSRC_Logger::warning(
+					'Authenticated WordPress user is not linked to a member record.',
+					array(
+						'method'  => __METHOD__,
+						'user_id' => $user->ID,
+						'email'   => $user->user_email,
+					)
+				);
+				wp_send_json_error( array( 'message' => 'This account is not associated with a membership.' ) );
+				return;
+			}
 		}
 
 		// Set auth cookie and log in
 		wp_set_current_user( $user->ID );
 		wp_set_auth_cookie( $user->ID, $remember );
+
+		// Determine redirect URL based on user role
+		// If user is admin and no specific redirect was requested, send to wp-admin
+		if ( $is_admin && ( empty( $redirect_to ) || $redirect_to === home_url( '/member-portal' ) ) ) {
+			$redirect_to = admin_url();
+		}
 
 		wp_send_json_success(
 			array(

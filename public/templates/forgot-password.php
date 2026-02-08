@@ -40,12 +40,12 @@ get_header();
 			</div>
 
 			<div class="stsrc-form-group">
-				<button type="submit" class="stsrc-button stsrc-button-primary" id="stsrc-submit-forgot-password">
+				<button type="submit" class="stsrc-button stsrc-button-primary stsrc-button-full" id="stsrc-submit-forgot-password">
 					<?php echo esc_html__( 'Send Reset Link', 'smoketree-plugin' ); ?>
 				</button>
 			</div>
 
-			<div class="stsrc-form-group">
+			<div class="stsrc-login-links">
 				<a href="<?php echo esc_url( home_url( '/login' ) ); ?>">
 					<?php echo esc_html__( 'Back to Login', 'smoketree-plugin' ); ?>
 				</a>

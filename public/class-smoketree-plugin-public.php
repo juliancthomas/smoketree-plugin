@@ -287,5 +287,87 @@ class Smoketree_Plugin_Public {
 		}
 	}
 
+	/**
+	 * Redirect wp-login.php to custom login page.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function redirect_wp_login(): void {
+		global $pagenow;
+		
+		// Only redirect wp-login.php, not wp-admin
+		if ( 'wp-login.php' === $pagenow ) {
+
+			$redirect_to = '';
+			
+			// Preserve redirect_to parameter if present
+			if ( isset( $_GET['redirect_to'] ) ) {
+				$redirect_to = '?redirect_to=' . urlencode( wp_unslash( $_GET['redirect_to'] ) );
+			}
+			
+			// Handle different actions
+			if ( isset( $_GET['action'] ) ) {
+				$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+				
+				switch ( $action ) {
+					case 'lostpassword':
+					case 'retrievepassword':
+						wp_safe_redirect( home_url( '/forgot-password' . $redirect_to ) );
+						exit;
+					
+					case 'rp':
+					case 'resetpass':
+						// Preserve reset key and login parameters
+						$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+						$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : '';
+						wp_safe_redirect( home_url( '/reset-password?token=' . $key . '&email=' . $login ) );
+						exit;
+					
+					case 'logout':
+						// Let the handle_logout_redirect method handle this
+						return;
+					
+					case 'register':
+						wp_safe_redirect( home_url( '/register' ) );
+						exit;
+					
+					default:
+						// For any other action, redirect to login
+						wp_safe_redirect( home_url( '/login' . $redirect_to ) );
+						exit;
+				}
+			}
+			
+			// Default: redirect to custom login page
+			wp_safe_redirect( home_url( '/login' . $redirect_to ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Customize password reset email.
+	 *
+	 * @since    1.0.0
+	 * @param    string    $message    Default password reset email message.
+	 * @param    string    $key        Password reset key.
+	 * @param    string    $user_login User login name.
+	 * @param    WP_User   $user_data  User data object.
+	 * @return   string                Modified password reset email message.
+	 */
+	public function custom_password_reset_email( $message, $key, $user_login, $user_data ) {
+		// Create custom reset URL pointing to our custom page
+		$reset_url = home_url( '/reset-password?token=' . $key . '&email=' . rawurlencode( $user_data->user_email ) );
+		
+		$message = __( 'Someone has requested a password reset for the following account:', 'smoketree-plugin' ) . "\r\n\r\n";
+		$message .= network_home_url( '/' ) . "\r\n\r\n";
+		$message .= sprintf( __( 'Email: %s', 'smoketree-plugin' ), $user_data->user_email ) . "\r\n\r\n";
+		$message .= __( 'If this was a mistake, just ignore this email and nothing will happen.', 'smoketree-plugin' ) . "\r\n\r\n";
+		$message .= __( 'To reset your password, visit the following address:', 'smoketree-plugin' ) . "\r\n\r\n";
+		$message .= $reset_url . "\r\n";
+		
+		return $message;
+	}
+
 }
 
