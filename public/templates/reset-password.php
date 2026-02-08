@@ -42,7 +42,8 @@ if ( ! empty( $token ) && ! empty( $email ) ) {
 	$token_error = __( 'Invalid reset link. Please request a new password reset.', 'smoketree-plugin' );
 }
 
-get_header();
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-reset-password-page">
@@ -148,5 +149,6 @@ jQuery(document).ready(function($) {
 </script>
 
 <?php
-get_footer();
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 

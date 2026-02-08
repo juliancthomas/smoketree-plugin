@@ -45,7 +45,8 @@ $extra_member_fee = 50.00; // Fee per extra member
 $request_params = wp_unslash( $_GET );
 $payment_flag   = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
 
-get_header('smoketree');
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-registration-page">
@@ -62,5 +63,7 @@ get_header('smoketree');
 	</div>
 </div>
 
-<?php get_footer('smoketree'); ?>
+<?php
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 

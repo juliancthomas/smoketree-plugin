@@ -25,7 +25,8 @@ $redirect_to    = isset( $request_params['redirect_to'] ) ? esc_url_raw( $reques
 $login_flag     = isset( $request_params['login'] ) ? sanitize_text_field( $request_params['login'] ) : '';
 $loggedout_flag = isset( $request_params['loggedout'] ) ? sanitize_text_field( $request_params['loggedout'] ) : '';
 
-get_header();
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-login-page">
@@ -172,5 +173,6 @@ jQuery(document).ready(function($) {
 </script>
 
 <?php
-get_footer();
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 

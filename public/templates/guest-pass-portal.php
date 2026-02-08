@@ -43,7 +43,8 @@ $usage_log = STSRC_Guest_Pass_DB::get_guest_pass_log(
 );
 $usage_log = array_slice( $usage_log, 0, 10 );
 
-get_header();
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-guest-pass-portal">
@@ -282,5 +283,6 @@ jQuery(document).ready(function($) {
 </script>
 
 <?php
-get_footer();
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 

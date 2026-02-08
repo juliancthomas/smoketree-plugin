@@ -88,7 +88,8 @@ $request_params     = wp_unslash( $_GET );
 $payment_status     = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
 $extra_member_state = isset( $request_params['extra_member'] ) ? sanitize_text_field( $request_params['extra_member'] ) : '';
 
-get_header();
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-member-portal">
@@ -150,5 +151,6 @@ get_header();
 </div>
 
 <?php
-get_footer();
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 

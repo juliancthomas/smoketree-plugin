@@ -19,7 +19,8 @@ if ( is_user_logged_in() ) {
 	exit;
 }
 
-get_header();
+// Load plugin header
+require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <div class="stsrc-forgot-password-page">
@@ -89,5 +90,6 @@ jQuery(document).ready(function($) {
 </script>
 
 <?php
-get_footer();
+// Load plugin footer
+require_once plugin_dir_path( __FILE__ ) . 'footer.php';
 
