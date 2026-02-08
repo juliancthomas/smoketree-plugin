@@ -69,6 +69,7 @@ class Smoketree_Plugin_Admin {
 		$this->version = $version;
 
 		$this->register_admin_menu();
+		$this->register_acf_options_page();
 
 	}
 
@@ -165,6 +166,39 @@ class Smoketree_Plugin_Admin {
 	 */
 	private function register_admin_menu(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+	}
+
+	/**
+	 * Register ACF options page for settings.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	private function register_acf_options_page(): void {
+		if ( function_exists( 'acf_add_options_page' ) ) {
+			add_action( 'acf/init', array( $this, 'add_acf_options_page' ) );
+		}
+	}
+
+	/**
+	 * Add ACF options page.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function add_acf_options_page(): void {
+		acf_add_options_page(
+			array(
+				'page_title' => __( 'Smoketree Settings', 'smoketree-plugin' ),
+				'menu_title' => __( 'Settings', 'smoketree-plugin' ),
+				'menu_slug'  => 'stsrc-settings',
+				'capability' => 'manage_options',
+				'parent_slug' => 'stsrc-dashboard',
+				'redirect'   => false,
+				'position'   => false,
+				'icon_url'   => false,
+			)
+		);
 	}
 
 	/**
