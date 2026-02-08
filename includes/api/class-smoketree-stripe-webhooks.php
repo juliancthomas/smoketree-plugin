@@ -78,6 +78,29 @@ class Smoketree_Stripe_Webhooks {
 	}
 
 	/**
+	 * Get webhook secret based on test mode.
+	 *
+	 * @since    1.0.0
+	 * @return   string    Webhook secret or empty string
+	 */
+	private static function get_webhook_secret(): string {
+		// Try ACF first, then fallback to get_option
+		$secret = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_webhook_secret', '' );
+		
+		// Check for test mode (handle bool, int, and string values)
+		$test_mode = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
+		$is_test_mode = ( true === $test_mode || 1 === $test_mode || '1' === $test_mode );
+		
+		if ( $is_test_mode ) {
+			$test_secret = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_test_webhook_secret', '' );
+			if ( ! empty( $test_secret ) ) {
+				$secret = $test_secret;
+			}
+		}
+		return (string) $secret;
+	}
+
+	/**
 	 * Verify webhook signature.
 	 *
 	 * @since    1.0.0
@@ -90,7 +113,8 @@ class Smoketree_Stripe_Webhooks {
 			return false;
 		}
 
-		$webhook_secret = get_option( 'stsrc_stripe_webhook_secret', '' );
+		// Get webhook secret based on test mode
+		$webhook_secret = self::get_webhook_secret();
 		if ( empty( $webhook_secret ) ) {
 			// If no webhook secret is configured, allow (for development)
 			// In production, this should return false

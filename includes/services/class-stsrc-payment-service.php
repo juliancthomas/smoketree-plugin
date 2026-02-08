@@ -45,6 +45,10 @@ class STSRC_Payment_Service {
 		$secret_key = $this->get_secret_key();
 		if ( ! empty( $secret_key ) && class_exists( '\Stripe\Stripe' ) ) {
 			\Stripe\Stripe::setApiKey( $secret_key );
+			
+			// Debug logging to verify which key is being used
+			$key_type = ( strpos( $secret_key, 'sk_test_' ) === 0 ) ? 'TEST' : 'LIVE';
+			error_log( sprintf( '[Stripe Init] Using %s secret key (starts with: %s)', $key_type, substr( $secret_key, 0, 12 ) ) );
 		}
 	}
 
@@ -55,13 +59,28 @@ class STSRC_Payment_Service {
 	 * @return   string    Secret key or empty string
 	 */
 	private function get_secret_key(): string {
-		$key = get_option( 'stsrc_stripe_secret_key', '' );
-		// Check for test mode
-		$test_mode = get_option( 'stsrc_stripe_test_mode', '0' );
-		if ( '1' === $test_mode ) {
-			$key = get_option( 'stsrc_stripe_test_secret_key', $key );
+		// Try ACF first, then fallback to get_option
+		$key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_secret_key', 'option' ) : get_option( 'stsrc_stripe_secret_key', '' );
+		
+		// Check for test mode (handle bool, int, and string values)
+		$test_mode = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
+		$is_test_mode = ( true === $test_mode || 1 === $test_mode || '1' === $test_mode );
+		
+		// Debug logging
+		error_log( sprintf( '[Stripe Keys] Test mode raw value: %s (type: %s), Is test mode: %s', var_export( $test_mode, true ), gettype( $test_mode ), $is_test_mode ? 'YES' : 'NO' ) );
+		
+		if ( $is_test_mode ) {
+			$test_key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_secret_key', 'option' ) : get_option( 'stsrc_stripe_test_secret_key', '' );
+			if ( ! empty( $test_key ) ) {
+				error_log( '[Stripe Keys] Using TEST secret key' );
+				$key = $test_key;
+			} else {
+				error_log( '[Stripe Keys] Test mode enabled but no test key found, using production key' );
+			}
+		} else {
+			error_log( '[Stripe Keys] Using PRODUCTION secret key' );
 		}
-		return $key;
+		return (string) $key;
 	}
 
 	/**
@@ -71,13 +90,30 @@ class STSRC_Payment_Service {
 	 * @return   string    Publishable key or empty string
 	 */
 	public function get_publishable_key(): string {
-		$key = get_option( 'stsrc_stripe_publishable_key', '' );
-		// Check for test mode
-		$test_mode = get_option( 'stsrc_stripe_test_mode', '0' );
-		if ( '1' === $test_mode ) {
-			$key = get_option( 'stsrc_stripe_test_publishable_key', $key );
+		// Try ACF first, then fallback to get_option
+		$key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_publishable_key', 'option' ) : get_option( 'stsrc_stripe_publishable_key', '' );
+		
+		// Check for test mode (handle bool, int, and string values)
+		$test_mode = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
+		$is_test_mode = ( true === $test_mode || 1 === $test_mode || '1' === $test_mode );
+		
+		if ( $is_test_mode ) {
+			$test_key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_publishable_key', 'option' ) : get_option( 'stsrc_stripe_test_publishable_key', '' );
+			if ( ! empty( $test_key ) ) {
+				error_log( '[Stripe Keys] Using TEST publishable key' );
+				$key = $test_key;
+			} else {
+				error_log( '[Stripe Keys] Test mode enabled but no test publishable key found, using production key' );
+			}
+		} else {
+			error_log( '[Stripe Keys] Using PRODUCTION publishable key' );
 		}
-		return $key;
+		
+		// Log which key type we're returning
+		$key_type = ( strpos( $key, 'pk_test_' ) === 0 ) ? 'TEST' : 'LIVE';
+		error_log( sprintf( '[Stripe Keys] Returning %s publishable key (starts with: %s)', $key_type, substr( $key, 0, 12 ) ) );
+		
+		return (string) $key;
 	}
 
 	/**

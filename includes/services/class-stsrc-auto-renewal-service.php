@@ -677,10 +677,18 @@ class STSRC_Auto_Renewal_Service {
 			}
 		}
 
-		$secret_key = get_option( 'stsrc_stripe_secret_key', '' );
-		$test_mode  = get_option( 'stsrc_stripe_test_mode', '0' );
-		if ( '1' === $test_mode ) {
-			$secret_key = get_option( 'stsrc_stripe_test_secret_key', $secret_key );
+		// Try ACF first, then fallback to get_option
+		$secret_key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_secret_key', 'option' ) : get_option( 'stsrc_stripe_secret_key', '' );
+		$test_mode  = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
+		
+		// Check for test mode (handle bool, int, and string values)
+		$is_test_mode = ( true === $test_mode || 1 === $test_mode || '1' === $test_mode );
+		
+		if ( $is_test_mode ) {
+			$test_key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_secret_key', 'option' ) : get_option( 'stsrc_stripe_test_secret_key', '' );
+			if ( ! empty( $test_key ) ) {
+				$secret_key = $test_key;
+			}
 		}
 
 		if ( ! empty( $secret_key ) && class_exists( '\Stripe\Stripe' ) ) {

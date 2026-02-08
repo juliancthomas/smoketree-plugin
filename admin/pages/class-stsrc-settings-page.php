@@ -64,10 +64,11 @@ class STSRC_Settings_Page {
 		// Stripe Settings
 		$settings['stripe_publishable_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_publishable_key', 'option' ) : get_option( 'stsrc_stripe_publishable_key', '' );
 		$settings['stripe_secret_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_secret_key', 'option' ) : get_option( 'stsrc_stripe_secret_key', '' );
+		$settings['stripe_webhook_secret'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_webhook_secret', '' );
 		$settings['stripe_test_mode'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
 		$settings['stripe_test_publishable_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_publishable_key', 'option' ) : get_option( 'stsrc_stripe_test_publishable_key', '' );
 		$settings['stripe_test_secret_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_secret_key', 'option' ) : get_option( 'stsrc_stripe_test_secret_key', '' );
-		$settings['stripe_webhook_secret'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_webhook_secret', '' );
+		$settings['stripe_test_webhook_secret'] = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_test_webhook_secret', '' );
 
 		// CAPTCHA Settings
 		$captcha_provider = function_exists( 'get_field' ) ? get_field( 'stsrc_captcha_provider', 'option' ) : get_option( 'stsrc_captcha_provider', 'recaptcha' );
