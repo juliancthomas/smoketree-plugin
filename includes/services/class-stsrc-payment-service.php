@@ -510,5 +510,116 @@ class STSRC_Payment_Service {
 			)
 		);
 	}
+
+	/**
+	 * Create balance payment checkout session.
+	 *
+	 * Creates a Stripe checkout session for a member to pay their outstanding balance.
+	 *
+	 * @since    1.1.0
+	 * @param    int    $member_id    Member ID
+	 * @param    float  $amount       Payment amount
+	 * @return   string|false         Checkout session URL or false on failure
+	 */
+	public function create_balance_payment_checkout_session( int $member_id, float $amount ): string|false {
+		// Get minimum payment setting
+		$minimum_payment = $this->get_minimum_balance_payment();
+
+		// Validate amount meets minimum
+		if ( $amount < $minimum_payment ) {
+			STSRC_Logger::warning(
+				'Balance payment amount below minimum.',
+				array(
+					'method'          => __METHOD__,
+					'member_id'       => $member_id,
+					'amount'          => $amount,
+					'minimum_payment' => $minimum_payment,
+				)
+			);
+			return false;
+		}
+
+		// Load member database class
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		// Get member data
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			STSRC_Logger::warning(
+				'Member record not found when creating balance payment checkout session.',
+				array(
+					'method'    => __METHOD__,
+					'member_id' => $member_id,
+				)
+			);
+			return false;
+		}
+
+		// Verify member has balance owed
+		$balance_owed = (float) ( $member['balance_owed'] ?? 0.00 );
+		if ( $balance_owed <= 0 ) {
+			STSRC_Logger::info(
+				'No balance owed for member requesting balance payment.',
+				array(
+					'method'       => __METHOD__,
+					'member_id'    => $member_id,
+					'balance_owed' => $balance_owed,
+				)
+			);
+			return false;
+		}
+
+		// Get membership type for description
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		$membership_type = STSRC_Membership_DB::get_membership_type( $member['membership_type_id'] );
+		$membership_name = $membership_type['name'] ?? 'Membership';
+
+		// Build success URL with session ID placeholder
+		$success_url = home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' );
+		$cancel_url  = home_url( '/member-portal?payment=cancelled' );
+
+		// Create checkout session
+		return $this->create_checkout_session(
+			array(
+				'amount'         => $amount,
+				'product_name'   => 'Balance Payment for ' . $membership_name . ' Membership',
+				'customer_id'    => $member['stripe_customer_id'] ?? null,
+				'customer_email' => $member['email'],
+				'customer_name'  => $member['first_name'] . ' ' . $member['last_name'],
+				'success_url'    => $success_url,
+				'cancel_url'     => $cancel_url,
+				'metadata'       => array(
+					'payment_type'     => 'balance_payment',
+					'member_id'        => $member_id,
+					'original_balance' => $balance_owed,
+					'payment_amount'   => $amount,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Get minimum balance payment amount.
+	 *
+	 * Retrieves the minimum payment amount setting with fallback to default.
+	 *
+	 * @since    1.1.0
+	 * @return   float    Minimum payment amount (default: 10.00)
+	 */
+	public function get_minimum_balance_payment(): float {
+		// Try ACF first, then fallback to get_option
+		$minimum = function_exists( 'get_field' )
+			? get_field( 'stsrc_minimum_balance_payment', 'option' )
+			: get_option( 'stsrc_minimum_balance_payment', 10.00 );
+
+		// Ensure it's a positive number
+		$minimum = (float) $minimum;
+
+		if ( $minimum <= 0 ) {
+			$minimum = 10.00;
+		}
+
+		return $minimum;
+	}
 }
 

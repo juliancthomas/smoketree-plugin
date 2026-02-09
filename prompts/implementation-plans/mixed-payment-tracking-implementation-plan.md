@@ -25,31 +25,34 @@
 
 ## Section 2: Core Service Layer
 
-- [ ] Step 2.1: Transaction Database Class - Core Methods
+- [x] Step 2.1: Transaction Database Class - Core Methods
   - **Task**: Implement the core CRUD methods in the Transaction DB class for creating and retrieving transaction records. Include proper sanitization, validation, prepared statements, and error handling with WP_Error returns.
   - **Files**: Maximum 1 file
     - `includes/database/class-stsrc-transaction-db.php`: Add methods: `create_transaction($member_id, $transaction_data)`, `get_transactions($member_id, $year = null, $page = 1, $per_page = 20)`, `get_transaction($transaction_id)`, `get_total_paid($member_id)`, `get_total_adjustments($member_id)`, `get_balance_summary($member_id)`. Use $wpdb->prepare() for all queries.
   - **Step Dependencies**: Step 1.1 (table must exist)
   - **User Instructions**: None
   - **Git message**: `feat(database): add transaction DB class core methods`
+  - **Status**: ✅ COMPLETED (implemented in Step 1.1)
 
-- [ ] Step 2.2: Member Database Class - Balance Methods
+- [x] Step 2.2: Member Database Class - Balance Methods
   - **Task**: Add balance-specific methods to the Member DB class for updating balance fields and calculating/verifying balances from the transaction ledger.
   - **Files**: Maximum 1 file
     - `includes/database/class-stsrc-member-db.php`: Add methods: `update_balance($member_id, $new_balance, $final_payment_method = null)`, `get_members_with_balance($balance_operator = '>', $balance_amount = 0)`, `calculate_member_balance($member_id)` which sums transactions and compares to stored balance_owed for integrity checking
   - **Step Dependencies**: Step 2.1 (transaction methods needed for calculate_member_balance)
   - **User Instructions**: None
   - **Git message**: `feat(database): add member balance management methods`
+  - **Status**: ✅ COMPLETED
 
-- [ ] Step 2.3: Balance Service Class
+- [x] Step 2.3: Balance Service Class
   - **Task**: Create a service class to handle all balance-related business logic, including adjustments, manual payment recording, balance calculations, status updates, and auto-activation. This class orchestrates database operations and enforces business rules.
   - **Files**: Maximum 1 file
     - `includes/services/class-stsrc-balance-service.php`: Create new class with methods: `adjust_balance($member_id, $adjustment_type, $amount, $description, $admin_notes, $admin_user_id)`, `record_manual_payment($member_id, $payment_method, $amount, $description, $admin_notes, $admin_user_id, $date_received)`, `record_stripe_payment($member_id, $amount, $payment_method, $stripe_ids, $description)`, `update_member_status_if_paid($member_id)`, `get_balance_display_data($member_id)`. Include validation for amounts, required fields, and automatic status change logic.
   - **Step Dependencies**: Steps 2.1, 2.2 (needs Transaction DB and Member DB)
   - **User Instructions**: None
   - **Git message**: `feat(services): create balance service with business logic`
+  - **Status**: ✅ COMPLETED
 
-- [ ] Step 2.4: Enhance Payment Service for Balance Payments
+- [x] Step 2.4: Enhance Payment Service for Balance Payments
   - **Task**: Add method to existing Payment Service class to create Stripe checkout sessions specifically for balance payments. Include validation for minimum payment amounts, member existence, and outstanding balance.
   - **Files**: Maximum 2 files
     - `includes/services/class-stsrc-payment-service.php`: Add method `create_balance_payment_checkout_session($member_id, $amount)` that validates amount against minimum setting, verifies member has balance owed, creates checkout session with appropriate metadata (payment_type: 'balance_payment', member_id, original_balance, payment_amount), and returns session URL or WP_Error
@@ -57,6 +60,7 @@
   - **Step Dependencies**: None (can be built independently)
   - **User Instructions**: None
   - **Git message**: `feat(payments): add balance payment checkout session creation`
+  - **Status**: ✅ COMPLETED
 
 ## Section 3: Admin Settings
 

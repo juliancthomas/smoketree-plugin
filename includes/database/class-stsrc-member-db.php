@@ -325,6 +325,117 @@ class STSRC_Member_DB {
 	}
 
 	/**
+	 * Update member balance and optional final payment method.
+	 *
+	 * @since    1.1.0
+	 * @param    int         $member_id             Member ID
+	 * @param    float       $new_balance           New balance amount
+	 * @param    string|null $final_payment_method  Optional final payment method
+	 * @return   bool                               True on success, false on failure
+	 */
+	public static function update_balance( int $member_id, float $new_balance, ?string $final_payment_method = null ): bool {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'stsrc_members';
+
+		$data = array(
+			'balance_owed' => $new_balance,
+			'updated_at'   => current_time( 'mysql' ),
+		);
+
+		$formats = array( '%f', '%s' );
+
+		// Add final payment method if provided
+		if ( null !== $final_payment_method ) {
+			$data['final_payment_method'] = $final_payment_method;
+			$formats[] = '%s';
+		}
+
+		$result = $wpdb->update(
+			$table_name,
+			$data,
+			array( 'member_id' => $member_id ),
+			$formats,
+			array( '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Get members with balance matching criteria.
+	 *
+	 * @since    1.1.0
+	 * @param    string $balance_operator  Operator: '>', '<', '=', '>=', '<=', '!='
+	 * @param    float  $balance_amount    Balance amount to compare
+	 * @return   array                     Array of member arrays
+	 */
+	public static function get_members_with_balance( string $balance_operator = '>', float $balance_amount = 0 ): array {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'stsrc_members';
+
+		// Validate operator for security
+		$allowed_operators = array( '>', '<', '=', '>=', '<=', '!=' );
+		if ( ! in_array( $balance_operator, $allowed_operators, true ) ) {
+			$balance_operator = '>';
+		}
+
+		// Build query with operator
+		$query = $wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE balance_owed {$balance_operator} %f ORDER BY balance_owed DESC",
+			$balance_amount
+		);
+
+		$results = $wpdb->get_results( $query, ARRAY_A );
+
+		return $results ? $results : array();
+	}
+
+	/**
+	 * Calculate member balance from transaction ledger.
+	 *
+	 * Sums all transactions to verify the stored balance_owed matches the calculated balance.
+	 * This is used for data integrity checks.
+	 *
+	 * @since    1.1.0
+	 * @param    int    $member_id    Member ID
+	 * @return   float|null           Calculated balance or null if member not found
+	 */
+	public static function calculate_member_balance( int $member_id ): ?float {
+		global $wpdb;
+
+		$members_table      = $wpdb->prefix . 'stsrc_members';
+		$transactions_table = $wpdb->prefix . 'stsrc_transactions';
+
+		// Get member's original price
+		$member = self::get_member( $member_id );
+
+		if ( null === $member ) {
+			return null;
+		}
+
+		$original_price = (float) ( $member['original_membership_price'] ?? 0.00 );
+
+		// Sum all transaction amounts (payments are negative, fees/charges are positive)
+		// Initial transaction has amount 0
+		$total_transactions = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT SUM(amount) FROM {$transactions_table} WHERE member_id = %d",
+				$member_id
+			)
+		);
+
+		$total_transactions = (float) ( $total_transactions ?? 0.00 );
+
+		// Calculated balance = original price + sum of all transactions
+		// (payments reduce balance, fees increase it)
+		$calculated_balance = $original_price + $total_transactions;
+
+		return $calculated_balance;
+	}
+
+	/**
 	 * Backfill balance fields for existing members.
 	 *
 	 * For existing members:
