@@ -97,7 +97,7 @@
   - **Git message**: `feat(admin): add transaction history table to member page`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 4.3: Adjust Balance Modal - UI and Validation
+- [x] Step 4.3: Adjust Balance Modal - UI and Validation
   - **Task**: Create modal dialog UI for admin balance adjustments. Include form fields for adjustment type dropdown, amount (with positive/negative validation), description, and admin notes. Add real-time preview of new balance and two-step confirmation.
   - **Files**: Maximum 3 files
     - `admin/partials/adjust-balance-modal.php`: Create modal HTML template with form fields, include hidden fields for member_id and nonce, add preview section for calculated new balance
@@ -106,6 +106,7 @@
   - **Step Dependencies**: Step 4.1 (appears on same page)
   - **User Instructions**: Click "Adjust Balance" button on member edit page and verify modal opens with all fields and preview working correctly
   - **Git message**: `feat(admin): create adjust balance modal UI`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 4.4: Adjust Balance - AJAX Handler
   - **Task**: Create AJAX endpoint to handle balance adjustment submissions from admin. Validate nonce, capability, amount, and required fields. Call Balance Service to create adjustment transaction, update balance, and trigger status change if applicable. Return success/error response.

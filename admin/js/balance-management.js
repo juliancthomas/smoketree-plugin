@@ -123,16 +123,315 @@
 			});
 		}
 
-		// Placeholder for adjust balance modal (will be implemented in next step)
+		/**
+		 * Adjust Balance Modal - Open
+		 */
 		$('#stsrc-adjust-balance-btn').on('click', function(e) {
 			e.preventDefault();
-			alert('Adjust balance modal will be implemented in the next step.');
+			openAdjustBalanceModal();
 		});
+
+		/**
+		 * Open Adjust Balance Modal
+		 */
+		function openAdjustBalanceModal() {
+			const memberId = getMemberId();
+			if (!memberId) {
+				alert('Unable to determine member ID.');
+				return;
+			}
+
+			// Get current balance from display
+			const currentBalanceText = $('#stsrc-balance-section').find('div[style*="font-size: 32px"]').text().trim();
+			const currentBalance = parseFloat(currentBalanceText.replace(/[^0-9.-]/g, '')) || 0;
+
+			// Set member ID and current balance
+			$('#stsrc-adjust-member-id').val(memberId);
+			$('#stsrc-adjust-current-balance').text(formatCurrency(Math.abs(currentBalance)));
+
+			// Reset form
+			resetAdjustBalanceModal();
+
+			// Store current balance for calculations
+			$('#stsrc-adjust-balance-modal').data('currentBalance', currentBalance);
+
+			// Show modal
+			$('#stsrc-adjust-balance-modal').fadeIn(200);
+			$('body').addClass('stsrc-modal-open');
+		}
+
+		/**
+		 * Close Adjust Balance Modal
+		 */
+		$(document).on('click', '.stsrc-modal-close', function() {
+			closeAdjustBalanceModal();
+		});
+
+		$(document).on('click', '.stsrc-modal-overlay', function() {
+			closeAdjustBalanceModal();
+		});
+
+		function closeAdjustBalanceModal() {
+			$('#stsrc-adjust-balance-modal').fadeOut(200);
+			$('body').removeClass('stsrc-modal-open');
+			setTimeout(resetAdjustBalanceModal, 300);
+		}
+
+		/**
+		 * Close and Reload Page
+		 */
+		$(document).on('click', '.stsrc-modal-close-reload', function() {
+			location.reload();
+		});
+
+		/**
+		 * Reset Modal to Initial State
+		 */
+		function resetAdjustBalanceModal() {
+			// Reset form
+			$('#stsrc-adjust-balance-form')[0].reset();
+			
+			// Hide all steps except form
+			$('#stsrc-adjust-form-step').show();
+			$('#stsrc-adjust-confirm-step').hide();
+			$('#stsrc-adjust-success-step').hide();
+			$('#stsrc-adjust-error-step').hide();
+			
+			// Hide all button groups except form buttons
+			$('#stsrc-adjust-form-buttons').show();
+			$('#stsrc-adjust-confirm-buttons').hide();
+			$('#stsrc-adjust-close-button').hide();
+			$('#stsrc-adjust-loading').hide();
+			
+			// Reset preview
+			$('#stsrc-balance-preview').hide();
+			
+			// Disable continue button
+			$('#stsrc-continue-to-confirm').prop('disabled', true);
+			
+			// Clear errors
+			$('.stsrc-error-message').hide().text('');
+			$('#stsrc-adjustment-type-hint').text('');
+		}
+
+		/**
+		 * Adjustment Type Change - Update Hints
+		 */
+		$('#stsrc-adjustment-type').on('change', function() {
+			const type = $(this).val();
+			const hints = {
+				'discount': 'This will reduce the member\'s balance (negative adjustment).',
+				'fee': 'This will increase the member\'s balance (positive adjustment).',
+				'correction': 'Use this for correcting errors. Can increase or decrease balance.',
+				'other': 'Generic adjustment. Please provide clear description.'
+			};
+			
+			$('#stsrc-adjustment-type-hint').text(hints[type] || '');
+			updateBalancePreview();
+		});
+
+		/**
+		 * Amount Input - Real-time Preview
+		 */
+		$('#stsrc-adjustment-amount').on('input', function() {
+			updateBalancePreview();
+		});
+
+		/**
+		 * Form Input - Validate and Enable Continue Button
+		 */
+		$('#stsrc-adjust-balance-form input, #stsrc-adjust-balance-form select, #stsrc-adjust-balance-form textarea').on('input change', function() {
+			validateAdjustBalanceForm();
+		});
+
+		/**
+		 * Validate Adjust Balance Form
+		 */
+		function validateAdjustBalanceForm() {
+			const type = $('#stsrc-adjustment-type').val();
+			const amount = parseFloat($('#stsrc-adjustment-amount').val());
+			const description = $('#stsrc-adjustment-description').val().trim();
+
+			let isValid = true;
+			$('#stsrc-amount-error').hide();
+
+			// Check required fields
+			if (!type || !description) {
+				isValid = false;
+			}
+
+			// Validate amount
+			if (isNaN(amount) || amount <= 0) {
+				isValid = false;
+			} else if (amount < 0.01) {
+				$('#stsrc-amount-error').text('Amount must be at least $0.01').show();
+				isValid = false;
+			}
+
+			// Enable/disable continue button
+			$('#stsrc-continue-to-confirm').prop('disabled', !isValid);
+
+			return isValid;
+		}
+
+		/**
+		 * Update Balance Preview
+		 */
+		function updateBalancePreview() {
+			const type = $('#stsrc-adjustment-type').val();
+			const amount = parseFloat($('#stsrc-adjustment-amount').val());
+			const currentBalance = $('#stsrc-adjust-balance-modal').data('currentBalance') || 0;
+
+			if (!type || isNaN(amount) || amount <= 0) {
+				$('#stsrc-balance-preview').hide();
+				return;
+			}
+
+			// Calculate adjustment based on type
+			let adjustmentAmount = 0;
+			let adjustmentSign = '';
+			let adjustmentLabel = 'Adjustment:';
+
+			switch (type) {
+				case 'discount':
+					adjustmentAmount = -amount;
+					adjustmentSign = '-';
+					adjustmentLabel = 'Discount:';
+					break;
+				case 'fee':
+					adjustmentAmount = amount;
+					adjustmentSign = '+';
+					adjustmentLabel = 'Fee:';
+					break;
+				case 'correction':
+					// For correction, we'll treat positive amounts as reducing balance by default
+					// Admin can change in description if needed
+					adjustmentAmount = -amount;
+					adjustmentSign = '-';
+					adjustmentLabel = 'Correction:';
+					break;
+				case 'other':
+					adjustmentAmount = -amount;
+					adjustmentSign = '-';
+					adjustmentLabel = 'Adjustment:';
+					break;
+			}
+
+			const newBalance = currentBalance + adjustmentAmount;
+
+			// Update preview display
+			$('#stsrc-preview-current-amount').text(formatCurrency(Math.abs(currentBalance)));
+			$('#stsrc-preview-adjustment-label').text(adjustmentLabel);
+			$('#stsrc-preview-adjustment-sign').text(adjustmentSign);
+			$('#stsrc-preview-adjustment-amount').text(formatCurrency(Math.abs(adjustmentAmount)));
+			$('#stsrc-preview-new-amount').text(formatCurrency(Math.abs(newBalance)));
+
+			// Color coding
+			const $newBalanceSpan = $('.stsrc-preview-new-balance');
+			if (newBalance > 0) {
+				$newBalanceSpan.css('color', '#f44336'); // Red for outstanding
+			} else if (newBalance < 0) {
+				$newBalanceSpan.css('color', '#ff9800'); // Orange for overpaid
+			} else {
+				$newBalanceSpan.css('color', '#4caf50'); // Green for paid in full
+			}
+
+			// Show preview
+			$('#stsrc-balance-preview').slideDown(200);
+		}
+
+		/**
+		 * Continue to Confirmation Step
+		 */
+		$('#stsrc-continue-to-confirm').on('click', function() {
+			if (!validateAdjustBalanceForm()) {
+				return;
+			}
+
+			const type = $('#stsrc-adjustment-type').val();
+			const amount = parseFloat($('#stsrc-adjustment-amount').val());
+			const description = $('#stsrc-adjustment-description').val().trim();
+			const currentBalance = $('#stsrc-adjust-balance-modal').data('currentBalance') || 0;
+
+			// Calculate new balance
+			let adjustmentAmount = 0;
+			let typeLabel = '';
+			
+			switch (type) {
+				case 'discount':
+					adjustmentAmount = -amount;
+					typeLabel = 'Discount';
+					break;
+				case 'fee':
+					adjustmentAmount = amount;
+					typeLabel = 'Fee';
+					break;
+				case 'correction':
+					adjustmentAmount = -amount;
+					typeLabel = 'Correction';
+					break;
+				case 'other':
+					adjustmentAmount = -amount;
+					typeLabel = 'Other Adjustment';
+					break;
+			}
+
+			const newBalance = currentBalance + adjustmentAmount;
+
+			// Populate confirmation details
+			$('#stsrc-confirm-type').text(typeLabel);
+			$('#stsrc-confirm-amount').text('$' + formatCurrency(amount));
+			$('#stsrc-confirm-description').text(description);
+			$('#stsrc-confirm-new-balance').text('$' + formatCurrency(Math.abs(newBalance)));
+
+			// Switch to confirmation step
+			$('#stsrc-adjust-form-step').hide();
+			$('#stsrc-adjust-confirm-step').show();
+			$('#stsrc-adjust-form-buttons').hide();
+			$('#stsrc-adjust-confirm-buttons').show();
+		});
+
+		/**
+		 * Back to Form
+		 */
+		$('#stsrc-back-to-form').on('click', function() {
+			$('#stsrc-adjust-confirm-step').hide();
+			$('#stsrc-adjust-form-step').show();
+			$('#stsrc-adjust-confirm-buttons').hide();
+			$('#stsrc-adjust-form-buttons').show();
+		});
+
+		/**
+		 * Submit Adjustment (will be connected to AJAX in step 4.4)
+		 */
+		$('#stsrc-submit-adjustment').on('click', function() {
+			// Show loading
+			$('#stsrc-adjust-confirm-buttons').hide();
+			$('#stsrc-adjust-loading').show();
+
+			// For now, just show a placeholder success
+			setTimeout(function() {
+				$('#stsrc-adjust-confirm-step').hide();
+				$('#stsrc-adjust-success-step').show();
+				$('#stsrc-success-message').text('Balance adjustment has been recorded successfully. The transaction has been added to the member\'s history.');
+				$('#stsrc-adjust-loading').hide();
+				$('#stsrc-adjust-close-button').show();
+			}, 1000);
+
+			// TODO: This will be replaced with actual AJAX call in step 4.4
+		});
+
+		/**
+		 * Format Currency Helper
+		 */
+		function formatCurrency(amount) {
+			return parseFloat(amount).toFixed(2);
+		}
 
 		// Placeholder for record payment modal (will be implemented in next step)
 		$('#stsrc-record-payment-btn').on('click', function(e) {
 			e.preventDefault();
-			alert('Record payment modal will be implemented in the next step.');
+			alert('Record payment modal will be implemented in a future step.');
 		});
 	});
 
