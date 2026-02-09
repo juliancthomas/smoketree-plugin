@@ -155,6 +155,14 @@ $member_id = $member['member_id'] ?? 0;
 				</table>
 			</div>
 
+			<?php
+			// Balance section (v1.1.0+) - only show for existing members
+			if ( $is_edit ) {
+				$balance_section_data = array( 'member_id' => $member_id );
+				include plugin_dir_path( __FILE__ ) . 'member-balance-section.php';
+			}
+			?>
+
 			<?php if ( $is_edit ) : ?>
 				<!-- Family Members -->
 				<div class="stsrc-form-section">

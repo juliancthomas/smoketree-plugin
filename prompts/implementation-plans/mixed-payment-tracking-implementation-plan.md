@@ -76,7 +76,7 @@
 
 ## Section 4: Admin UI - Balance Management
 
-- [ ] Step 4.1: Admin Member Balance Display Section
+- [x] Step 4.1: Admin Member Balance Display Section
   - **Task**: Create a partial template to display the balance overview on the admin member edit page. Show membership type, original price, total paid, total adjustments, current balance owed (prominent), and status badge (Paid in Full / Outstanding / Overpaid).
   - **Files**: Maximum 2 files
     - `admin/partials/member-balance-section.php`: Create new partial that retrieves balance data via Balance Service, displays in clean card/section layout with proper styling, includes status badge logic based on balance amount
@@ -84,6 +84,7 @@
   - **Step Dependencies**: Step 2.3 (needs Balance Service for data)
   - **User Instructions**: View any member's edit page in admin and verify the new "Account Balance" section appears above or near the member details
   - **Git message**: `feat(admin): add balance overview section to member edit page`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 4.2: Admin Transaction History Table
   - **Task**: Create a transaction history table partial for the admin member edit page. Include columns for date, type, payment method, description, amount, balance after, and admin name. Add filtering by current year, sorting by date, pagination, color coding, and links to admin profiles and Stripe transactions.
