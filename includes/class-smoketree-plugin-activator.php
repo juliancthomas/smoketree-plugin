@@ -77,6 +77,23 @@ class Smoketree_Plugin_Activator {
 			// Tables and columns are created/enhanced by STSRC_Database::create_tables()
 			// which uses dbDelta to safely add new tables and columns
 
+			// Load required database classes for backfill
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-member-db.php';
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-transaction-db.php';
+
+			// Backfill balance fields for existing members
+			$members_updated = STSRC_Member_DB::backfill_balance_fields();
+
+			// Create initial transactions for existing members
+			$transactions_created = STSRC_Transaction_DB::backfill_initial_transactions();
+
+			// Log the migration results
+			error_log( sprintf(
+				'STSRC v1.1.0 Migration: Updated %d members and created %d initial transactions',
+				$members_updated,
+				$transactions_created
+			) );
+
 			// Update database version
 			update_option( 'stsrc_db_version', '1.1.0' );
 		}

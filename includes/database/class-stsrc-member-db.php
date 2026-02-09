@@ -325,6 +325,66 @@ class STSRC_Member_DB {
 	}
 
 	/**
+	 * Backfill balance fields for existing members.
+	 *
+	 * For existing members:
+	 * - Set original_membership_price from their membership type
+	 * - Set balance_owed to 0 for active members
+	 * - Set balance_owed to membership price for pending members
+	 *
+	 * @since    1.1.0
+	 * @return   int    Number of members updated
+	 */
+	public static function backfill_balance_fields(): int {
+		global $wpdb;
+
+		$members_table      = $wpdb->prefix . 'stsrc_members';
+		$memberships_table  = $wpdb->prefix . 'stsrc_membership_types';
+
+		// Get all members who don't have original_membership_price set (null or 0)
+		$members = $wpdb->get_results(
+			"SELECT m.member_id, m.membership_type_id, m.status, mt.price 
+			FROM {$members_table} m
+			LEFT JOIN {$memberships_table} mt ON m.membership_type_id = mt.membership_type_id
+			WHERE m.original_membership_price = 0.00 OR m.original_membership_price IS NULL",
+			ARRAY_A
+		);
+
+		if ( empty( $members ) ) {
+			return 0;
+		}
+
+		$updated_count = 0;
+
+		foreach ( $members as $member ) {
+			$membership_price = (float) ( $member['price'] ?? 0.00 );
+			$status          = $member['status'] ?? 'pending';
+
+			// For active members: balance is 0 (they've paid)
+			// For pending/cancelled members: balance is the membership price
+			$balance_owed = ( 'active' === $status ) ? 0.00 : $membership_price;
+
+			$result = $wpdb->update(
+				$members_table,
+				array(
+					'original_membership_price' => $membership_price,
+					'balance_owed'             => $balance_owed,
+					'updated_at'               => current_time( 'mysql' ),
+				),
+				array( 'member_id' => $member['member_id'] ),
+				array( '%f', '%f', '%s' ),
+				array( '%d' )
+			);
+
+			if ( false !== $result ) {
+				$updated_count++;
+			}
+		}
+
+		return $updated_count;
+	}
+
+	/**
 	 * Enhance members table with balance tracking columns.
 	 *
 	 * Adds new columns for balance tracking: balance_owed, original_membership_price,

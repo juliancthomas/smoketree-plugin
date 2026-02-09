@@ -382,5 +382,93 @@ class STSRC_Transaction_DB {
 
 		return (int) $count;
 	}
+
+	/**
+	 * Backfill initial transactions for existing members.
+	 *
+	 * Creates initial transaction records for all members who don't have any transactions yet.
+	 * For active members: creates a transaction showing they paid in full
+	 * For pending/cancelled members: creates a transaction showing outstanding balance
+	 *
+	 * @since    1.1.0
+	 * @return   int    Number of transaction records created
+	 */
+	public static function backfill_initial_transactions(): int {
+		global $wpdb;
+
+		$members_table      = $wpdb->prefix . 'stsrc_members';
+		$memberships_table  = $wpdb->prefix . 'stsrc_membership_types';
+		$transactions_table = $wpdb->prefix . 'stsrc_transactions';
+
+		// Get all members who don't have any transactions yet
+		$members = $wpdb->get_results(
+			"SELECT m.member_id, m.membership_type_id, m.status, m.balance_owed, 
+				m.original_membership_price, m.created_at, mt.name as membership_name
+			FROM {$members_table} m
+			LEFT JOIN {$memberships_table} mt ON m.membership_type_id = mt.membership_type_id
+			LEFT JOIN {$transactions_table} t ON m.member_id = t.member_id
+			WHERE t.transaction_id IS NULL
+			GROUP BY m.member_id",
+			ARRAY_A
+		);
+
+		if ( empty( $members ) ) {
+			return 0;
+		}
+
+		$created_count = 0;
+
+		foreach ( $members as $member ) {
+			$member_id        = (int) $member['member_id'];
+			$status           = $member['status'] ?? 'pending';
+			$balance_owed     = (float) ( $member['balance_owed'] ?? 0.00 );
+			$original_price   = (float) ( $member['original_membership_price'] ?? 0.00 );
+			$membership_name  = $member['membership_name'] ?? 'Membership';
+			$created_at       = $member['created_at'] ?? current_time( 'mysql' );
+
+			// Create appropriate transaction based on member status
+			if ( 'active' === $status ) {
+				// Active member - show they paid in full
+				$description = sprintf(
+					'Initial membership registration - %s ($%s) - Paid in full',
+					$membership_name,
+					number_format( $original_price, 2 )
+				);
+
+				$transaction_data = array(
+					'transaction_type' => 'initial',
+					'payment_method'   => 'initial',
+					'amount'           => 0.00,
+					'balance_after'    => 0.00,
+					'description'      => $description,
+					'created_at'       => $created_at,
+				);
+			} else {
+				// Pending/cancelled member - show outstanding balance
+				$description = sprintf(
+					'Initial membership registration - %s ($%s)',
+					$membership_name,
+					number_format( $original_price, 2 )
+				);
+
+				$transaction_data = array(
+					'transaction_type' => 'initial',
+					'payment_method'   => 'initial',
+					'amount'           => 0.00,
+					'balance_after'    => $balance_owed,
+					'description'      => $description,
+					'created_at'       => $created_at,
+				);
+			}
+
+			$result = self::create_transaction( $member_id, $transaction_data );
+
+			if ( false !== $result ) {
+				$created_count++;
+			}
+		}
+
+		return $created_count;
+	}
 }
 

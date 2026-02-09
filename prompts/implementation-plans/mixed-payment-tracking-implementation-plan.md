@@ -2,7 +2,7 @@
 
 ## Section 1: Database Foundation
 
-- [ ] Step 1.1: Create Transactions Table and Enhance Members Table
+- [x] Step 1.1: Create Transactions Table and Enhance Members Table
   - **Task**: Create the new `wp_stsrc_transactions` table with all required fields and indexes. Add new balance-related columns to the existing `wp_stsrc_members` table. Implement database upgrade routine with version tracking to prevent duplicate migrations.
   - **Files**: Maximum 2 files
     - `includes/database/class-stsrc-transaction-db.php`: Create new class with table creation method using dbDelta, including all fields (transaction_id, member_id, transaction_type, payment_method, amount, balance_after, stripe fields, description, admin fields, created_at) and indexes (member_id, transaction_type, created_at, stripe_payment_intent_id)
@@ -10,8 +10,9 @@
   - **Step Dependencies**: None - this is the foundation
   - **User Instructions**: After deployment, verify in phpMyAdmin that the new `wp_stsrc_transactions` table exists and the `wp_stsrc_members` table has the three new columns
   - **Git message**: `feat(database): add transactions table and balance tracking columns`
+  - **Status**: ✅ COMPLETED
 
-- [ ] Step 1.2: Database Migration and Data Backfill
+- [x] Step 1.2: Database Migration and Data Backfill
   - **Task**: Create activation hook handler to run database migrations. For existing members, backfill `original_membership_price` from their membership type, set `balance_owed` to 0 for active members, and create initial transaction records for all existing members indicating their paid status or outstanding balance.
   - **Files**: Maximum 3 files
     - `includes/class-stsrc-activator.php`: Enhance or create plugin activator class with database upgrade routine that calls transaction and member table creation methods, checks plugin version option, and runs backfill logic
@@ -20,6 +21,7 @@
   - **Step Dependencies**: Step 1.1 (tables must exist)
   - **User Instructions**: Test on staging environment first. Back up database before activating. After activation, verify a few existing member records have appropriate balance_owed and initial transaction entries.
   - **Git message**: `feat(database): implement migration and backfill for existing members`
+  - **Status**: ✅ COMPLETED
 
 ## Section 2: Core Service Layer
 

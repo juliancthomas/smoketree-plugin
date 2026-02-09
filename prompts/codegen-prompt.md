@@ -3,31 +3,16 @@ You are an AI code generator responsible for implementing a wordpess plugin base
 Your task is to systematically implement each step of the plan, one at a time.
 
 First, carefully review the project request:
-prompts\project-request-refined.md
+prompts\project-requests\mixed-payment-tracking.md
 
 Next, carefully review the project rules:
 docs\best practices.md
 
 Technical Specification:
-prompts\technical-specification.md
+prompts\tec-specs\mixed-payment-tracking-tech-spec.md
 
 Implementation Plan:
-prompts\implementation-plan.md
-
-Registration form fields:
-docs\registration-form-fields.md
-
-Memberships details:
-docs\membership-details.md
-
-Membership Benefits:
-docs\membership-benefits.md
-
-Current Email Template:
-docs\email-templates.md
-
-Finally, carefully review the starter template:
-./smoketree-plugin
+prompts\implementation-plans\mixed-payment-tracking-implementation-plan.md
 
 Your task is to:
 1. Identify the next incomplete step from the implementation plan (marked with `- [ ]`)
