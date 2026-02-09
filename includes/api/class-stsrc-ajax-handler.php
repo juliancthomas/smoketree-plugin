@@ -2382,6 +2382,15 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_fee_pay_later', sanitize_text_field( $post_data['fee_pay_later'] ) );
 		}
 
+		// Save payment settings (v1.1.0+)
+		if ( isset( $post_data['minimum_balance_payment'] ) ) {
+			$minimum_payment = floatval( $post_data['minimum_balance_payment'] );
+			// Validate: must be greater than 0
+			if ( $minimum_payment > 0 ) {
+				update_option( 'stsrc_minimum_balance_payment', number_format( $minimum_payment, 2, '.', '' ) );
+			}
+		}
+
 		// If ACF is available, also save to ACF options
 		if ( function_exists( 'update_field' ) ) {
 			if ( isset( $post_data['stripe_publishable_key'] ) ) {
@@ -2389,6 +2398,13 @@ class STSRC_Ajax_Handler {
 			}
 			if ( isset( $post_data['stripe_secret_key'] ) ) {
 				update_field( 'stsrc_stripe_secret_key', sanitize_text_field( $post_data['stripe_secret_key'] ), 'option' );
+			}
+			// Payment settings (v1.1.0+)
+			if ( isset( $post_data['minimum_balance_payment'] ) ) {
+				$minimum_payment = floatval( $post_data['minimum_balance_payment'] );
+				if ( $minimum_payment > 0 ) {
+					update_field( 'stsrc_minimum_balance_payment', number_format( $minimum_payment, 2, '.', '' ), 'option' );
+				}
 			}
 			// Add other ACF field updates as needed
 		}

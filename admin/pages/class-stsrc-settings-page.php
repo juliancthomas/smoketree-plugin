@@ -98,6 +98,9 @@ class STSRC_Settings_Page {
 		$settings['fee_check'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_check', 'option' ) : get_option( 'stsrc_fee_check', '' );
 		$settings['fee_pay_later'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_pay_later', 'option' ) : get_option( 'stsrc_fee_pay_later', '' );
 
+		// Payment Settings (v1.1.0+)
+		$settings['minimum_balance_payment'] = function_exists( 'get_field' ) ? get_field( 'stsrc_minimum_balance_payment', 'option' ) : get_option( 'stsrc_minimum_balance_payment', '10.00' );
+
 		return $settings;
 	}
 }

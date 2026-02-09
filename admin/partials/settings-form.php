@@ -245,6 +245,21 @@ $acf_available = $data['acf_available'] ?? false;
 						</tr>
 					</table>
 				</div>
+
+				<!-- Payment Settings (v1.1.0+) -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Payment Settings', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Configure settings for balance payments and payment tracking.', 'smoketree-plugin' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="minimum_balance_payment"><?php echo esc_html__( 'Minimum Balance Payment Amount', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="number" name="minimum_balance_payment" id="minimum_balance_payment" value="<?php echo esc_attr( $settings['minimum_balance_payment'] ?? '10.00' ); ?>" class="regular-text" step="0.01" min="0.01" required>
+								<p class="description"><?php echo esc_html__( 'Minimum amount members can pay toward their balance via Stripe (e.g., 10.00 for $10 minimum)', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
 			</div>
 
 			<p class="submit">

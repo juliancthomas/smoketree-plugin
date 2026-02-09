@@ -64,7 +64,7 @@
 
 ## Section 3: Admin Settings
 
-- [ ] Step 3.1: Add Minimum Balance Payment Setting
+- [x] Step 3.1: Add Minimum Balance Payment Setting
   - **Task**: Add a new "Payment Settings" section to the plugin's admin settings page with a field for the minimum balance payment amount. Include validation to ensure the value is greater than 0.
   - **Files**: Maximum 2 files
     - `admin/class-stsrc-settings.php`: Add new settings section and field for `stsrc_minimum_balance_payment` with label "Minimum Balance Payment Amount", description explaining purpose, default value 10.00, and validation callback ensuring value > 0
@@ -72,6 +72,7 @@
   - **Step Dependencies**: None
   - **User Instructions**: After deployment, navigate to plugin settings page and verify the new "Minimum Balance Payment Amount" field appears with default value 10.00
   - **Git message**: `feat(settings): add minimum balance payment amount setting`
+  - **Status**: ✅ COMPLETED
 
 ## Section 4: Admin UI - Balance Management
 
