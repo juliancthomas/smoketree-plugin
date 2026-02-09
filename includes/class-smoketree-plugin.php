@@ -79,6 +79,7 @@ class Smoketree_Plugin {
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
 		$this->define_auto_renewal_hooks();
+		$this->define_legacy_migration_hooks();
 		$this->register_rest_routes();
 		$this->register_ajax_handlers();
 		$this->maybe_run_database_migrations();
@@ -135,6 +136,16 @@ class Smoketree_Plugin {
 		 * Database management utilities.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-database.php';
+
+		/**
+		 * Legacy authentication service for migrated members.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/services/class-stsrc-legacy-auth-service.php';
+
+		/**
+		 * Migration admin page.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/pages/class-stsrc-migration-page.php';
 
 		$this->loader = new Smoketree_Plugin_Loader();
 
@@ -207,6 +218,26 @@ class Smoketree_Plugin {
 		$this->loader->add_action( STSRC_Auto_Renewal_Service::CRON_HOOK_NOTIFICATION, $auto_service, 'handle_notification_cron' );
 		$this->loader->add_action( STSRC_Auto_Renewal_Service::CRON_HOOK_PROCESS, $auto_service, 'handle_processing_cron' );
 		$this->loader->add_action( 'init', 'STSRC_Auto_Renewal_Service', 'ensure_cron_events' );
+
+	}
+
+	/**
+	 * Register hooks for legacy member migration and authentication.
+	 *
+	 * @since    1.0.0
+	 * @access   private
+	 */
+	private function define_legacy_migration_hooks() {
+
+		// Initialize legacy authentication service
+		STSRC_Legacy_Auth_Service::init();
+
+		// Initialize migration admin page
+		$migration_page = new STSRC_Migration_Page();
+
+		// Register AJAX endpoint for legacy password reset
+		$this->loader->add_action( 'wp_ajax_stsrc_legacy_password_reset', 'STSRC_Legacy_Auth_Service', 'handle_legacy_password_reset' );
+		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_legacy_password_reset', 'STSRC_Legacy_Auth_Service', 'handle_legacy_password_reset' );
 
 	}
 

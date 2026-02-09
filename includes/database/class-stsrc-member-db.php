@@ -300,7 +300,7 @@ class STSRC_Member_DB {
 	 * Count active, paid members.
 	 *
 	 * @since    1.0.0
-	 * @return   int    Count of active members with card or bank_account payment type
+	 * @return   int    Count of active members
 	 */
 	public static function get_active_member_count(): int {
 		global $wpdb;
@@ -310,8 +310,7 @@ class STSRC_Member_DB {
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table_name} 
-				WHERE status = %s 
-				AND payment_type IN ('card', 'bank_account')",
+				WHERE status = %s",
 				'active'
 			)
 		);

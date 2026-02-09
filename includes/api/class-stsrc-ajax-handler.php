@@ -3152,28 +3152,51 @@ class STSRC_Ajax_Handler {
 			home_url()
 		);
 
-		// Send email
+		// Check if this is a legacy user who needs password reset
+		$needs_password_reset = false;
+		if ( ! empty( $existing_member['user_id'] ) ) {
+			$needs_password_reset = get_user_meta( $existing_member['user_id'], 'stsrc_legacy_password_needs_reset', true );
+		}
+
+		// Build email message based on whether password reset is needed
 		$subject = 'Reactivate Your Smoketree Membership';
-		$message = sprintf(
-			"Hello %s,\n\n" .
-			"You recently tried to register for Smoketree Swim and Recreation Club with an email address that was previously used for a cancelled membership.\n\n" .
-			"To reactivate your account and complete your registration, please click the link below:\n\n" .
-			"%s\n\n" .
-			"This link will expire in 24 hours. If you did not make this request, you can safely ignore this email.\n\n" .
-			"Best regards,\n" .
-			"Smoketree Swim and Recreation Club",
-			$existing_member['first_name'],
-			$reactivation_url
-		);
+		
+		if ( $needs_password_reset ) {
+			$message = sprintf(
+				"Hello %s,\n\n" .
+				"You recently tried to register for Smoketree Swim and Recreation Club with an email address that was previously used for a cancelled membership.\n\n" .
+				"To reactivate your account and complete your registration, please click the link below:\n\n" .
+				"%s\n\n" .
+				"Important: Your account was migrated from our previous system. After reactivation, you will be required to reset your password for security reasons.\n\n" .
+				"This link will expire in 24 hours. If you did not make this request, you can safely ignore this email.\n\n" .
+				"Best regards,\n" .
+				"Smoketree Swim and Recreation Club",
+				$existing_member['first_name'],
+				$reactivation_url
+			);
+		} else {
+			$message = sprintf(
+				"Hello %s,\n\n" .
+				"You recently tried to register for Smoketree Swim and Recreation Club with an email address that was previously used for a cancelled membership.\n\n" .
+				"To reactivate your account and complete your registration, please click the link below:\n\n" .
+				"%s\n\n" .
+				"This link will expire in 24 hours. If you did not make this request, you can safely ignore this email.\n\n" .
+				"Best regards,\n" .
+				"Smoketree Swim and Recreation Club",
+				$existing_member['first_name'],
+				$reactivation_url
+			);
+		}
 
 		wp_mail( $existing_member['email'], $subject, $message );
 
 		STSRC_Logger::info(
 			'Reactivation email sent for cancelled member.',
 			array(
-				'method'    => __METHOD__,
-				'member_id' => $existing_member['member_id'],
-				'email'     => $existing_member['email'],
+				'method'               => __METHOD__,
+				'member_id'            => $existing_member['member_id'],
+				'email'                => $existing_member['email'],
+				'needs_password_reset' => $needs_password_reset,
 			)
 		);
 	}
@@ -3247,8 +3270,14 @@ class STSRC_Ajax_Handler {
 			wp_die( 'Failed to reactivate account. Please try again or contact support.' );
 		}
 
-		// Update WordPress user password if provided
-		if ( ! empty( $new_data['password'] ) && ! empty( $member['user_id'] ) ) {
+		// Check if this is a legacy user who needs password reset
+		$needs_password_reset = false;
+		if ( ! empty( $member['user_id'] ) ) {
+			$needs_password_reset = get_user_meta( $member['user_id'], 'stsrc_legacy_password_needs_reset', true );
+		}
+
+		// Update WordPress user password if provided (but not for legacy users)
+		if ( ! empty( $new_data['password'] ) && ! empty( $member['user_id'] ) && ! $needs_password_reset ) {
 			wp_set_password( $new_data['password'], $member['user_id'] );
 		}
 
@@ -3258,11 +3287,34 @@ class STSRC_Ajax_Handler {
 		STSRC_Logger::info(
 			'Member account reactivated successfully.',
 			array(
-				'method'    => __METHOD__,
-				'member_id' => $member_id,
-				'email'     => $member['email'],
+				'method'               => __METHOD__,
+				'member_id'            => $member_id,
+				'email'                => $member['email'],
+				'needs_password_reset' => $needs_password_reset,
 			)
 		);
+
+		// If legacy user, redirect to password reset instead of normal flow
+		if ( $needs_password_reset && ! empty( $member['user_id'] ) ) {
+			$user = get_user_by( 'id', $member['user_id'] );
+			if ( $user ) {
+				$reset_key = get_password_reset_key( $user );
+				if ( ! is_wp_error( $reset_key ) ) {
+					$reset_url = add_query_arg(
+						array(
+							'action'      => 'stsrc_reset_password',
+							'key'         => $reset_key,
+							'login'       => rawurlencode( $user->user_login ),
+							'legacy'      => '1',
+							'reactivated' => '1',
+						),
+						home_url( '/member-portal/' )
+					);
+					wp_redirect( $reset_url );
+					exit;
+				}
+			}
+		}
 
 		// Process payment based on payment type
 		if ( in_array( $new_data['payment_type'], array( 'card', 'bank_account' ), true ) ) {
