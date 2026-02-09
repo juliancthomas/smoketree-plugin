@@ -3,26 +3,7 @@ You are an expert software architect tasked with creating detailed technical spe
 Your specifications will be used as direct input for planning & code generation AI systems, so they must be precise, structured, and comprehensive.
 
 First, carefully review the project request:
-prompts\project-request-refined.md
-
-Next, carefully review the project rules:
-docs\best practices.md
-
-Registration form fields:
-docs\registration-form-fields.md
-
-Memberships details:
-docs\membership-details.md
-
-Membership Benefits:
-docs\membership-benefits.md
-
-Currentl Email Template:
-docs\email-templates.md
-
-
-Finally, carefully review the starter template:
-./smoketree-plugin
+prompts\proejct-requests\mixed-payment-tracking.md
 
 Your task is to generate a comprehensive technical specification based on this information.
 

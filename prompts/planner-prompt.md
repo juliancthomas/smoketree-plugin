@@ -1,32 +1,17 @@
 You are an AI task planner responsible for breaking down a complex wordpress plugin development project into manageable steps.
 
-Your goal is to create a detailed, step-by-step plan that will guide the code generation process for building a wordpress plugin based on a provided technical specification.
+Your goal is to create a detailed, step-by-step plan that will guide the code generation process for building this feature based on a provided technical specification.
 
 First, carefully review the project request:
-prompts\project-request-refined.md
+prompts\project-requests\mixed-payment-tracking.md
 
 Next, carefully review the project rules:
 docs\best practices.md
 
 Technical Specification:
-prompts\technical-specification.md
+prompts\tec-specs\mixed-payment-tracking-tech-spec.md
 
-Registration form fields:
-docs\registration-form-fields.md
-
-Memberships details:
-docs\membership-details.md
-
-Membership Benefits:
-docs\membership-benefits.md
-
-Currentl Email Template:
-docs\email-templates.md
-
-Finally, carefully review the starter template:
-./smoketree-plugin
-
-After reviewing these inputs, your task is to create a comprehensive, detailed plan for implementing the wordpress plugin.
+After reviewing these inputs, your task is to create a comprehensive, detailed plan for implementing the feature.
 
 Before creating the final plan, analyze the inputs and plan your approach. Wrap your thought process in <brainstorming> tags.
 
@@ -56,6 +41,7 @@ Present your plan using the following markdown-based format. This format is spec
     - `path/to/file1.php`: [Description of changes]
   - **Step Dependencies**: [Step Dependencies]
   - **User Instructions**: [Instructions for User]
+  - **Git message**: [Conventional Commit and message]
 
 [Additional steps...]
 ```
@@ -68,6 +54,6 @@ Remember to:
 - Consider the logical order of implementation, ensuring that dependencies are addressed in the correct sequence.
 - Include steps for error handling, data validation, and edge case management.
 
-Begin your response with your brainstorming, then proceed to the creation your detailed implementation plan for the wordpress plugin based on the provided specification.
+Begin your response with your brainstorming, then proceed to the creation your detailed implementation plan for the new wordpress plugin's feature based on the provided specification.
 
 Once you are done, we will pass this specification to the AI code generation system.
