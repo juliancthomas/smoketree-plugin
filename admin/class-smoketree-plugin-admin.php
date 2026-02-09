@@ -92,6 +92,17 @@ class Smoketree_Plugin_Admin {
 			$this->version,
 			'all'
 		);
+
+		// Load balance management styles on member edit page (v1.1.0+)
+		if ( $this->is_member_edit_page() ) {
+			wp_enqueue_style(
+				$this->plugin_name . '-balance',
+				plugin_dir_url( __FILE__ ) . 'css/balance-management.css',
+				array(),
+				$this->version,
+				'all'
+			);
+		}
 	}
 
 	/**
@@ -134,6 +145,17 @@ class Smoketree_Plugin_Admin {
 				),
 			)
 		);
+
+		// Load balance management script on member edit page (v1.1.0+)
+		if ( $this->is_member_edit_page() ) {
+			wp_enqueue_script(
+				$this->plugin_name . '-balance',
+				plugin_dir_url( __FILE__ ) . 'js/balance-management.js',
+				array( 'jquery' ),
+				$this->version,
+				true
+			);
+		}
 	}
 
 	/**
@@ -156,6 +178,22 @@ class Smoketree_Plugin_Admin {
 		);
 
 		return in_array( $hook, $plugin_pages, true );
+	}
+
+	/**
+	 * Check if current page is member edit page.
+	 *
+	 * @since    1.1.0
+	 * @return   bool    True if member edit page
+	 */
+	private function is_member_edit_page(): bool {
+		// Check if we're on the members page with a member_id parameter
+		if ( isset( $_GET['page'] ) && 'stsrc-members' === $_GET['page'] ) {
+			// Check if there's a member_id or action=edit parameter
+			return isset( $_GET['member_id'] ) || ( isset( $_GET['action'] ) && 'edit' === $_GET['action'] );
+		}
+
+		return false;
 	}
 
 	/**

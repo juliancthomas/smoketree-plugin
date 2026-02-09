@@ -86,7 +86,7 @@
   - **Git message**: `feat(admin): add balance overview section to member edit page`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 4.2: Admin Transaction History Table
+- [x] Step 4.2: Admin Transaction History Table
   - **Task**: Create a transaction history table partial for the admin member edit page. Include columns for date, type, payment method, description, amount, balance after, and admin name. Add filtering by current year, sorting by date, pagination, color coding, and links to admin profiles and Stripe transactions.
   - **Files**: Maximum 3 files
     - `admin/partials/member-transaction-history.php`: Create table partial with WP_List_Table or custom table implementation, fetch transactions via Transaction DB, apply color coding (green for payments, blue for adjustments, red for fees, yellow for initial), include pagination controls (20 per page), add Stripe transaction links when applicable
@@ -95,6 +95,7 @@
   - **Step Dependencies**: Steps 2.1, 4.1 (needs Transaction DB and to be on member edit page)
   - **User Instructions**: View a member with existing transactions and verify the table displays correctly with pagination and color coding
   - **Git message**: `feat(admin): add transaction history table to member page`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 4.3: Adjust Balance Modal - UI and Validation
   - **Task**: Create modal dialog UI for admin balance adjustments. Include form fields for adjustment type dropdown, amount (with positive/negative validation), description, and admin notes. Add real-time preview of new balance and two-step confirmation.

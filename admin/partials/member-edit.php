@@ -160,6 +160,10 @@ $member_id = $member['member_id'] ?? 0;
 			if ( $is_edit ) {
 				$balance_section_data = array( 'member_id' => $member_id );
 				include plugin_dir_path( __FILE__ ) . 'member-balance-section.php';
+
+				// Transaction history section
+				$transaction_history_data = array( 'member_id' => $member_id );
+				include plugin_dir_path( __FILE__ ) . 'member-transaction-history.php';
 			}
 			?>
 

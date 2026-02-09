@@ -203,20 +203,3 @@ $balance_color = $balance_owed > 0 ? '#f44336' : ( $balance_owed < 0 ? '#ff9800'
 }
 </style>
 
-<script>
-jQuery(document).ready(function($) {
-	// Placeholder handlers for buttons (will be implemented in next steps)
-	$('#stsrc-view-transactions-btn').on('click', function() {
-		alert('Transaction history will be displayed in the next implementation step.');
-	});
-
-	$('#stsrc-record-payment-btn').on('click', function() {
-		alert('Record payment modal will be implemented in upcoming steps.');
-	});
-
-	$('#stsrc-adjust-balance-btn').on('click', function() {
-		alert('Adjust balance modal will be implemented in upcoming steps.');
-	});
-});
-</script>
-

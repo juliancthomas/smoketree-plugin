@@ -1,0 +1,216 @@
+/**
+ * Balance Management Admin Styles
+ *
+ * Styles for admin balance and transaction management UI.
+ *
+ * @package    Smoketree_Plugin
+ * @subpackage Smoketree_Plugin/admin/css
+ */
+
+/* Transaction History Section */
+#stsrc-transaction-history-section {
+	margin-top: 20px;
+}
+
+/* Transaction Table Styling */
+#stsrc-transaction-table {
+	background: #fff;
+}
+
+#stsrc-transaction-table th {
+	background: #f0f0f1;
+	font-weight: 600;
+	padding: 10px;
+}
+
+#stsrc-transaction-table td {
+	padding: 12px 10px;
+	vertical-align: top;
+}
+
+/* Transaction Type Colors */
+.stsrc-transaction-payment {
+	border-left: 3px solid #4caf50;
+}
+
+.stsrc-transaction-adjustment {
+	border-left: 3px solid #2196f3;
+}
+
+.stsrc-transaction-fee {
+	border-left: 3px solid #f44336;
+}
+
+.stsrc-transaction-initial {
+	border-left: 3px solid #ff9800;
+}
+
+.stsrc-transaction-refund {
+	border-left: 3px solid #9c27b0;
+}
+
+/* Transaction Type Badges */
+.stsrc-transaction-type-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.stsrc-type-payment {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
+.stsrc-type-adjustment {
+	background: #e3f2fd;
+	color: #1565c0;
+}
+
+.stsrc-type-fee {
+	background: #ffebee;
+	color: #c62828;
+}
+
+.stsrc-type-initial {
+	background: #fff3e0;
+	color: #e65100;
+}
+
+.stsrc-type-refund {
+	background: #f3e5f5;
+	color: #6a1b9a;
+}
+
+/* Payment Method Badges */
+.stsrc-payment-method-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	background: #f0f0f1;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	font-size: 11px;
+	color: #50575e;
+	font-weight: 500;
+}
+
+/* Amount Styling */
+.stsrc-amount-negative {
+	color: #4caf50;
+}
+
+.stsrc-amount-positive {
+	color: #f44336;
+}
+
+/* Pagination */
+.stsrc-transaction-pagination {
+	padding: 10px;
+	background: #f9f9f9;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.stsrc-transaction-pagination .button {
+	min-width: 70px;
+}
+
+/* Filter Section */
+.stsrc-transaction-filters {
+	padding: 12px;
+	background: #f9f9f9;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.stsrc-transaction-filters label {
+	margin: 0;
+}
+
+.stsrc-transaction-filters select {
+	margin: 0;
+}
+
+/* Loading State */
+.stsrc-transaction-table-wrapper {
+	transition: opacity 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+	#stsrc-transaction-table {
+		font-size: 13px;
+	}
+
+	#stsrc-transaction-table th,
+	#stsrc-transaction-table td {
+		padding: 8px 6px;
+	}
+
+	.stsrc-transaction-filters {
+		flex-direction: column;
+		align-items: flex-start !important;
+		gap: 8px !important;
+	}
+
+	.stsrc-transaction-filters select {
+		max-width: 100% !important;
+	}
+
+	.stsrc-transaction-filters span {
+		margin-left: 0 !important;
+	}
+
+	.stsrc-transaction-pagination {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.stsrc-transaction-pagination > div:last-child {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 600px) {
+	/* Stack table columns on very small screens */
+	#stsrc-transaction-table thead {
+		display: none;
+	}
+
+	#stsrc-transaction-table tr {
+		display: block;
+		margin-bottom: 15px;
+		border: 1px solid #c3c4c7;
+		border-radius: 4px;
+		padding: 10px;
+	}
+
+	#stsrc-transaction-table td {
+		display: block;
+		text-align: left !important;
+		padding: 5px 0;
+		border: none;
+	}
+
+	#stsrc-transaction-table td:before {
+		content: attr(data-label);
+		font-weight: 600;
+		display: inline-block;
+		width: 120px;
+		margin-right: 10px;
+	}
+}
+
+/* Empty State */
+.stsrc-transaction-empty-state {
+	padding: 40px;
+	text-align: center;
+	background: #f9f9f9;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+}
+
