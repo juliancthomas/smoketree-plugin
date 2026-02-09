@@ -42,29 +42,32 @@ class STSRC_Member_DB {
 
 		// Define format strings for each field
 		$formats = array(
-			'user_id'              => '%d',
-			'membership_type_id'   => '%d',
-			'status'               => '%s',
-			'payment_type'         => '%s',
-			'stripe_customer_id'   => '%s',
-			'first_name'           => '%s',
-			'last_name'            => '%s',
-			'email'                => '%s',
-			'phone'                => '%s',
-			'street_1'             => '%s',
-			'street_2'             => '%s',
-			'city'                 => '%s',
-			'state'                => '%s',
-			'zip'                  => '%s',
-			'country'              => '%s',
-			'referral_source'      => '%s',
-			'waiver_full_name'     => '%s',
-			'waiver_signed_date'   => '%s',
-			'guest_pass_balance'   => '%d',
-			'auto_renewal_enabled' => '%d',
-			'expiration_date'      => '%s',
-			'created_at'           => '%s',
-			'updated_at'           => '%s',
+			'user_id'                  => '%d',
+			'membership_type_id'       => '%d',
+			'status'                   => '%s',
+			'payment_type'             => '%s',
+			'stripe_customer_id'       => '%s',
+			'first_name'               => '%s',
+			'last_name'                => '%s',
+			'email'                    => '%s',
+			'phone'                    => '%s',
+			'street_1'                 => '%s',
+			'street_2'                 => '%s',
+			'city'                     => '%s',
+			'state'                    => '%s',
+			'zip'                      => '%s',
+			'country'                  => '%s',
+			'referral_source'          => '%s',
+			'waiver_full_name'         => '%s',
+			'waiver_signed_date'       => '%s',
+			'guest_pass_balance'       => '%d',
+			'auto_renewal_enabled'     => '%d',
+			'expiration_date'          => '%s',
+			'balance_owed'             => '%f',
+			'original_membership_price' => '%f',
+			'final_payment_method'     => '%s',
+			'created_at'               => '%s',
+			'updated_at'               => '%s',
 		);
 
 		// Build format array in the same order as $data
@@ -156,28 +159,31 @@ class STSRC_Member_DB {
 
 		// Define format strings
 		$formats = array(
-			'user_id'              => '%d',
-			'membership_type_id'   => '%d',
-			'status'               => '%s',
-			'payment_type'         => '%s',
-			'stripe_customer_id'   => '%s',
-			'first_name'           => '%s',
-			'last_name'            => '%s',
-			'email'                => '%s',
-			'phone'                => '%s',
-			'street_1'             => '%s',
-			'street_2'             => '%s',
-			'city'                 => '%s',
-			'state'                => '%s',
-			'zip'                  => '%s',
-			'country'              => '%s',
-			'referral_source'      => '%s',
-			'waiver_full_name'     => '%s',
-			'waiver_signed_date'   => '%s',
-			'guest_pass_balance'   => '%d',
-			'auto_renewal_enabled' => '%d',
-			'expiration_date'      => '%s',
-			'updated_at'           => '%s',
+			'user_id'                  => '%d',
+			'membership_type_id'       => '%d',
+			'status'                   => '%s',
+			'payment_type'             => '%s',
+			'stripe_customer_id'       => '%s',
+			'first_name'               => '%s',
+			'last_name'                => '%s',
+			'email'                    => '%s',
+			'phone'                    => '%s',
+			'street_1'                 => '%s',
+			'street_2'                 => '%s',
+			'city'                     => '%s',
+			'state'                    => '%s',
+			'zip'                      => '%s',
+			'country'                  => '%s',
+			'referral_source'          => '%s',
+			'waiver_full_name'         => '%s',
+			'waiver_signed_date'       => '%s',
+			'guest_pass_balance'       => '%d',
+			'auto_renewal_enabled'     => '%d',
+			'expiration_date'          => '%s',
+			'balance_owed'             => '%f',
+			'original_membership_price' => '%f',
+			'final_payment_method'     => '%s',
+			'updated_at'               => '%s',
 		);
 
 		// Build format array
@@ -316,6 +322,67 @@ class STSRC_Member_DB {
 		);
 
 		return (int) $count;
+	}
+
+	/**
+	 * Enhance members table with balance tracking columns.
+	 *
+	 * Adds new columns for balance tracking: balance_owed, original_membership_price,
+	 * and final_payment_method. Uses dbDelta to safely add columns without affecting
+	 * existing data.
+	 *
+	 * @since    1.1.0
+	 * @return   void
+	 */
+	public static function enhance_table_for_balance_tracking(): void {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+		$table_name      = $wpdb->prefix . 'stsrc_members';
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// Get the full table structure including new columns
+		// dbDelta will only add missing columns, not modify existing ones
+		$sql = "CREATE TABLE $table_name (
+			member_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			membership_type_id BIGINT(20) UNSIGNED NOT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'pending',
+			payment_type VARCHAR(20) NOT NULL,
+			stripe_customer_id VARCHAR(255) DEFAULT NULL,
+			first_name VARCHAR(100) NOT NULL,
+			last_name VARCHAR(100) NOT NULL,
+			email VARCHAR(255) NOT NULL,
+			phone VARCHAR(20) NOT NULL,
+			street_1 VARCHAR(255) NOT NULL,
+			street_2 VARCHAR(255) DEFAULT NULL,
+			city VARCHAR(100) NOT NULL DEFAULT 'Tucker',
+			state VARCHAR(2) NOT NULL DEFAULT 'GA',
+			zip VARCHAR(10) NOT NULL DEFAULT '30084',
+			country VARCHAR(2) NOT NULL DEFAULT 'US',
+			referral_source VARCHAR(100) DEFAULT NULL,
+			waiver_full_name VARCHAR(255) NOT NULL,
+			waiver_signed_date DATE NOT NULL,
+			guest_pass_balance INT(11) NOT NULL DEFAULT 0,
+			auto_renewal_enabled TINYINT(1) NOT NULL DEFAULT 0,
+			expiration_date DATE DEFAULT NULL,
+			balance_owed DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+			original_membership_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+			final_payment_method VARCHAR(20) DEFAULT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (member_id),
+			UNIQUE KEY email (email),
+			UNIQUE KEY user_id (user_id),
+			KEY membership_type_id (membership_type_id),
+			KEY status (status),
+			KEY stripe_customer_id (stripe_customer_id),
+			KEY created_at (created_at),
+			KEY balance_owed (balance_owed)
+		) $charset_collate;";
+
+		dbDelta( $sql );
 	}
 }
 

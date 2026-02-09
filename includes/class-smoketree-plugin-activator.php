@@ -36,6 +36,9 @@ class Smoketree_Plugin_Activator {
 		// Create all database tables
 		STSRC_Database::create_tables();
 
+		// Run database upgrade routine
+		self::upgrade_database();
+
 		// Create custom user role for members
 		self::create_member_role();
 
@@ -50,6 +53,38 @@ class Smoketree_Plugin_Activator {
 
 		// Flush rewrite rules
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Upgrade database schema if needed.
+	 *
+	 * Checks the stored database version and runs necessary migrations.
+	 * This method is called on plugin activation.
+	 *
+	 * @since    1.1.0
+	 * @return   void
+	 */
+	private static function upgrade_database(): void {
+		// Get current database version
+		$current_db_version = get_option( 'stsrc_db_version', '1.0.0' );
+
+		// Get plugin version constant
+		$plugin_version = defined( 'SMOKETREE_PLUGIN_VERSION' ) ? SMOKETREE_PLUGIN_VERSION : '1.0.0';
+
+		// Compare versions - if database version is lower, run upgrades
+		if ( version_compare( $current_db_version, '1.1.0', '<' ) ) {
+			// Version 1.1.0 upgrade: Balance tracking system
+			// Tables and columns are created/enhanced by STSRC_Database::create_tables()
+			// which uses dbDelta to safely add new tables and columns
+
+			// Update database version
+			update_option( 'stsrc_db_version', '1.1.0' );
+		}
+
+		// Always update to current plugin version
+		if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
+			update_option( 'stsrc_db_version', $plugin_version );
+		}
 	}
 
 	/**

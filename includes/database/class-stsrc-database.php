@@ -37,6 +37,10 @@ class STSRC_Database {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
+		// Load transaction DB class for table creation
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
 		// Table: wp_stsrc_members
 		$table_members = $wpdb->prefix . 'stsrc_members';
 		$sql_members = "CREATE TABLE $table_members (
@@ -213,6 +217,12 @@ class STSRC_Database {
 			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE
 		) $charset_collate;";
 		dbDelta( $sql_payment_logs );
+
+		// Create transactions table (v1.1.0+)
+		STSRC_Transaction_DB::create_table();
+
+		// Enhance members table with balance tracking columns (v1.1.0+)
+		STSRC_Member_DB::enhance_table_for_balance_tracking();
 	}
 
 	/**
@@ -225,6 +235,7 @@ class STSRC_Database {
 		global $wpdb;
 
 		$tables = array(
+			$wpdb->prefix . 'stsrc_transactions',
 			$wpdb->prefix . 'stsrc_payment_logs',
 			$wpdb->prefix . 'stsrc_access_codes',
 			$wpdb->prefix . 'stsrc_email_logs',
