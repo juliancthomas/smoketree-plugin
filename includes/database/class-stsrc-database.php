@@ -111,8 +111,7 @@ class STSRC_Database {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (family_member_id),
 			KEY member_id (member_id),
-			UNIQUE KEY member_name (member_id, first_name, last_name),
-			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE
+			UNIQUE KEY member_name (member_id, first_name, last_name)
 		) $charset_collate;";
 		dbDelta( $sql_family_members );
 
@@ -130,8 +129,7 @@ class STSRC_Database {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (extra_member_id),
 			KEY member_id (member_id),
-			UNIQUE KEY member_name (member_id, first_name, last_name),
-			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE
+			UNIQUE KEY member_name (member_id, first_name, last_name)
 		) $charset_collate;";
 		dbDelta( $sql_extra_members );
 
@@ -152,8 +150,7 @@ class STSRC_Database {
 			PRIMARY KEY (guest_pass_id),
 			KEY member_id (member_id),
 			KEY used_at (used_at),
-			KEY created_at (created_at),
-			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE
+			KEY created_at (created_at)
 		) $charset_collate;";
 		dbDelta( $sql_guest_passes );
 
@@ -173,8 +170,7 @@ class STSRC_Database {
 			KEY email_campaign_id (email_campaign_id),
 			KEY member_id (member_id),
 			KEY status (status),
-			KEY sent_at (sent_at),
-			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE SET NULL
+			KEY sent_at (sent_at)
 		) $charset_collate;";
 		dbDelta( $sql_email_logs );
 
@@ -213,8 +209,7 @@ class STSRC_Database {
 			KEY member_id (member_id),
 			KEY stripe_payment_intent_id (stripe_payment_intent_id),
 			KEY status (status),
-			KEY created_at (created_at),
-			FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE
+			KEY created_at (created_at)
 		) $charset_collate;";
 		dbDelta( $sql_payment_logs );
 
@@ -223,6 +218,98 @@ class STSRC_Database {
 
 		// Enhance members table with balance tracking columns (v1.1.0+)
 		STSRC_Member_DB::enhance_table_for_balance_tracking();
+
+		// Add foreign key constraints after all tables are created
+		self::add_foreign_key_constraints();
+	}
+
+	/**
+	 * Add foreign key constraints to tables.
+	 *
+	 * This is done separately from CREATE TABLE because dbDelta doesn't handle
+	 * foreign keys properly in CREATE TABLE statements.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	private static function add_foreign_key_constraints() {
+		global $wpdb;
+
+		$table_members        = $wpdb->prefix . 'stsrc_members';
+		$table_family_members = $wpdb->prefix . 'stsrc_family_members';
+		$table_extra_members  = $wpdb->prefix . 'stsrc_extra_members';
+		$table_guest_passes   = $wpdb->prefix . 'stsrc_guest_passes';
+		$table_email_logs     = $wpdb->prefix . 'stsrc_email_logs';
+		$table_payment_logs   = $wpdb->prefix . 'stsrc_payment_logs';
+		$table_transactions   = $wpdb->prefix . 'stsrc_transactions';
+
+		// Check and add foreign keys if they don't exist
+		$constraints = array(
+			array(
+				'table' => $table_family_members,
+				'name'  => 'fk_family_members_member_id',
+				'sql'   => "ALTER TABLE {$table_family_members} 
+					ADD CONSTRAINT fk_family_members_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_extra_members,
+				'name'  => 'fk_extra_members_member_id',
+				'sql'   => "ALTER TABLE {$table_extra_members} 
+					ADD CONSTRAINT fk_extra_members_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_guest_passes,
+				'name'  => 'fk_guest_passes_member_id',
+				'sql'   => "ALTER TABLE {$table_guest_passes} 
+					ADD CONSTRAINT fk_guest_passes_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_email_logs,
+				'name'  => 'fk_email_logs_member_id',
+				'sql'   => "ALTER TABLE {$table_email_logs} 
+					ADD CONSTRAINT fk_email_logs_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE SET NULL"
+			),
+			array(
+				'table' => $table_payment_logs,
+				'name'  => 'fk_payment_logs_member_id',
+				'sql'   => "ALTER TABLE {$table_payment_logs} 
+					ADD CONSTRAINT fk_payment_logs_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_transactions,
+				'name'  => 'fk_transactions_member_id',
+				'sql'   => "ALTER TABLE {$table_transactions} 
+					ADD CONSTRAINT fk_transactions_member_id 
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+		);
+
+		foreach ( $constraints as $constraint ) {
+			// Check if foreign key already exists
+			$existing = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT CONSTRAINT_NAME 
+					FROM information_schema.TABLE_CONSTRAINTS 
+					WHERE TABLE_SCHEMA = %s 
+					AND TABLE_NAME = %s 
+					AND CONSTRAINT_NAME = %s 
+					AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+					DB_NAME,
+					$constraint['table'],
+					$constraint['name']
+				)
+			);
+
+			// Only add if it doesn't exist
+			if ( empty( $existing ) ) {
+				$wpdb->query( $constraint['sql'] );
+			}
+		}
 	}
 
 	/**

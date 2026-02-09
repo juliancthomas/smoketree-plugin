@@ -13,6 +13,11 @@
  * @subpackage Smoketree_Plugin/includes/services
  */
 
+// Load required database classes
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
 /**
  * Balance Service Class.
  *

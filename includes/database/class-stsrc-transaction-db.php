@@ -60,11 +60,13 @@ class STSRC_Transaction_DB {
 			KEY member_id (member_id),
 			KEY transaction_type (transaction_type),
 			KEY created_at (created_at),
-			KEY stripe_payment_intent_id (stripe_payment_intent_id),
-			FOREIGN KEY (member_id) REFERENCES {$members_table}(member_id) ON DELETE CASCADE
+			KEY stripe_payment_intent_id (stripe_payment_intent_id)
 		) $charset_collate;";
 
 		dbDelta( $sql );
+
+		// Note: Foreign key constraint is added by STSRC_Database::add_foreign_key_constraints()
+		// after all tables are created, as dbDelta doesn't handle foreign keys properly.
 	}
 
 	/**
