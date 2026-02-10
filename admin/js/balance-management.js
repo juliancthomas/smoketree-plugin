@@ -409,17 +409,76 @@
 			$('#stsrc-adjust-confirm-buttons').hide();
 			$('#stsrc-adjust-loading').show();
 
-			// For now, just show a placeholder success
-			setTimeout(function() {
-				$('#stsrc-adjust-confirm-step').hide();
-				$('#stsrc-adjust-success-step').show();
-				$('#stsrc-success-message').text('Balance adjustment has been recorded successfully. The transaction has been added to the member\'s history.');
-				$('#stsrc-adjust-loading').hide();
-				$('#stsrc-adjust-close-button').show();
-			}, 1000);
+			const formData = {
+				action: 'stsrc_adjust_balance',
+				member_id: $('#stsrc-adjust-member-id').val(),
+				adjustment_type: $('#stsrc-adjustment-type').val(),
+				amount: $('#stsrc-adjustment-amount').val(),
+				description: $('#stsrc-adjustment-description').val(),
+				admin_notes: $('#stsrc-adjustment-admin-notes').val(),
+				stsrc_adjust_balance_nonce: $('#stsrc-adjust-balance-form').find('input[name="stsrc_adjust_balance_nonce"]').val()
+			};
 
-			// TODO: This will be replaced with actual AJAX call in step 4.4
+			$.ajax({
+				url: ajaxurl,
+				type: 'POST',
+				data: formData,
+				success: function(response) {
+					if (response.success) {
+						$('#stsrc-adjust-confirm-step').hide();
+						$('#stsrc-adjust-success-step').show();
+						$('#stsrc-success-message').text(response.data.message || 'Balance adjustment has been recorded successfully.');
+						$('#stsrc-adjust-loading').hide();
+						$('#stsrc-adjust-close-button').show();
+
+						// Refresh balance summary and transaction history
+						refreshBalanceDisplay(response.data.new_balance);
+						const memberId = getMemberId();
+						if (memberId) {
+							loadTransactions(memberId, $('#stsrc-transaction-year-filter').val() || '', 1);
+						}
+					} else {
+						showAdjustBalanceError(response.data && response.data.message ? response.data.message : 'Failed to adjust balance.');
+					}
+				},
+				error: function() {
+					showAdjustBalanceError('An error occurred while adjusting the balance.');
+				}
+			});
 		});
+
+		/**
+		 * Show Adjust Balance Error State
+		 */
+		function showAdjustBalanceError(message) {
+			$('#stsrc-adjust-confirm-step').hide();
+			$('#stsrc-adjust-error-step').show();
+			$('#stsrc-error-message').text(message);
+			$('#stsrc-adjust-loading').hide();
+			$('#stsrc-adjust-close-button').show();
+		}
+
+		/**
+		 * Refresh Balance Display UI
+		 */
+		function refreshBalanceDisplay(newBalance) {
+			if (typeof newBalance === 'undefined' || newBalance === null) {
+				return;
+			}
+
+			const balanceValue = parseFloat(newBalance);
+			const $balanceSection = $('#stsrc-balance-section');
+			const $balanceAmount = $balanceSection.find('div[style*="font-size: 32px"]');
+
+			if ($balanceAmount.length) {
+				const formatted = formatCurrency(Math.abs(balanceValue));
+				if (balanceValue < 0) {
+					$balanceAmount.html('-$' + formatted);
+				} else {
+					$balanceAmount.html('$' + formatted);
+				}
+			}
+		}
 
 		/**
 		 * Format Currency Helper
