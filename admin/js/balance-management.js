@@ -164,11 +164,23 @@
 		 * Close Adjust Balance Modal
 		 */
 		$(document).on('click', '.stsrc-modal-close', function() {
-			closeAdjustBalanceModal();
+			const $modal = $(this).closest('.stsrc-modal');
+			if ($modal.attr('id') === 'stsrc-adjust-balance-modal') {
+				closeAdjustBalanceModal();
+			}
+			if ($modal.attr('id') === 'stsrc-record-payment-modal') {
+				closeRecordPaymentModal();
+			}
 		});
 
 		$(document).on('click', '.stsrc-modal-overlay', function() {
-			closeAdjustBalanceModal();
+			const $modal = $(this).closest('.stsrc-modal');
+			if ($modal.attr('id') === 'stsrc-adjust-balance-modal') {
+				closeAdjustBalanceModal();
+			}
+			if ($modal.attr('id') === 'stsrc-record-payment-modal') {
+				closeRecordPaymentModal();
+			}
 		});
 
 		function closeAdjustBalanceModal() {
@@ -213,6 +225,95 @@
 			$('.stsrc-error-message').hide().text('');
 			$('#stsrc-adjustment-type-hint').text('');
 		}
+
+		/**
+		 * Record Manual Payment Modal - Open
+		 */
+		$('#stsrc-record-payment-btn').on('click', function(e) {
+			e.preventDefault();
+			openRecordPaymentModal();
+		});
+
+		function openRecordPaymentModal() {
+			const memberId = getMemberId();
+			if (!memberId) {
+				alert('Unable to determine member ID.');
+				return;
+			}
+
+			$('#stsrc-record-payment-member-id').val(memberId);
+			resetRecordPaymentModal();
+
+			$('#stsrc-record-payment-modal').fadeIn(200);
+			$('body').addClass('stsrc-modal-open');
+		}
+
+		function closeRecordPaymentModal() {
+			$('#stsrc-record-payment-modal').fadeOut(200);
+			$('body').removeClass('stsrc-modal-open');
+			setTimeout(resetRecordPaymentModal, 300);
+		}
+
+		function resetRecordPaymentModal() {
+			const $form = $('#stsrc-record-payment-form');
+			if ($form.length) {
+				$form[0].reset();
+			}
+			updateCheckNumberVisibility();
+			$('#stsrc-payment-amount-error').hide().text('');
+			$('#stsrc-submit-record-payment').prop('disabled', true);
+		}
+
+		function updateCheckNumberVisibility() {
+			const method = $('#stsrc-payment-method').val();
+			const $checkGroup = $('.stsrc-check-number-group');
+			if (method === 'check') {
+				$checkGroup.removeClass('stsrc-hidden');
+			} else {
+				$checkGroup.addClass('stsrc-hidden');
+				$('#stsrc-check-number').val('');
+			}
+		}
+
+		function validateRecordPaymentForm() {
+			const method = $('#stsrc-payment-method').val();
+			const amount = parseFloat($('#stsrc-payment-amount').val());
+			const description = $('#stsrc-payment-description').val().trim();
+			const dateReceived = $('#stsrc-payment-date').val();
+
+			let isValid = true;
+			$('#stsrc-payment-amount-error').hide();
+
+			if (!method || !description || !dateReceived) {
+				isValid = false;
+			}
+
+			if (isNaN(amount) || amount <= 0) {
+				isValid = false;
+			} else if (amount < 0.01) {
+				$('#stsrc-payment-amount-error').text('Amount must be at least $0.01').show();
+				isValid = false;
+			}
+
+			$('#stsrc-submit-record-payment').prop('disabled', !isValid);
+			return isValid;
+		}
+
+		$('#stsrc-payment-method').on('change', function() {
+			updateCheckNumberVisibility();
+			validateRecordPaymentForm();
+		});
+
+		$('#stsrc-record-payment-form input, #stsrc-record-payment-form select, #stsrc-record-payment-form textarea').on('input change', function() {
+			validateRecordPaymentForm();
+		});
+
+		$('#stsrc-submit-record-payment').on('click', function() {
+			if (!validateRecordPaymentForm()) {
+				return;
+			}
+			alert('Record payment submission will be connected in a future step.');
+		});
 
 		/**
 		 * Adjustment Type Change - Update Hints
@@ -487,11 +588,7 @@
 			return parseFloat(amount).toFixed(2);
 		}
 
-		// Placeholder for record payment modal (will be implemented in next step)
-		$('#stsrc-record-payment-btn').on('click', function(e) {
-			e.preventDefault();
-			alert('Record payment modal will be implemented in a future step.');
-		});
+		// Record payment modal submission will be wired to AJAX in a later step.
 	});
 
 })(jQuery);

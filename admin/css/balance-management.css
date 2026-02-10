@@ -437,6 +437,11 @@ body.stsrc-modal-open {
 	border-radius: 3px;
 }
 
+/* Utility */
+.stsrc-hidden {
+	display: none;
+}
+
 /* Balance Preview Box */
 .stsrc-balance-preview {
 	margin-top: 24px;

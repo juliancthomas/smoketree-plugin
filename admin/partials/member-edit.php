@@ -168,6 +168,7 @@ $member_id = $member['member_id'] ?? 0;
 				// Balance management modals
 				$modal_data = array( 'member_id' => $member_id );
 				include plugin_dir_path( __FILE__ ) . 'adjust-balance-modal.php';
+				include plugin_dir_path( __FILE__ ) . 'record-payment-modal.php';
 			}
 			?>
 

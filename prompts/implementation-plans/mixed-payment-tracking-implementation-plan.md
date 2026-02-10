@@ -126,7 +126,7 @@
   - **User Instructions**: Test adjusting a member's balance with various amounts (positive, negative, zero edge case). Verify balance updates, transaction appears in history, and status changes to active if balance reaches zero.
   - **Git message**: `feat(admin): connect adjust balance modal to backend`
 
-- [ ] Step 4.6: Record Manual Payment Modal - UI
+- [x] Step 4.6: Record Manual Payment Modal - UI
   - **Task**: Create modal dialog for admins to record manual payments received offline (check, Zelle, cash). Include fields for payment method dropdown, amount (required, must be > 0), optional check number (shown conditionally), description, date received (defaults to today), and admin notes.
   - **Files**: Maximum 3 files
     - `admin/partials/record-payment-modal.php`: Create modal HTML with form fields, conditional display logic for check number field based on payment method selection, date picker for date received
@@ -135,6 +135,7 @@
   - **Step Dependencies**: Step 4.1 (appears on same page)
   - **User Instructions**: Click "Record Manual Payment" button and verify modal opens, check number field appears only when "check" is selected
   - **Git message**: `feat(admin): create record manual payment modal UI`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 4.7: Record Manual Payment - AJAX Handler and Integration
   - **Task**: Create AJAX endpoint for manual payment recording. Validate inputs, call Balance Service to create payment transaction, update balance and final_payment_method, trigger status change if applicable, queue confirmation email to member. Connect modal to handler with loading states and refresh logic.
