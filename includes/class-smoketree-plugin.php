@@ -279,7 +279,9 @@ class Smoketree_Plugin {
 	 */
 	private function register_ajax_handlers() {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-ajax-handler.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-balance-ajax.php';
 		$ajax_handler = new STSRC_Ajax_Handler();
+		$balance_ajax = new STSRC_Balance_Ajax();
 
 		// Login endpoint (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_login', $ajax_handler, 'login' );
@@ -320,6 +322,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_save_settings', $ajax_handler, 'save_settings' );
 		$this->loader->add_action( 'wp_ajax_stsrc_admin_adjust_guest_passes', $ajax_handler, 'admin_adjust_guest_passes' );
 		$this->loader->add_action( 'wp_ajax_stsrc_bulk_update_members', $ajax_handler, 'bulk_update_members' );
+		$this->loader->add_action( 'wp_ajax_stsrc_adjust_balance', $balance_ajax, 'handle_admin_adjust_balance' );
 
 		// Password reset endpoints (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_forgot_password', $ajax_handler, 'forgot_password' );

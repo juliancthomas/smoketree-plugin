@@ -108,14 +108,15 @@
   - **Git message**: `feat(admin): create adjust balance modal UI`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 4.4: Adjust Balance - AJAX Handler
+- [x] Step 4.4: Adjust Balance - AJAX Handler
   - **Task**: Create AJAX endpoint to handle balance adjustment submissions from admin. Validate nonce, capability, amount, and required fields. Call Balance Service to create adjustment transaction, update balance, and trigger status change if applicable. Return success/error response.
   - **Files**: Maximum 2 files
-    - `includes/ajax/class-stsrc-balance-ajax.php`: Create new AJAX handler class with method `handle_admin_adjust_balance()` that validates inputs, checks current_user_can('manage_options'), calls Balance Service adjust_balance method, returns JSON response with new balance and success message
-    - `includes/class-stsrc-ajax.php`: Register new AJAX action hooks (wp_ajax_stsrc_adjust_balance) to route to the handler class
+    - `includes/api/class-stsrc-balance-ajax.php`: Create new AJAX handler class with method `handle_admin_adjust_balance()` that validates inputs, checks current_user_can('manage_options'), calls Balance Service adjust_balance method, returns JSON response with new balance and success message
+    - `includes/class-smoketree-plugin.php`: Register new AJAX action hooks (wp_ajax_stsrc_adjust_balance) to route to the handler class
   - **Step Dependencies**: Step 2.3 (needs Balance Service)
   - **User Instructions**: None (integration tested in next step)
   - **Git message**: `feat(ajax): add balance adjustment handler`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 4.5: Adjust Balance - Integration and Testing
   - **Task**: Connect the adjust balance modal form to the AJAX handler. Add submission logic, loading states, error handling, success messages, and automatic refresh of balance section and transaction history after successful adjustment.
