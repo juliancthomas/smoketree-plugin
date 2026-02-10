@@ -137,7 +137,7 @@
   - **Git message**: `feat(admin): create record manual payment modal UI`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 4.7: Record Manual Payment - AJAX Handler and Integration
+- [x] Step 4.7: Record Manual Payment - AJAX Handler and Integration
   - **Task**: Create AJAX endpoint for manual payment recording. Validate inputs, call Balance Service to create payment transaction, update balance and final_payment_method, trigger status change if applicable, queue confirmation email to member. Connect modal to handler with loading states and refresh logic.
   - **Files**: Maximum 2 files
     - `includes/ajax/class-stsrc-balance-ajax.php`: Add method `handle_admin_record_payment()` that validates nonce and capability, validates amount > 0 and required fields, calls Balance Service record_manual_payment method, triggers email queue, returns JSON success/error
@@ -145,6 +145,7 @@
   - **Step Dependencies**: Steps 2.3, 4.6 (needs Balance Service and modal UI)
   - **User Instructions**: Test recording a manual check payment for $100. Verify transaction appears, balance decreases, and member receives confirmation email.
   - **Git message**: `feat(admin): implement manual payment recording with email notification`
+  - **Status**: ✅ COMPLETED
 
 ## Section 5: Admin Reporting and List Enhancements
 

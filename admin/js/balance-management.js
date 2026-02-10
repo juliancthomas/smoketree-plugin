@@ -261,6 +261,7 @@
 			}
 			updateCheckNumberVisibility();
 			$('#stsrc-payment-amount-error').hide().text('');
+			$('#stsrc-record-payment-message').addClass('stsrc-hidden').text('').removeClass('stsrc-success-message stsrc-error-message');
 			$('#stsrc-submit-record-payment').prop('disabled', true);
 		}
 
@@ -312,8 +313,60 @@
 			if (!validateRecordPaymentForm()) {
 				return;
 			}
-			alert('Record payment submission will be connected in a future step.');
+
+			const $button = $(this);
+			$button.prop('disabled', true).text('Recording...');
+
+			const formData = {
+				action: 'stsrc_record_payment',
+				member_id: $('#stsrc-record-payment-member-id').val(),
+				payment_method: $('#stsrc-payment-method').val(),
+				check_number: $('#stsrc-check-number').val(),
+				amount: $('#stsrc-payment-amount').val(),
+				description: $('#stsrc-payment-description').val(),
+				date_received: $('#stsrc-payment-date').val(),
+				admin_notes: $('#stsrc-payment-admin-notes').val(),
+				stsrc_record_payment_nonce: $('#stsrc-record-payment-form').find('input[name="stsrc_record_payment_nonce"]').val()
+			};
+
+			$.ajax({
+				url: ajaxurl,
+				type: 'POST',
+				data: formData,
+				success: function(response) {
+					if (response.success) {
+						showRecordPaymentMessage('success', response.data.message || 'Manual payment recorded successfully.');
+						refreshBalanceDisplay(response.data.new_balance);
+						const memberId = getMemberId();
+						if (memberId) {
+							loadTransactions(memberId, $('#stsrc-transaction-year-filter').val() || '', 1);
+						}
+						setTimeout(function() {
+							closeRecordPaymentModal();
+						}, 800);
+					} else {
+						showRecordPaymentMessage('error', response.data && response.data.message ? response.data.message : 'Failed to record payment.');
+					}
+				},
+				error: function() {
+					showRecordPaymentMessage('error', 'An error occurred while recording the payment.');
+				},
+				complete: function() {
+					$button.prop('disabled', false).text('Record Payment');
+				}
+			});
 		});
+
+		function showRecordPaymentMessage(type, message) {
+			const $message = $('#stsrc-record-payment-message');
+			$message.removeClass('stsrc-hidden');
+			$message.text(message);
+			if (type === 'success') {
+				$message.removeClass('stsrc-error-message').addClass('stsrc-success-message');
+			} else {
+				$message.removeClass('stsrc-success-message').addClass('stsrc-error-message');
+			}
+		}
 
 		/**
 		 * Adjustment Type Change - Update Hints

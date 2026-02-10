@@ -323,6 +323,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_admin_adjust_guest_passes', $ajax_handler, 'admin_adjust_guest_passes' );
 		$this->loader->add_action( 'wp_ajax_stsrc_bulk_update_members', $ajax_handler, 'bulk_update_members' );
 		$this->loader->add_action( 'wp_ajax_stsrc_adjust_balance', $balance_ajax, 'handle_admin_adjust_balance' );
+		$this->loader->add_action( 'wp_ajax_stsrc_record_payment', $balance_ajax, 'handle_admin_record_payment' );
 
 		// Password reset endpoints (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_forgot_password', $ajax_handler, 'forgot_password' );

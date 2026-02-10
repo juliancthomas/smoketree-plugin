@@ -115,6 +115,8 @@ $today     = current_time( 'Y-m-d' );
 						placeholder="<?php echo esc_attr__( 'Internal notes not visible to member (optional)', 'smoketree-plugin' ); ?>"
 					></textarea>
 				</div>
+
+				<div class="stsrc-form-group stsrc-hidden" id="stsrc-record-payment-message"></div>
 			</form>
 		</div>
 
