@@ -1,0 +1,83 @@
+/**
+ * Member Portal styles
+ *
+ * Styling for member portal-specific balance features.
+ *
+ * @package    Smoketree_Plugin
+ * @subpackage Smoketree_Plugin/public/css
+ */
+
+.stsrc-member-balance-card {
+	display: grid;
+	grid-template-columns: 1.1fr 1fr;
+	gap: 20px;
+	padding: 24px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+	border: 1px solid #ffcc80;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	margin-bottom: 24px;
+}
+
+.stsrc-member-balance-card__eyebrow {
+	margin: 0 0 6px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	font-weight: 700;
+	color: #7a4f01;
+}
+
+.stsrc-member-balance-card__amount {
+	font-size: 42px;
+	line-height: 1.05;
+	font-weight: 800;
+	color: #b53d00;
+	margin-bottom: 8px;
+}
+
+.stsrc-member-balance-card__note {
+	margin: 0;
+	color: #6a4a23;
+}
+
+.stsrc-member-balance-card__details {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px 16px;
+	margin-bottom: 16px;
+}
+
+.stsrc-member-balance-card__detail {
+	display: flex;
+	flex-direction: column;
+}
+
+.stsrc-member-balance-card__label {
+	font-size: 12px;
+	color: #6a4a23;
+	margin-bottom: 2px;
+}
+
+.stsrc-member-balance-card__value {
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.stsrc-member-balance-card__value--remaining {
+	color: #b53d00;
+}
+
+.stsrc-pay-balance-btn {
+	width: 100%;
+}
+
+@media (max-width: 900px) {
+	.stsrc-member-balance-card {
+		grid-template-columns: 1fr;
+	}
+
+	.stsrc-member-balance-card__amount {
+		font-size: 34px;
+	}
+}

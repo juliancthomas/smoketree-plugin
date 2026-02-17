@@ -172,7 +172,7 @@
 
 ## Section 6: Member Portal Experience
 
-- [ ] Step 6.1: Member Balance Card - UI Display
+- [x] Step 6.1: Member Balance Card - UI Display
   - **Task**: Create a prominent balance overview card for the member portal that displays only when balance_owed > 0. Show outstanding balance (large), membership type, original price, total paid, remaining balance, and a primary "Pay Balance" button. Use attention-grabbing yellow/orange styling.
   - **Files**: Maximum 3 files
     - `public/partials/member-balance-card.php`: Create card partial that retrieves member balance data, conditionally renders only if balance > 0, displays formatted amounts and membership details with prominent balance amount
@@ -181,6 +181,7 @@
   - **Step Dependencies**: Step 2.3 (needs Balance Service for data)
   - **User Instructions**: Log in to member portal as a member with outstanding balance. Verify the balance card appears prominently at the top with correct amounts and styling.
   - **Git message**: `feat(portal): add balance overview card for members`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 6.2: Member Transaction History Section
   - **Task**: Create transaction history display for member portal showing current year's transactions. Include date, description, payment method badge, and colored amount. Show newest first, limit to current year, make collapsible if more than 5 transactions, include empty state.

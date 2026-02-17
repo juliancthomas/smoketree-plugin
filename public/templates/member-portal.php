@@ -22,6 +22,9 @@ if ( ! is_user_logged_in() ) {
 // Get current user
 $current_user = wp_get_current_user();
 
+// Member portal helper
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'class-stsrc-member-portal.php';
+
 // Get member data
 require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-member-db.php';
 $member = STSRC_Member_DB::get_member_by_email( $current_user->user_email );
@@ -116,6 +119,9 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<?php endif; ?>
 
 		<div id="stsrc-portal-messages"></div>
+
+		<!-- Outstanding Balance Card -->
+		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
 
 		<!-- Member Profile Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-profile.php'; ?>

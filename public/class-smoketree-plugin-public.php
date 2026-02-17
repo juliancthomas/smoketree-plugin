@@ -84,6 +84,16 @@ class Smoketree_Plugin_Public {
 				$this->version,
 				'all'
 			);
+
+			if ( $this->is_member_portal_page() ) {
+				wp_enqueue_style(
+					$this->plugin_name . '-member-portal',
+					plugin_dir_url( __FILE__ ) . 'css/member-portal.css',
+					array( $this->plugin_name ),
+					$this->version,
+					'all'
+				);
+			}
 		}
 	}
 
@@ -127,6 +137,25 @@ class Smoketree_Plugin_Public {
 		);
 
 		return in_array( $page_template, $plugin_templates, true );
+	}
+
+	/**
+	 * Check if current page is the member portal.
+	 *
+	 * @since    1.1.0
+	 * @return   bool
+	 */
+	private function is_member_portal_page(): bool {
+		global $post;
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		$page_slug     = $post->post_name;
+		$page_template = get_post_meta( $post->ID, '_wp_page_template', true );
+
+		return 'member-portal' === $page_slug || 'member-portal.php' === $page_template;
 	}
 
 	/**
