@@ -392,5 +392,54 @@ class STSRC_Email_Service {
 			__( 'Balance Payment Received', 'smoketree-plugin' )
 		);
 	}
+
+	/**
+	 * Send balance payment failed email to member.
+	 *
+	 * @since    1.1.0
+	 * @param    int    $member_id Member ID.
+	 * @param    float  $amount    Attempted payment amount.
+	 * @param    string $reason    Failure reason from Stripe, if available.
+	 * @return   bool              True on success, false on failure.
+	 */
+	public function send_balance_payment_failed_email( int $member_id, float $amount, string $reason = '' ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member || empty( $member['email'] ) ) {
+			STSRC_Logger::warning(
+				'Unable to send balance payment failed email: member not found.',
+				array(
+					'method'    => __METHOD__,
+					'member_id' => $member_id,
+				)
+			);
+			return false;
+		}
+
+		$attempted_amount = abs( $amount );
+		$current_balance  = (float) ( $member['balance_owed'] ?? 0 );
+		$failure_reason   = ! empty( $reason )
+			? sanitize_text_field( $reason )
+			: __( 'Your bank or card issuer declined the payment attempt.', 'smoketree-plugin' );
+
+		$data = array(
+			'first_name'       => $member['first_name'] ?? '',
+			'last_name'        => $member['last_name'] ?? '',
+			'email'            => $member['email'],
+			'attempted_amount' => '$' . number_format( $attempted_amount, 2 ),
+			'failure_reason'   => $failure_reason,
+			'current_balance'  => '$' . number_format( $current_balance, 2 ),
+			'portal_url'       => home_url( '/member-portal' ),
+			'secretary_email'  => sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
+		);
+
+		return $this->send_email(
+			'balance-payment-failed.php',
+			$data,
+			sanitize_email( $member['email'] ),
+			__( 'Balance Payment Failed', 'smoketree-plugin' )
+		);
+	}
 }
 
