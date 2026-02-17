@@ -174,6 +174,16 @@ class Smoketree_Plugin_Public {
 				false
 			);
 
+			if ( $this->is_member_portal_page() ) {
+				wp_enqueue_script(
+					$this->plugin_name . '-member-portal',
+					plugin_dir_url( __FILE__ ) . 'js/member-portal.js',
+					array( 'jquery', $this->plugin_name ),
+					$this->version,
+					true
+				);
+			}
+
 			// Localize script for AJAX
 			wp_localize_script(
 				$this->plugin_name,

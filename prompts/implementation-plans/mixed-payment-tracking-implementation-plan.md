@@ -183,7 +183,7 @@
   - **Git message**: `feat(portal): add balance overview card for members`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 6.2: Member Transaction History Section
+- [x] Step 6.2: Member Transaction History Section
   - **Task**: Create transaction history display for member portal showing current year's transactions. Include date, description, payment method badge, and colored amount. Show newest first, limit to current year, make collapsible if more than 5 transactions, include empty state.
   - **Files**: Maximum 3 files
     - `public/partials/member-transaction-history.php`: Create partial that fetches transactions for current member filtered by current calendar year using Transaction DB, displays in clean list/table format with badges and color coding, includes empty state message, collapsible wrapper for > 5 transactions
@@ -192,6 +192,7 @@
   - **Step Dependencies**: Step 2.1 (needs Transaction DB)
   - **User Instructions**: Log in as member with transaction history and verify transactions display correctly for current year only, with appropriate colors and badges
   - **Git message**: `feat(portal): add transaction history section for members`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 6.3: Pay Balance Modal - UI and Validation
   - **Task**: Create payment modal for members to pay their balance via Stripe. Include current balance display, editable payment amount input (pre-filled with full balance), real-time validation against minimum payment setting, preview of balance after payment, and payment method selection info.
