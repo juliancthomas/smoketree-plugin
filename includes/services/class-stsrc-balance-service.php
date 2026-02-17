@@ -18,6 +18,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-tran
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
 
 /**
  * Balance Service Class.
@@ -101,11 +102,6 @@ class STSRC_Balance_Service {
 
 		// Return transaction data
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
-		if ( $transaction ) {
-			$email_service = new STSRC_Email_Service();
-			$email_sent    = $email_service->send_manual_payment_confirmation_email( $member_id, $transaction_id );
-			$transaction['manual_payment_email_sent'] = $email_sent;
-		}
 
 		return $transaction;
 	}
@@ -200,13 +196,8 @@ class STSRC_Balance_Service {
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
 		if ( $transaction ) {
 			$email_service = new STSRC_Email_Service();
-
-			$email_service->send_balance_payment_success_email( $member_id, $transaction_id );
-			$email_service->send_admin_balance_payment_notification( $member_id, $transaction_id );
-
-			if ( $new_balance < 0 ) {
-				$email_service->send_admin_overpayment_alert( $member_id, $transaction_id );
-			}
+			$email_sent    = $email_service->send_manual_payment_confirmation_email( $member_id, $transaction_id );
+			$transaction['manual_payment_email_sent'] = $email_sent;
 		}
 
 		return $transaction;
@@ -285,6 +276,15 @@ class STSRC_Balance_Service {
 
 		// Return transaction data
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( $transaction ) {
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_balance_payment_success_email( $member_id, $transaction_id );
+			$email_service->send_admin_balance_payment_notification( $member_id, $transaction_id );
+
+			if ( $new_balance < 0 ) {
+				$email_service->send_admin_overpayment_alert( $member_id, $transaction_id );
+			}
+		}
 
 		return $transaction;
 	}
@@ -313,27 +313,72 @@ class STSRC_Balance_Service {
 
 		// Only activate if currently pending and balance is zero or negative
 		if ( 'pending' === $current_status && $balance_owed <= 0 ) {
-			// Update status to active
-			$status_updated = STSRC_Member_DB::update_member(
-				$member_id,
-				array( 'status' => 'active' )
-			);
+			$member_service = new STSRC_Member_Service();
+			$activated      = $member_service->activate_member( $member_id );
 
-			if ( $status_updated ) {
-				// Log the activation
-				error_log( sprintf(
-					'STSRC: Member #%d automatically activated - balance paid in full',
-					$member_id
-				) );
+			if ( $activated ) {
+				error_log(
+					sprintf(
+						'STSRC: Member #%d automatically activated after balance reached %s',
+						$member_id,
+						number_format( $balance_owed, 2 )
+					)
+				);
 
-				// TODO: Trigger welcome email and other activation actions
-				// This would call existing activation logic from the member service
-
-				return true;
+				do_action( 'stsrc_member_auto_activated_after_balance_paid', $member_id, $balance_owed, $member );
 			}
+
+			return $activated;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Log admin status override when member is activated with outstanding balance.
+	 *
+	 * @since    1.1.0
+	 * @param    int    $member_id      Member ID.
+	 * @param    int    $admin_user_id  Admin user ID performing override.
+	 * @param    string $context        Optional context string.
+	 * @return   bool                   True when override was logged.
+	 */
+	public static function handle_admin_status_override( int $member_id, int $admin_user_id = 0, string $context = '' ): bool {
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( null === $member ) {
+			return false;
+		}
+
+		$current_status = (string) ( $member['status'] ?? '' );
+		$balance_owed   = (float) ( $member['balance_owed'] ?? 0.00 );
+
+		if ( 'active' !== $current_status || $balance_owed <= 0 ) {
+			return false;
+		}
+
+		$admin_user_id = $admin_user_id > 0 ? $admin_user_id : get_current_user_id();
+		$context       = sanitize_text_field( $context );
+
+		error_log(
+			sprintf(
+				'STSRC: Admin override activation | member_id=%d | admin_user_id=%d | outstanding_balance=%s | context=%s',
+				$member_id,
+				$admin_user_id,
+				number_format( $balance_owed, 2, '.', '' ),
+				$context
+			)
+		);
+
+		do_action(
+			'stsrc_member_status_override_with_balance',
+			$member_id,
+			$admin_user_id,
+			$balance_owed,
+			$context,
+			$member
+		);
+
+		return true;
 	}
 
 	/**

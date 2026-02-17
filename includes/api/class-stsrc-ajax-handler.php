@@ -991,6 +991,9 @@ class STSRC_Ajax_Handler {
 		$updated = 0;
 
 		foreach ( $member_ids as $member_id ) {
+			$current_member  = STSRC_Member_DB::get_member( $member_id );
+			$previous_status = sanitize_text_field( (string) ( $current_member['status'] ?? '' ) );
+
 			$update_data = array(
 				'status' => $new_status,
 			);
@@ -1006,6 +1009,15 @@ class STSRC_Ajax_Handler {
 			$updated_member = STSRC_Member_DB::update_member( $member_id, $update_data );
 			if ( $updated_member ) {
 				$updated++;
+
+				if ( 'active' === $new_status && 'active' !== $previous_status ) {
+					STSRC_Balance_Service::handle_admin_status_override(
+						$member_id,
+						get_current_user_id(),
+						'admin_bulk_status_update'
+					);
+				}
+
 				do_action(
 					'stsrc_member_bulk_status_updated',
 					$member_id,
@@ -2686,6 +2698,17 @@ class STSRC_Ajax_Handler {
 		if ( ! $result ) {
 			wp_send_json_error( array( 'message' => 'Failed to update member.' ) );
 			return;
+		}
+
+		$previous_status = sanitize_text_field( (string) ( $current_member['status'] ?? '' ) );
+		$new_status      = sanitize_text_field( (string) ( $update_data['status'] ?? '' ) );
+		if ( 'active' === $new_status && 'active' !== $previous_status ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
+			STSRC_Balance_Service::handle_admin_status_override(
+				$member_id,
+				get_current_user_id(),
+				'admin_update_member'
+			);
 		}
 
 		// Handle password change if provided
