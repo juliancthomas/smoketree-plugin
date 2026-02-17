@@ -159,14 +159,16 @@
   - **Git message**: `feat(admin): add outstanding balances dashboard widget`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 5.2: Member List - Balance Column and Filters
+- [x] Step 5.2: Member List - Balance Column and Filters
   - **Task**: Enhance the admin members list table to include a sortable "Balance" column and add a filter dropdown for "Balance Status" (All / Paid in Full / Outstanding / Overpaid). Update queries to support sorting and filtering by balance_owed.
   - **Files**: Maximum 2 files
-    - `admin/class-stsrc-member-list-table.php`: Add balance column to columns array, implement column display callback formatting as currency, make column sortable, add filter dropdown to restrict_manage_posts hook, modify query to filter by balance status selection, add orderby clause for balance sorting
-    - `admin/css/admin-members.css`: Style balance column with right alignment for currency display, color coding for negative/positive balances
+    - `admin/pages/class-stsrc-members-page.php`: Add support for balance status filtering and balance sorting in the members list data pipeline
+    - `admin/partials/members-list.php`: Add balance status dropdown, sortable balance column header, and balance cell rendering
+    - `admin/css/smoketree-plugin-admin.css`: Style balance column alignment, sortable header indicator, and positive/negative/zero balance colors
   - **Step Dependencies**: Step 1.2 (members have balance data)
   - **User Instructions**: Navigate to members list, verify Balance column appears, test sorting by clicking column header, test filtering using Balance Status dropdown
   - **Git message**: `feat(admin): add balance column and filters to member list`
+  - **Status**: ✅ COMPLETED
 
 ## Section 6: Member Portal Experience
 

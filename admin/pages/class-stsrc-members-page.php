@@ -87,9 +87,59 @@ class STSRC_Members_Page {
 		if ( ! empty( $request['search'] ) ) {
 			$filters['search'] = sanitize_text_field( $request['search'] );
 		}
+		if ( ! empty( $request['balance_status'] ) ) {
+			$filters['balance_status'] = sanitize_text_field( $request['balance_status'] );
+		}
+
+		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';
+		$order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
+		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+			$order = 'DESC';
+		}
+		$filters['orderby'] = $orderby;
+		$filters['order']   = $order;
 
 		// Get members
 		$members = STSRC_Member_DB::get_members( $filters );
+
+		// Apply balance status filtering (post-query for compatibility with existing DB API)
+		if ( ! empty( $filters['balance_status'] ) ) {
+			$members = array_values(
+				array_filter(
+					$members,
+					static function( array $member ) use ( $filters ): bool {
+						$balance = (float) ( $member['balance_owed'] ?? 0 );
+						return match ( $filters['balance_status'] ) {
+							'paid_in_full' => abs( $balance ) <= 0.01,
+							'outstanding'  => $balance > 0.01,
+							'overpaid'     => $balance < -0.01,
+							default        => true,
+						};
+					}
+				)
+			);
+		}
+
+		// Apply balance sorting when requested
+		if ( 'balance' === $orderby ) {
+			usort(
+				$members,
+				static function( array $a, array $b ) use ( $order ): int {
+					$balance_a = (float) ( $a['balance_owed'] ?? 0 );
+					$balance_b = (float) ( $b['balance_owed'] ?? 0 );
+
+					if ( abs( $balance_a - $balance_b ) < 0.00001 ) {
+						return 0;
+					}
+
+					if ( 'ASC' === $order ) {
+						return $balance_a <=> $balance_b;
+					}
+
+					return $balance_b <=> $balance_a;
+				}
+			);
+		}
 
 		// Get membership types for filter dropdown
 		$membership_types = STSRC_Membership_DB::get_all_membership_types();

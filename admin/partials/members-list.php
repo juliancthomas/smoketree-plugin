@@ -16,6 +16,25 @@ $membership_types = $data['membership_types'] ?? array();
 $filters = $data['filters'] ?? array();
 $active_count = $data['active_count'] ?? 0;
 $admin_nonce = wp_create_nonce( 'stsrc_admin_nonce' );
+$current_orderby = $filters['orderby'] ?? 'created_at';
+$current_order   = strtoupper( $filters['order'] ?? 'DESC' );
+$next_balance_order = ( 'balance' === $current_orderby && 'ASC' === $current_order ) ? 'DESC' : 'ASC';
+
+$balance_sort_url = add_query_arg(
+	array(
+		'page'               => 'stsrc-members',
+		'search'             => $filters['search'] ?? '',
+		'membership_type_id' => $filters['membership_type_id'] ?? '',
+		'status'             => $filters['status'] ?? '',
+		'payment_type'       => $filters['payment_type'] ?? '',
+		'date_from'          => $filters['date_from'] ?? '',
+		'date_to'            => $filters['date_to'] ?? '',
+		'balance_status'     => $filters['balance_status'] ?? '',
+		'orderby'            => 'balance',
+		'order'              => $next_balance_order,
+	),
+	admin_url( 'admin.php' )
+);
 ?>
 
 <div class="wrap">
@@ -67,6 +86,16 @@ $admin_nonce = wp_create_nonce( 'stsrc_admin_nonce' );
 						<option value="zelle" <?php selected( $filters['payment_type'] ?? '', 'zelle' ); ?>><?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?></option>
 						<option value="check" <?php selected( $filters['payment_type'] ?? '', 'check' ); ?>><?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?></option>
 						<option value="pay_later" <?php selected( $filters['payment_type'] ?? '', 'pay_later' ); ?>><?php echo esc_html__( 'Pay Later', 'smoketree-plugin' ); ?></option>
+					</select>
+				</div>
+
+				<div class="stsrc-filter-group">
+					<label for="balance_status"><?php echo esc_html__( 'Balance Status', 'smoketree-plugin' ); ?>:</label>
+					<select name="balance_status" id="balance_status">
+						<option value=""><?php echo esc_html__( 'All Balances', 'smoketree-plugin' ); ?></option>
+						<option value="paid_in_full" <?php selected( $filters['balance_status'] ?? '', 'paid_in_full' ); ?>><?php echo esc_html__( 'Paid in Full', 'smoketree-plugin' ); ?></option>
+						<option value="outstanding" <?php selected( $filters['balance_status'] ?? '', 'outstanding' ); ?>><?php echo esc_html__( 'Outstanding', 'smoketree-plugin' ); ?></option>
+						<option value="overpaid" <?php selected( $filters['balance_status'] ?? '', 'overpaid' ); ?>><?php echo esc_html__( 'Overpaid', 'smoketree-plugin' ); ?></option>
 					</select>
 				</div>
 
@@ -171,6 +200,14 @@ $admin_nonce = wp_create_nonce( 'stsrc_admin_nonce' );
 						<th class="manage-column"><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column"><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column"><?php echo esc_html__( 'Payment Type', 'smoketree-plugin' ); ?></th>
+						<th class="manage-column stsrc-balance-column">
+							<a href="<?php echo esc_url( $balance_sort_url ); ?>" class="stsrc-sort-link">
+								<?php echo esc_html__( 'Balance', 'smoketree-plugin' ); ?>
+								<?php if ( 'balance' === $current_orderby ) : ?>
+									<span class="stsrc-sort-indicator"><?php echo esc_html( 'ASC' === $current_order ? '▲' : '▼' ); ?></span>
+								<?php endif; ?>
+							</a>
+						</th>
 						<th class="manage-column"><?php echo esc_html__( 'Created', 'smoketree-plugin' ); ?></th>
 					</tr>
 				</thead>
@@ -215,12 +252,23 @@ $admin_nonce = wp_create_nonce( 'stsrc_admin_nonce' );
 									</span>
 								</td>
 								<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $member['payment_type'] ) ) ); ?></td>
+								<?php
+								$balance = (float) ( $member['balance_owed'] ?? 0 );
+								$balance_class = $balance > 0.01 ? 'stsrc-balance-positive' : ( $balance < -0.01 ? 'stsrc-balance-negative' : 'stsrc-balance-zero' );
+								?>
+								<td class="stsrc-balance-column <?php echo esc_attr( $balance_class ); ?>">
+									<?php if ( $balance < 0 ) : ?>
+										-<?php echo esc_html( '$' . number_format( abs( $balance ), 2 ) ); ?>
+									<?php else : ?>
+										<?php echo esc_html( '$' . number_format( $balance, 2 ) ); ?>
+									<?php endif; ?>
+								</td>
 								<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $member['created_at'] ) ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
 						<tr>
-							<td colspan="7"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
+							<td colspan="8"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>

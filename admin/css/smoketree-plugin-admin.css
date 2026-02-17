@@ -242,6 +242,36 @@
 	border-bottom: none;
 }
 
+/* Members list: balance column */
+.stsrc-balance-column {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.stsrc-sort-link {
+	text-decoration: none;
+}
+
+.stsrc-sort-indicator {
+	margin-left: 4px;
+	font-size: 11px;
+}
+
+.stsrc-balance-positive {
+	color: #d63638;
+	font-weight: 600;
+}
+
+.stsrc-balance-negative {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.stsrc-balance-zero {
+	color: #50575e;
+	font-weight: 600;
+}
+
 /* Status badges */
 .stsrc-status-badge {
 	display: inline-block;
