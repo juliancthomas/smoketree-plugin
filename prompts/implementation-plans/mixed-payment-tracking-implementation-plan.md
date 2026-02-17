@@ -271,7 +271,7 @@
   - **Git message**: `feat(emails): add balance payment success template`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 9.2: Balance Payment Failed Email (Member)
+- [x] Step 9.2: Balance Payment Failed Email (Member)
   - **Task**: Create email template sent to member when balance payment fails. Include failure notification, reason if available from Stripe, attempted amount, current balance still owed, "Retry Payment" button linking to portal, and alternative payment method information.
   - **Files**: Maximum 2 files
     - `emails/balance-payment-failed.php`: Create email template with empathetic failure message, display attempted amount and reason, show current outstanding balance, include prominent CTA button to retry payment in portal, list alternative methods (Zelle, check with instructions)
@@ -279,8 +279,9 @@
   - **Step Dependencies**: None
   - **User Instructions**: Test with failed payment and verify member receives helpful email with retry options
   - **Git message**: `feat(emails): add balance payment failed template`
+  - **Status**: ✅ COMPLETED
 
-- [ ] Step 9.3: Admin Notification Emails (Balance Payment and Overpayment)
+- [x] Step 9.3: Admin Notification Emails (Balance Payment and Overpayment)
   - **Task**: Create two admin notification templates: one for successful balance payments and one for overpayment alerts. Include member details, payment information, new balance, and link to member admin page.
   - **Files**: Maximum 3 files
     - `emails/notify-admin-balance-payment.php`: Create template with member name/email, amount paid, payment method, new balance, conditional "Member automatically activated" message if balance = 0, link to member edit page
@@ -289,6 +290,7 @@
   - **Step Dependencies**: None
   - **User Instructions**: Test balance payment completion and overpayment scenario. Verify admin receives appropriate emails.
   - **Git message**: `feat(emails): add admin balance payment notifications`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 9.4: Manual Payment Confirmation Email (Member)
   - **Task**: Create email template sent to member when admin records a manual payment on their behalf. Confirm payment received, show payment method and amount, date received, new balance (or "Paid in Full"), and activation message if applicable.
