@@ -441,5 +441,230 @@ class STSRC_Email_Service {
 			__( 'Balance Payment Failed', 'smoketree-plugin' )
 		);
 	}
+
+	/**
+	 * Send admin notification for a successful balance payment.
+	 *
+	 * @since    1.1.0
+	 * @param    int $member_id      Member ID.
+	 * @param    int $transaction_id Transaction ID.
+	 * @return   bool                True when at least one email sends successfully.
+	 */
+	public function send_admin_balance_payment_notification( int $member_id, int $transaction_id ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member || empty( $member['email'] ) ) {
+			STSRC_Logger::warning(
+				'Unable to send admin balance payment notification: member not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( ! $transaction ) {
+			STSRC_Logger::warning(
+				'Unable to send admin balance payment notification: transaction not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$amount_paid = abs( (float) ( $transaction['amount'] ?? 0 ) );
+		$new_balance = (float) ( $transaction['balance_after'] ?? 0 );
+		$method_raw  = (string) ( $transaction['payment_method'] ?? '' );
+		$created_at  = (string) ( $transaction['created_at'] ?? '' );
+
+		$method_labels = array(
+			'card'            => __( 'Credit Card', 'smoketree-plugin' ),
+			'us_bank_account' => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'check'           => __( 'Check', 'smoketree-plugin' ),
+			'zelle'           => __( 'Zelle', 'smoketree-plugin' ),
+			'cash'            => __( 'Cash', 'smoketree-plugin' ),
+		);
+
+		$admin_members_url = admin_url( 'admin.php?page=stsrc-members' );
+		$member_admin_url  = add_query_arg(
+			array(
+				'action'    => 'edit',
+				'member_id' => (int) $member_id,
+			),
+			$admin_members_url
+		);
+
+		$data = array(
+			'member_name'             => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+			'member_email'            => $member['email'],
+			'amount_paid'             => '$' . number_format( $amount_paid, 2 ),
+			'payment_method'          => $method_labels[ $method_raw ] ?? ucfirst( str_replace( '_', ' ', $method_raw ) ),
+			'new_balance'             => '$' . number_format( $new_balance, 2 ),
+			'is_paid_in_full'         => $new_balance <= 0.01,
+			'transaction_date'        => ! empty( $created_at ) ? date_i18n( get_option( 'date_format' ), strtotime( $created_at ) ) : '',
+			'member_admin_url'        => $member_admin_url,
+			'member_activated_notice' => $new_balance <= 0.01,
+		);
+
+		$subject = sprintf(
+			/* translators: %s: member full name */
+			__( 'Balance Payment Received - %s', 'smoketree-plugin' ),
+			$data['member_name']
+		);
+
+		$admin_emails = $this->get_admin_notification_recipients();
+		if ( empty( $admin_emails ) ) {
+			return false;
+		}
+
+		$sent_any = false;
+		foreach ( $admin_emails as $admin_email ) {
+			$result = $this->send_email(
+				'notify-admin-balance-payment.php',
+				$data,
+				$admin_email,
+				$subject
+			);
+			if ( $result ) {
+				$sent_any = true;
+			}
+		}
+
+		return $sent_any;
+	}
+
+	/**
+	 * Send admin overpayment alert email.
+	 *
+	 * @since    1.1.0
+	 * @param    int $member_id      Member ID.
+	 * @param    int $transaction_id Transaction ID.
+	 * @return   bool                True when at least one email sends successfully.
+	 */
+	public function send_admin_overpayment_alert( int $member_id, int $transaction_id ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member || empty( $member['email'] ) ) {
+			STSRC_Logger::warning(
+				'Unable to send admin overpayment alert: member not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( ! $transaction ) {
+			STSRC_Logger::warning(
+				'Unable to send admin overpayment alert: transaction not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$new_balance       = (float) ( $transaction['balance_after'] ?? 0 );
+		$overpayment_amount = abs( min( 0.0, $new_balance ) );
+		$payment_amount    = abs( (float) ( $transaction['amount'] ?? 0 ) );
+		$method_raw        = (string) ( $transaction['payment_method'] ?? '' );
+		$created_at        = (string) ( $transaction['created_at'] ?? '' );
+
+		$method_labels = array(
+			'card'            => __( 'Credit Card', 'smoketree-plugin' ),
+			'us_bank_account' => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'check'           => __( 'Check', 'smoketree-plugin' ),
+			'zelle'           => __( 'Zelle', 'smoketree-plugin' ),
+			'cash'            => __( 'Cash', 'smoketree-plugin' ),
+		);
+
+		$admin_members_url = admin_url( 'admin.php?page=stsrc-members' );
+		$member_admin_url  = add_query_arg(
+			array(
+				'action'    => 'edit',
+				'member_id' => (int) $member_id,
+			),
+			$admin_members_url
+		);
+
+		$data = array(
+			'member_name'       => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+			'member_email'      => $member['email'],
+			'overpayment_amount'=> '$' . number_format( $overpayment_amount, 2 ),
+			'payment_amount'    => '$' . number_format( $payment_amount, 2 ),
+			'payment_method'    => $method_labels[ $method_raw ] ?? ucfirst( str_replace( '_', ' ', $method_raw ) ),
+			'transaction_date'  => ! empty( $created_at ) ? date_i18n( get_option( 'date_format' ), strtotime( $created_at ) ) : '',
+			'new_balance'       => '$' . number_format( $new_balance, 2 ),
+			'member_admin_url'  => $member_admin_url,
+		);
+
+		$subject = sprintf(
+			/* translators: %s: member full name */
+			__( 'Member Overpayment Alert - %s', 'smoketree-plugin' ),
+			$data['member_name']
+		);
+
+		$admin_emails = $this->get_admin_notification_recipients();
+		if ( empty( $admin_emails ) ) {
+			return false;
+		}
+
+		$sent_any = false;
+		foreach ( $admin_emails as $admin_email ) {
+			$result = $this->send_email(
+				'notify-admin-overpayment.php',
+				$data,
+				$admin_email,
+				$subject
+			);
+			if ( $result ) {
+				$sent_any = true;
+			}
+		}
+
+		return $sent_any;
+	}
+
+	/**
+	 * Get admin recipients for operational notification emails.
+	 *
+	 * @since    1.1.0
+	 * @return   array<string> Sanitized unique email addresses.
+	 */
+	private function get_admin_notification_recipients(): array {
+		$emails = array_filter(
+			array(
+				sanitize_email( (string) get_option( 'admin_email' ) ),
+				sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
+			)
+		);
+
+		$admin_users = get_users( array( 'role' => 'administrator' ) );
+		foreach ( $admin_users as $admin_user ) {
+			if ( ! empty( $admin_user->user_email ) ) {
+				$emails[] = sanitize_email( (string) $admin_user->user_email );
+			}
+		}
+
+		$emails = array_filter( $emails, 'is_email' );
+		$emails = array_values( array_unique( $emails ) );
+
+		return $emails;
+	}
 }
 
