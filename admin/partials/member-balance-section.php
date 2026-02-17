@@ -15,9 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Support both $balance_section_data and $data for flexibility
 if ( isset( $balance_section_data['member_id'] ) ) {
-	$member_id = $balance_section_data['member_id'];
+	$member_id = absint( $balance_section_data['member_id'] );
 } elseif ( isset( $data['member_id'] ) ) {
-	$member_id = $data['member_id'];
+	$member_id = absint( $data['member_id'] );
 } else {
 	$member_id = 0;
 }
@@ -108,8 +108,8 @@ $balance_color = $balance_owed > 0 ? '#f44336' : ( $balance_owed < 0 ? '#ff9800'
 				<div style="font-size: 12px; color: #646970; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">
 					<?php echo esc_html__( 'Adjustments', 'smoketree-plugin' ); ?>
 				</div>
-				<div style="font-size: 16px; color: <?php echo $total_adjustments > 0 ? '#f44336' : '#4caf50'; ?>; font-weight: 500;">
-					<?php echo $total_adjustments > 0 ? '+' : ''; ?>$<?php echo esc_html( number_format( $total_adjustments, 2 ) ); ?>
+				<div style="font-size: 16px; color: <?php echo esc_attr( $total_adjustments > 0 ? '#f44336' : '#4caf50' ); ?>; font-weight: 500;">
+					<?php echo esc_html( $total_adjustments > 0 ? '+' : '' ); ?>$<?php echo esc_html( number_format( $total_adjustments, 2 ) ); ?>
 				</div>
 			</div>
 			<?php endif; ?>

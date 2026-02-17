@@ -34,7 +34,7 @@ class Smoketree_Stripe_Webhooks {
 	public static function handle_webhook( WP_REST_Request $request ): WP_REST_Response {
 		// Get webhook payload
 		$payload = $request->get_body();
-		$sig_header = $request->get_header( 'stripe-signature' );
+		$sig_header = (string) $request->get_header( 'stripe-signature' );
 
 		// Verify webhook signature
 		if ( ! self::verify_signature( $payload, $sig_header ) ) {
@@ -47,6 +47,12 @@ class Smoketree_Stripe_Webhooks {
 
 		// Parse event
 		$event = json_decode( $payload, true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $event ) ) {
+			return new WP_REST_Response(
+				array( 'error' => 'Invalid JSON payload' ),
+				400
+			);
+		}
 
 		if ( ! isset( $event['type'] ) || ! isset( $event['id'] ) ) {
 			return new WP_REST_Response(
@@ -116,9 +122,8 @@ class Smoketree_Stripe_Webhooks {
 		// Get webhook secret based on test mode
 		$webhook_secret = self::get_webhook_secret();
 		if ( empty( $webhook_secret ) ) {
-			// If no webhook secret is configured, allow (for development)
-			// In production, this should return false
-			return true;
+			error_log( 'Stripe webhook rejected: webhook secret is not configured.' );
+			return false;
 		}
 
 		// Load Stripe SDK if needed

@@ -30,8 +30,9 @@ if ( empty( $member_id ) ) {
 require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-transaction-db.php';
 
 // Get filter parameters
-$current_year = isset( $_GET['transaction_year'] ) ? intval( $_GET['transaction_year'] ) : (int) date( 'Y' );
-$current_page = isset( $_GET['transaction_page'] ) ? intval( $_GET['transaction_page'] ) : 1;
+$current_year = isset( $_GET['transaction_year'] ) ? absint( wp_unslash( $_GET['transaction_year'] ) ) : (int) gmdate( 'Y' );
+$current_page = isset( $_GET['transaction_page'] ) ? absint( wp_unslash( $_GET['transaction_page'] ) ) : 1;
+$current_page = max( 1, $current_page );
 $per_page     = 20;
 
 // Get transactions
@@ -175,7 +176,7 @@ rsort( $available_years );
 								<?php endif; ?>
 							</td>
 							<td style="text-align: right; font-weight: 600;">
-								<span class="<?php echo $amount < 0 ? 'stsrc-amount-negative' : 'stsrc-amount-positive'; ?>">
+								<span class="<?php echo esc_attr( $amount < 0 ? 'stsrc-amount-negative' : 'stsrc-amount-positive' ); ?>">
 									<?php echo $amount > 0 ? '+' : ''; ?>$<?php echo esc_html( number_format( abs( $amount ), 2 ) ); ?>
 								</span>
 							</td>

@@ -190,6 +190,8 @@ class STSRC_Transaction_DB {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'stsrc_transactions';
+		$page       = max( 1, $page );
+		$per_page   = max( 1, $per_page );
 
 		// Build WHERE clause
 		$where_clauses = array( 'member_id = %d' );
