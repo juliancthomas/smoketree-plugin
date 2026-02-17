@@ -175,6 +175,9 @@ class Smoketree_Plugin_Public {
 			);
 
 			if ( $this->is_member_portal_page() ) {
+				$portal_context = $this->get_member_portal_context();
+				$minimum_payment = (float) get_option( 'stsrc_minimum_balance_payment', 10.00 );
+
 				wp_enqueue_script(
 					$this->plugin_name . '-member-portal',
 					plugin_dir_url( __FILE__ ) . 'js/member-portal.js',
@@ -195,7 +198,11 @@ class Smoketree_Plugin_Public {
 					$this->plugin_name . '-balance-payment',
 					'stsrcBalancePayment',
 					array(
-						'minimumPayment' => (float) get_option( 'stsrc_minimum_balance_payment', 10.0 ),
+						'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+						'nonce'          => wp_create_nonce( 'stsrc_balance_payment_nonce' ),
+						'memberId'       => (int) ( $portal_context['member_id'] ?? 0 ),
+						'currentBalance' => (float) ( $portal_context['current_balance'] ?? 0.0 ),
+						'minimumPayment' => $minimum_payment,
 					)
 				);
 			}
@@ -221,6 +228,43 @@ class Smoketree_Plugin_Public {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Get member context for localized member portal scripts.
+	 *
+	 * @since    1.1.0
+	 * @return   array{member_id:int,current_balance:float}
+	 */
+	private function get_member_portal_context(): array {
+		if ( ! is_user_logged_in() ) {
+			return array(
+				'member_id'       => 0,
+				'current_balance' => 0.0,
+			);
+		}
+
+		global $wpdb;
+
+		$member = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT member_id, balance_owed FROM {$wpdb->prefix}stsrc_members WHERE user_id = %d LIMIT 1",
+				get_current_user_id()
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $member ) ) {
+			return array(
+				'member_id'       => 0,
+				'current_balance' => 0.0,
+			);
+		}
+
+		return array(
+			'member_id'       => (int) ( $member['member_id'] ?? 0 ),
+			'current_balance' => (float) ( $member['balance_owed'] ?? 0.0 ),
+		);
 	}
 
 	/**

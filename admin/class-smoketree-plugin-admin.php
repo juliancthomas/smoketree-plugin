@@ -159,12 +159,29 @@ class Smoketree_Plugin_Admin {
 
 		// Load balance management script on member edit page (v1.1.0+)
 		if ( $this->is_member_edit_page() ) {
+			$member_id = isset( $_GET['member_id'] ) ? absint( wp_unslash( $_GET['member_id'] ) ) : 0;
+			$minimum_balance_payment = (float) get_option( 'stsrc_minimum_balance_payment', 10.00 );
+
 			wp_enqueue_script(
 				$this->plugin_name . '-balance',
 				plugin_dir_url( __FILE__ ) . 'js/balance-management.js',
 				array( 'jquery' ),
 				$this->version,
 				true
+			);
+
+			wp_localize_script(
+				$this->plugin_name . '-balance',
+				'stsrcBalanceAdmin',
+				array(
+					'ajaxUrl'               => admin_url( 'admin-ajax.php' ),
+					'memberId'              => $member_id,
+					'minimumBalancePayment' => $minimum_balance_payment,
+					'nonces'                => array(
+						'adjustBalance' => wp_create_nonce( 'stsrc_adjust_balance' ),
+						'recordPayment' => wp_create_nonce( 'stsrc_record_payment' ),
+					),
+				)
 			);
 		}
 	}

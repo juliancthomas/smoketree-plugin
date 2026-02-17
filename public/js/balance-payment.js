@@ -23,9 +23,10 @@
 		const $error = $('#stsrc-balance-payment-error');
 		const $submit = $('#stsrc-continue-to-payment');
 		const defaultSubmitText = $submit.text();
-		const minimumValue = Number((window.stsrcBalancePayment && window.stsrcBalancePayment.minimumPayment) || $('#stsrc-minimum-balance-payment-value').val() || 10);
-		const currentBalance = Number($('#stsrc-current-balance-value').val() || 0);
-		const ajaxUrl = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) || window.ajaxurl || '';
+		const localized = window.stsrcBalancePayment || {};
+		const minimumValue = Number(localized.minimumPayment || $('#stsrc-minimum-balance-payment-value').val() || 10);
+		const currentBalance = Number(localized.currentBalance || $('#stsrc-current-balance-value').val() || 0);
+		const ajaxUrl = localized.ajaxUrl || (window.stsrcPublic && window.stsrcPublic.ajaxUrl) || window.ajaxurl || '';
 
 		function openModal() {
 			$modal.removeClass('stsrc-hidden').attr('aria-hidden', 'false');
@@ -90,9 +91,9 @@
 				type: 'POST',
 				data: {
 					action: 'stsrc_create_balance_payment',
-					member_id: $('#stsrc-pay-balance-form input[name="member_id"]').val(),
+					member_id: localized.memberId || $('#stsrc-pay-balance-form input[name="member_id"]').val(),
 					amount: $amountInput.val(),
-					nonce: $('#stsrc-pay-balance-form input[name="nonce"]').val()
+					nonce: localized.nonce || $('#stsrc-pay-balance-form input[name="nonce"]').val()
 				},
 				success: function(response) {
 					if (response && response.success && response.data && response.data.session_url) {
