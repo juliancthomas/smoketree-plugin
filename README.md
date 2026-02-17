@@ -13,6 +13,9 @@ and season-based auto-renewal.
   guest passes, and Stripe billing portal access.
 - **Guest Pass Management:** Purchase guest passes, log usage, and allow admins to
   adjust balances.
+- **Mixed Payment & Balance Tracking:** Track member balances with a full transaction
+  ledger, support manual/offline partial payments, allow Stripe balance payoffs, and
+  auto-activate pending members when paid in full.
 - **Admin Dashboard:** Membership insights, bulk status updates, access code creation,
   email campaigns, CSV exports, and configurable settings.
 - **Auto-Renewal Engine:** Cron-driven notifications and off-session renewal charges
@@ -86,6 +89,15 @@ The plugin introduces a “Smoketree” top-level menu containing:
 - **Email Campaigns** – Compose, preview, and send batch emails to filtered segments.
 - **Settings** – Stripe, general, CAPTCHA, auto-renewal, and other configuration toggles.
 
+### Balance Tracking Highlights
+
+- Account balance summary and transaction history on member edit pages.
+- Admin tools for adjustments and manual payment recording.
+- Member portal balance card and pay-balance modal.
+- Stripe webhook-driven ledger updates for successful and failed balance payments.
+- Automatic status activation for pending members when balance reaches zero.
+- Audit logging and balance integrity tooling.
+
 ## Development
 
 - Code follows WordPress coding standards and uses the Plugin Boilerplate component
@@ -94,6 +106,14 @@ The plugin introduces a “Smoketree” top-level menu containing:
 - Database schema resides in `includes/database/class-stsrc-database.php`.
 - AJAX endpoints live in `includes/api/class-stsrc-ajax-handler.php`.
 - Auto-renewal logic is encapsulated in `includes/services/class-stsrc-auto-renewal-service.php`.
+- Balance and ledger orchestration is primarily in `includes/services/class-stsrc-balance-service.php`.
+- Balance payment checkout creation is in `includes/services/class-stsrc-payment-service.php`.
+
+### Feature Documentation
+
+- `docs/balance-tracking-system.md` - architecture, workflows, and admin/member behavior
+- `docs/api-reference.md` - public methods, hooks, and endpoint map
+- `docs/testing-report.md` - end-to-end scenario checklist and results template
 
 ### Testing
 

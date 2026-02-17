@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0 - 2026-02-17
+- Added mixed payment and balance tracking across admin and member portal flows.
+- Introduced `wp_stsrc_transactions` ledger support and member balance snapshot fields.
+- Added admin balance summary, transaction history, adjustment modal, and manual payment recording.
+- Added member-facing balance card, transaction history section, and Stripe balance payment modal.
+- Added Stripe webhook handling for balance payment success/failure with idempotency checks.
+- Added member/admin balance-payment and overpayment notification workflows.
+- Added auto-activation when pending members reach zero balance and override activity logging.
+- Added balance integrity tooling and expanded reporting for outstanding balances.
+- Added testing and documentation artifacts for balance tracking architecture, API usage, and E2E scenarios.
+
 ## 1.0.0 - 2025-12-20
 - Initial release of the Smoketree Swim & Recreation Club plugin.
 - Added online registration with Stripe Checkout and manual payment fallback.
