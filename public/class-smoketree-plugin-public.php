@@ -182,6 +182,22 @@ class Smoketree_Plugin_Public {
 					$this->version,
 					true
 				);
+
+				wp_enqueue_script(
+					$this->plugin_name . '-balance-payment',
+					plugin_dir_url( __FILE__ ) . 'js/balance-payment.js',
+					array( 'jquery' ),
+					$this->version,
+					true
+				);
+
+				wp_localize_script(
+					$this->plugin_name . '-balance-payment',
+					'stsrcBalancePayment',
+					array(
+						'minimumPayment' => (float) get_option( 'stsrc_minimum_balance_payment', 10.0 ),
+					)
+				);
 			}
 
 			// Localize script for AJAX

@@ -194,7 +194,7 @@
   - **Git message**: `feat(portal): add transaction history section for members`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 6.3: Pay Balance Modal - UI and Validation
+- [x] Step 6.3: Pay Balance Modal - UI and Validation
   - **Task**: Create payment modal for members to pay their balance via Stripe. Include current balance display, editable payment amount input (pre-filled with full balance), real-time validation against minimum payment setting, preview of balance after payment, and payment method selection info.
   - **Files**: Maximum 3 files
     - `public/partials/pay-balance-modal.php`: Create modal template with current balance display, amount input field with dollar sign prefix, validation error display area, real-time balance preview section, hidden fields for member_id and nonce, "Continue to Payment" button
@@ -203,6 +203,7 @@
   - **Step Dependencies**: Step 3.1 (needs minimum payment setting)
   - **User Instructions**: Click "Pay Balance" button and verify modal opens, try entering amount below minimum and verify error message, verify preview calculation updates in real-time
   - **Git message**: `feat(portal): create pay balance modal with validation`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 6.4: Balance Payment AJAX Handler
   - **Task**: Create AJAX endpoint for members to request a balance payment checkout session. Validate member ownership, nonce, minimum amount, and that member has outstanding balance. Call Payment Service to create Stripe checkout session and return session URL or error.

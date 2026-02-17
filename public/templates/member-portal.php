@@ -122,6 +122,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 		<!-- Outstanding Balance Card -->
 		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
+		<?php include plugin_dir_path( __FILE__ ) . '../partials/pay-balance-modal.php'; ?>
 
 		<!-- Transaction History Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>

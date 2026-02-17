@@ -177,3 +177,121 @@
 	margin-top: 12px;
 	text-align: center;
 }
+
+/* Pay balance modal */
+.stsrc-portal-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.stsrc-portal-modal__overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.stsrc-portal-modal__content {
+	position: relative;
+	width: min(560px, 100%);
+	background: #fff;
+	border-radius: 10px;
+	border: 1px solid #dcdcde;
+	box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+	overflow: hidden;
+}
+
+.stsrc-portal-modal__header,
+.stsrc-portal-modal__footer {
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.stsrc-portal-modal__footer {
+	border-bottom: 0;
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.stsrc-portal-modal__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.stsrc-portal-modal__header h3 {
+	margin: 0;
+}
+
+.stsrc-portal-modal__close {
+	border: 0;
+	background: transparent;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+	color: #50575e;
+}
+
+.stsrc-portal-modal__body {
+	padding: 16px;
+}
+
+.stsrc-pay-balance-current {
+	background: #fff8e1;
+	border: 1px solid #ffe082;
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 14px;
+}
+
+.stsrc-pay-balance-current__label {
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
+	color: #7a4f01;
+}
+
+.stsrc-pay-balance-current__value {
+	display: block;
+	font-size: 30px;
+	color: #b53d00;
+}
+
+.stsrc-pay-balance-input-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.stsrc-pay-balance-input-wrap span {
+	font-weight: 700;
+}
+
+.stsrc-pay-balance-preview {
+	background: #f0f6fc;
+	border: 1px solid #cde5fa;
+	border-radius: 8px;
+	padding: 10px 12px;
+	margin-bottom: 12px;
+}
+
+.stsrc-pay-balance-method-info {
+	font-size: 13px;
+	color: #646970;
+}
+
+.stsrc-pay-balance-error {
+	margin-top: 8px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: #ffebee;
+	color: #b71c1c;
+	border: 1px solid #ef9a9a;
+}
