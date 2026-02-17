@@ -19,6 +19,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-memb
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'class-stsrc-activity-log.php';
 
 /**
  * Balance Service Class.
@@ -102,6 +103,21 @@ class STSRC_Balance_Service {
 
 		// Return transaction data
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( $transaction ) {
+			STSRC_Activity_Log::log_balance_activity(
+				$member_id,
+				'balance_adjustment_recorded',
+				array(
+					'transaction_id'  => (int) $transaction_id,
+					'adjustment_type' => $adjustment_type,
+					'amount'          => $amount,
+					'previous_balance'=> $current_balance,
+					'new_balance'     => $new_balance,
+					'description'     => $description,
+				),
+				$admin_user_id
+			);
+		}
 
 		return $transaction;
 	}
@@ -198,6 +214,21 @@ class STSRC_Balance_Service {
 			$email_service = new STSRC_Email_Service();
 			$email_sent    = $email_service->send_manual_payment_confirmation_email( $member_id, $transaction_id );
 			$transaction['manual_payment_email_sent'] = $email_sent;
+
+			STSRC_Activity_Log::log_balance_activity(
+				$member_id,
+				'manual_payment_recorded',
+				array(
+					'transaction_id'   => (int) $transaction_id,
+					'payment_method'   => $payment_method,
+					'amount'           => $amount,
+					'previous_balance' => $current_balance,
+					'new_balance'      => $new_balance,
+					'date_received'    => $date_received,
+					'email_sent'       => $email_sent,
+				),
+				$admin_user_id
+			);
 		}
 
 		return $transaction;
@@ -284,6 +315,22 @@ class STSRC_Balance_Service {
 			if ( $new_balance < 0 ) {
 				$email_service->send_admin_overpayment_alert( $member_id, $transaction_id );
 			}
+
+			STSRC_Activity_Log::log_balance_activity(
+				$member_id,
+				'stripe_balance_payment_recorded',
+				array(
+					'transaction_id'      => (int) $transaction_id,
+					'payment_method'      => $payment_method,
+					'amount'              => $amount,
+					'previous_balance'    => $current_balance,
+					'new_balance'         => $new_balance,
+					'payment_intent_id'   => $stripe_ids['payment_intent_id'] ?? '',
+					'stripe_session_id'   => $stripe_ids['session_id'] ?? '',
+					'overpayment_detected'=> ( $new_balance < 0 ),
+				),
+				0
+			);
 		}
 
 		return $transaction;
@@ -326,6 +373,18 @@ class STSRC_Balance_Service {
 				);
 
 				do_action( 'stsrc_member_auto_activated_after_balance_paid', $member_id, $balance_owed, $member );
+
+				STSRC_Activity_Log::log_balance_activity(
+					$member_id,
+					'member_auto_activated',
+					array(
+						'previous_status' => $current_status,
+						'new_status'      => 'active',
+						'balance_owed'    => $balance_owed,
+						'reason'          => 'balance_paid_in_full',
+					),
+					0
+				);
 			}
 
 			return $activated;
@@ -376,6 +435,18 @@ class STSRC_Balance_Service {
 			$balance_owed,
 			$context,
 			$member
+		);
+
+		STSRC_Activity_Log::log_balance_activity(
+			$member_id,
+			'admin_status_override_with_balance',
+			array(
+				'previous_status'   => $current_status,
+				'new_status'        => 'active',
+				'outstanding_balance' => $balance_owed,
+				'context'           => $context,
+			),
+			$admin_user_id
 		);
 
 		return true;

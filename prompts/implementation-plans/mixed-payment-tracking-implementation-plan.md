@@ -338,7 +338,7 @@
   - **Git message**: `feat(admin): add balance integrity verification tool`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 11.2: Admin Activity Logging
+- [x] Step 11.2: Admin Activity Logging
   - **Task**: Enhance admin actions to log important balance-related activities for audit trail. Log adjustments, manual payments, status overrides, and bulk operations with admin user, timestamp, and action details.
   - **Files**: Maximum 2 files
     - `includes/class-stsrc-activity-log.php`: Create or enhance activity log class with method `log_balance_activity($member_id, $action_type, $details, $admin_user_id)` that stores log entries in options or custom table
@@ -346,6 +346,7 @@
   - **Step Dependencies**: None
   - **User Instructions**: Perform admin balance adjustment and verify activity is logged (view in dedicated log viewer or debug log)
   - **Git message**: `feat(admin): add activity logging for balance operations`
+  - **Status**: ✅ COMPLETED
 
 ## Section 12: Testing and Polish
 
