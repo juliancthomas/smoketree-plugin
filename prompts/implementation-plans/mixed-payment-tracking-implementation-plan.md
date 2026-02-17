@@ -261,14 +261,15 @@
 
 ## Section 9: Email Templates
 
-- [ ] Step 9.1: Balance Payment Success Email (Member)
+- [x] Step 9.1: Balance Payment Success Email (Member)
   - **Task**: Create email template sent to member when balance payment is successfully processed. Include thank you message, amount paid, new balance (or "Paid in Full" if zero), payment method, transaction date, and link to portal transaction history. If balance reaches zero, include activation message.
   - **Files**: Maximum 2 files
-    - `emails/balance-payment-success.php`: Create email template with conditional logic for $0 balance (show "Paid in Full!" and activation message), display payment details formatted as currency, include payment method badge, add link to member portal transaction history
+    - `templates/balance-payment-success.php`: Create email template with conditional logic for $0 balance (show "Paid in Full!" and activation message), display payment details formatted as currency, include payment method badge, add link to member portal transaction history
     - `includes/class-stsrc-email-service.php`: Add method `send_balance_payment_success_email($member_id, $transaction_id)` that retrieves member and transaction data, loads template, sends email
   - **Step Dependencies**: None (standalone template)
   - **User Instructions**: Trigger a test balance payment and verify member receives formatted email with correct details
   - **Git message**: `feat(emails): add balance payment success template`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 9.2: Balance Payment Failed Email (Member)
   - **Task**: Create email template sent to member when balance payment fails. Include failure notification, reason if available from Stripe, attempted amount, current balance still owed, "Retry Payment" button linking to portal, and alternative payment method information.

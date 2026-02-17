@@ -320,5 +320,77 @@ class STSRC_Email_Service {
 	public function get_rate_limit(): int {
 		return $this->rate_limit;
 	}
+
+	/**
+	 * Send balance payment success email to member.
+	 *
+	 * @since    1.1.0
+	 * @param    int $member_id       Member ID.
+	 * @param    int $transaction_id  Transaction ID.
+	 * @return   bool                 True on success, false on failure.
+	 */
+	public function send_balance_payment_success_email( int $member_id, int $transaction_id ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member || empty( $member['email'] ) ) {
+			STSRC_Logger::warning(
+				'Unable to send balance payment success email: member not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( ! $transaction ) {
+			STSRC_Logger::warning(
+				'Unable to send balance payment success email: transaction not found.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'transaction_id' => $transaction_id,
+				)
+			);
+			return false;
+		}
+
+		$amount_paid  = abs( (float) ( $transaction['amount'] ?? 0 ) );
+		$new_balance  = (float) ( $transaction['balance_after'] ?? 0 );
+		$method_raw   = (string) ( $transaction['payment_method'] ?? '' );
+		$created_at   = (string) ( $transaction['created_at'] ?? '' );
+
+		$method_labels = array(
+			'card'            => __( 'Credit Card', 'smoketree-plugin' ),
+			'us_bank_account' => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'check'           => __( 'Check', 'smoketree-plugin' ),
+			'zelle'           => __( 'Zelle', 'smoketree-plugin' ),
+			'cash'            => __( 'Cash', 'smoketree-plugin' ),
+		);
+
+		$data = array(
+			'first_name'       => $member['first_name'] ?? '',
+			'last_name'        => $member['last_name'] ?? '',
+			'email'            => $member['email'],
+			'amount_paid'      => '$' . number_format( $amount_paid, 2 ),
+			'new_balance'      => $new_balance,
+			'new_balance_text' => $new_balance <= 0.01 ? __( 'Paid in Full', 'smoketree-plugin' ) : '$' . number_format( $new_balance, 2 ),
+			'payment_method'   => $method_labels[ $method_raw ] ?? ucfirst( str_replace( '_', ' ', $method_raw ) ),
+			'transaction_date' => ! empty( $created_at ) ? date_i18n( get_option( 'date_format' ), strtotime( $created_at ) ) : '',
+			'portal_url'       => home_url( '/member-portal#stsrc-member-transaction-history' ),
+			'is_paid_in_full'  => $new_balance <= 0.01,
+		);
+
+		return $this->send_email(
+			'balance-payment-success.php',
+			$data,
+			sanitize_email( $member['email'] ),
+			__( 'Balance Payment Received', 'smoketree-plugin' )
+		);
+	}
 }
 
