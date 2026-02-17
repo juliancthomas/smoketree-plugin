@@ -1,0 +1,73 @@
+/**
+ * Dashboard Widgets Styles
+ *
+ * Styles for WordPress dashboard widgets added by the plugin.
+ *
+ * @package    Smoketree_Plugin
+ * @subpackage Smoketree_Plugin/admin/css
+ */
+
+.stsrc-dashboard-widget {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.stsrc-dashboard-widget__stat {
+	background: #f0f6fc;
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	padding: 16px;
+	text-align: center;
+}
+
+.stsrc-dashboard-widget__value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #2271b1;
+}
+
+.stsrc-dashboard-widget__label {
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #50575e;
+	margin-top: 6px;
+}
+
+.stsrc-dashboard-widget__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 12px;
+}
+
+.stsrc-dashboard-widget__item {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 12px;
+	text-align: center;
+}
+
+.stsrc-dashboard-widget__item-value {
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.stsrc-dashboard-widget__item-label {
+	font-size: 12px;
+	color: #646970;
+	margin-top: 4px;
+}
+
+.stsrc-dashboard-widget__footer {
+	display: flex;
+	justify-content: flex-end;
+}
+
+@media (max-width: 782px) {
+	.stsrc-dashboard-widget__footer {
+		justify-content: center;
+	}
+}

@@ -120,6 +120,7 @@ class Smoketree_Plugin {
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-smoketree-plugin-admin.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-stsrc-dashboard-widgets.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
@@ -178,9 +179,11 @@ class Smoketree_Plugin {
 	private function define_admin_hooks() {
 
 		$plugin_admin = new Smoketree_Plugin_Admin( $this->get_plugin_name(), $this->get_version() );
+		$dashboard_widgets = new STSRC_Dashboard_Widgets();
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'wp_dashboard_setup', $dashboard_widgets, 'register_widgets' );
 
 	}
 

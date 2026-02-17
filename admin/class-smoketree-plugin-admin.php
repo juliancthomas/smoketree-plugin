@@ -80,8 +80,8 @@ class Smoketree_Plugin_Admin {
 	 * @param    string    $hook    The current admin page hook
 	 */
 	public function enqueue_styles( string $hook ): void {
-		// Only load on plugin admin pages
-		if ( ! $this->is_plugin_admin_page( $hook ) ) {
+		// Only load on plugin admin pages or WP dashboard
+		if ( ! $this->is_plugin_admin_page( $hook ) && ! $this->is_wp_dashboard_page( $hook ) ) {
 			return;
 		}
 
@@ -98,6 +98,17 @@ class Smoketree_Plugin_Admin {
 			wp_enqueue_style(
 				$this->plugin_name . '-balance',
 				plugin_dir_url( __FILE__ ) . 'css/balance-management.css',
+				array(),
+				$this->version,
+				'all'
+			);
+		}
+
+		// Load dashboard widget styles on WP dashboard
+		if ( $this->is_wp_dashboard_page( $hook ) ) {
+			wp_enqueue_style(
+				$this->plugin_name . '-dashboard-widgets',
+				plugin_dir_url( __FILE__ ) . 'css/dashboard-widgets.css',
 				array(),
 				$this->version,
 				'all'
@@ -194,6 +205,17 @@ class Smoketree_Plugin_Admin {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check if current page is the WordPress dashboard.
+	 *
+	 * @since    1.1.0
+	 * @param    string    $hook    The current admin page hook
+	 * @return   bool               True if WP dashboard
+	 */
+	private function is_wp_dashboard_page( string $hook ): bool {
+		return 'index.php' === $hook;
 	}
 
 	/**

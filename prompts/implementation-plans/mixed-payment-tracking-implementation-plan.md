@@ -149,7 +149,7 @@
 
 ## Section 5: Admin Reporting and List Enhancements
 
-- [ ] Step 5.1: Dashboard Widget - Outstanding Balances
+- [x] Step 5.1: Dashboard Widget - Outstanding Balances
   - **Task**: Create a WordPress dashboard widget showing summary statistics for outstanding member balances: total members with balance > 0, total dollars outstanding, average balance owed, and link to filtered member list.
   - **Files**: Maximum 2 files
     - `admin/class-stsrc-dashboard-widgets.php`: Create new class or add to existing dashboard class with method to register widget, query Member DB for statistics using get_members_with_balance method, display formatted summary with link to members list with balance filter
@@ -157,6 +157,7 @@
   - **Step Dependencies**: Step 2.2 (needs Member DB balance query methods)
   - **User Instructions**: Navigate to WordPress dashboard and verify the "Outstanding Balances" widget appears with current data
   - **Git message**: `feat(admin): add outstanding balances dashboard widget`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 5.2: Member List - Balance Column and Filters
   - **Task**: Enhance the admin members list table to include a sortable "Balance" column and add a filter dropdown for "Balance Status" (All / Paid in Full / Outstanding / Overpaid). Update queries to support sorting and filtering by balance_owed.
