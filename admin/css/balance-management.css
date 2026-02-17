@@ -99,11 +99,11 @@
 
 /* Amount Styling */
 .stsrc-amount-negative {
-	color: #4caf50;
+	color: #1f7a1f;
 }
 
 .stsrc-amount-positive {
-	color: #f44336;
+	color: #b42318;
 }
 
 /* Pagination */
@@ -200,7 +200,7 @@
 		content: attr(data-label);
 		font-weight: 600;
 		display: inline-block;
-		width: 120px;
+		width: 110px;
 		margin-right: 10px;
 	}
 }
@@ -712,6 +712,55 @@ body.stsrc-modal-open {
 
 	.stsrc-preview-row {
 		font-size: 13px;
+	}
+}
+
+/* Accessibility and touch target improvements */
+.stsrc-modal-close:focus-visible,
+.stsrc-modal .button:focus-visible,
+.stsrc-form-group input:focus-visible,
+.stsrc-form-group select:focus-visible,
+.stsrc-form-group textarea:focus-visible,
+.stsrc-transaction-filters select:focus-visible,
+.stsrc-transaction-pagination .button:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.stsrc-modal .button,
+.stsrc-modal-close {
+	min-height: 44px;
+	min-width: 44px;
+}
+
+.stsrc-form-group input[type="text"],
+.stsrc-form-group input[type="number"],
+.stsrc-form-group select,
+.stsrc-form-group textarea {
+	min-height: 44px;
+}
+
+.stsrc-form-group textarea {
+	min-height: 96px;
+}
+
+.stsrc-transaction-table-wrapper {
+	overflow-x: auto;
+}
+
+@media (max-width: 782px) {
+	.stsrc-modal {
+		padding: 12px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.stsrc-modal-content,
+	.stsrc-balance-preview,
+	.stsrc-success-icon .dashicons,
+	.stsrc-transaction-table-wrapper {
+		animation: none !important;
+		transition: none !important;
 	}
 }
 

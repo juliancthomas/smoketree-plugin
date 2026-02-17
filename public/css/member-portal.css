@@ -70,6 +70,7 @@
 
 .stsrc-pay-balance-btn {
 	width: 100%;
+	min-height: 44px;
 }
 
 @media (max-width: 900px) {
@@ -166,11 +167,11 @@
 }
 
 .stsrc-transaction-amount--credit {
-	color: #00a32a;
+	color: #1f7a1f;
 }
 
 .stsrc-transaction-amount--debit {
-	color: #d63638;
+	color: #b42318;
 }
 
 .stsrc-transaction-history__actions {
@@ -237,6 +238,8 @@
 	line-height: 1;
 	cursor: pointer;
 	color: #50575e;
+	min-height: 44px;
+	min-width: 44px;
 }
 
 .stsrc-portal-modal__body {
@@ -274,6 +277,10 @@
 	font-weight: 700;
 }
 
+.stsrc-pay-balance-input-wrap input[type="number"] {
+	min-height: 44px;
+}
+
 .stsrc-pay-balance-preview {
 	background: #f0f6fc;
 	border: 1px solid #cde5fa;
@@ -294,4 +301,61 @@
 	background: #ffebee;
 	color: #b71c1c;
 	border: 1px solid #ef9a9a;
+}
+
+/* Accessibility and responsive enhancements */
+.stsrc-pay-balance-btn:focus-visible,
+.stsrc-transaction-history__actions .button:focus-visible,
+.stsrc-portal-modal__close:focus-visible,
+.stsrc-pay-balance-input-wrap input:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.stsrc-portal-modal__content {
+	max-height: min(90vh, 680px);
+	display: flex;
+	flex-direction: column;
+}
+
+.stsrc-portal-modal__body {
+	overflow-y: auto;
+}
+
+@media (max-width: 782px) {
+	.stsrc-member-balance-card {
+		padding: 18px;
+	}
+
+	.stsrc-member-balance-card__details {
+		grid-template-columns: 1fr;
+	}
+
+	.stsrc-transaction-item__meta,
+	.stsrc-transaction-item__content {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.stsrc-portal-modal {
+		padding: 8px;
+	}
+
+	.stsrc-portal-modal__footer {
+		flex-direction: column-reverse;
+	}
+
+	.stsrc-portal-modal__footer .button {
+		width: 100%;
+		min-height: 44px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.stsrc-portal-modal__content,
+	.stsrc-transaction-item,
+	.stsrc-member-balance-card {
+		transition: none !important;
+		animation: none !important;
+	}
 }

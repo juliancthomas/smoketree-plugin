@@ -81,7 +81,7 @@ class Smoketree_Plugin_Public {
 				$this->plugin_name,
 				plugin_dir_url( __FILE__ ) . 'css/smoketree-plugin-public.css',
 				$style_dependencies,
-				$this->version,
+				$this->get_asset_version( 'css/smoketree-plugin-public.css' ),
 				'all'
 			);
 
@@ -90,11 +90,28 @@ class Smoketree_Plugin_Public {
 					$this->plugin_name . '-member-portal',
 					plugin_dir_url( __FILE__ ) . 'css/member-portal.css',
 					array( $this->plugin_name ),
-					$this->version,
+					$this->get_asset_version( 'css/member-portal.css' ),
 					'all'
 				);
 			}
 		}
+	}
+
+	/**
+	 * Get cache-safe asset version using file modification time.
+	 *
+	 * @since    1.1.0
+	 * @param    string $relative_path Relative path from public directory.
+	 * @return   string
+	 */
+	private function get_asset_version( string $relative_path ): string {
+		$absolute_path = plugin_dir_path( __FILE__ ) . ltrim( $relative_path, '/\\' );
+
+		if ( file_exists( $absolute_path ) ) {
+			return (string) filemtime( $absolute_path );
+		}
+
+		return $this->version;
 	}
 
 	/**

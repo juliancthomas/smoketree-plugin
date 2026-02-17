@@ -89,7 +89,7 @@ class Smoketree_Plugin_Admin {
 			$this->plugin_name,
 			plugin_dir_url( __FILE__ ) . 'css/smoketree-plugin-admin.css',
 			array(),
-			$this->version,
+			$this->get_asset_version( 'css/smoketree-plugin-admin.css' ),
 			'all'
 		);
 
@@ -98,8 +98,8 @@ class Smoketree_Plugin_Admin {
 			wp_enqueue_style(
 				$this->plugin_name . '-balance',
 				plugin_dir_url( __FILE__ ) . 'css/balance-management.css',
-				array(),
-				$this->version,
+				array( $this->plugin_name ),
+				$this->get_asset_version( 'css/balance-management.css' ),
 				'all'
 			);
 		}
@@ -109,11 +109,28 @@ class Smoketree_Plugin_Admin {
 			wp_enqueue_style(
 				$this->plugin_name . '-dashboard-widgets',
 				plugin_dir_url( __FILE__ ) . 'css/dashboard-widgets.css',
-				array(),
-				$this->version,
+				array( $this->plugin_name ),
+				$this->get_asset_version( 'css/dashboard-widgets.css' ),
 				'all'
 			);
 		}
+	}
+
+	/**
+	 * Get cache-safe asset version using file modification time.
+	 *
+	 * @since    1.1.0
+	 * @param    string $relative_path Relative path from admin directory.
+	 * @return   string
+	 */
+	private function get_asset_version( string $relative_path ): string {
+		$absolute_path = plugin_dir_path( __FILE__ ) . ltrim( $relative_path, '/\\' );
+
+		if ( file_exists( $absolute_path ) ) {
+			return (string) filemtime( $absolute_path );
+		}
+
+		return $this->version;
 	}
 
 	/**
