@@ -13,8 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Get member_id if passed
-$member_id = isset( $data['member_id'] ) ? absint( $data['member_id'] ) : 0;
+// Support both $modal_data and $data for flexibility
+if ( isset( $modal_data['member_id'] ) ) {
+	$member_id = absint( $modal_data['member_id'] );
+} elseif ( isset( $data['member_id'] ) ) {
+	$member_id = absint( $data['member_id'] );
+} else {
+	$member_id = 0;
+}
 ?>
 
 <!-- Adjust Balance Modal -->

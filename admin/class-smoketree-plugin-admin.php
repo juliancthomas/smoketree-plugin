@@ -372,16 +372,6 @@ class Smoketree_Plugin_Admin {
 			'stsrc-access-codes',
 			array( $this, 'render_access_codes_page' )
 		);
-
-		// Settings
-		add_submenu_page(
-			'stsrc-dashboard',
-			__( 'Settings', 'smoketree-plugin' ),
-			__( 'Settings', 'smoketree-plugin' ),
-			'manage_options',
-			'stsrc-settings',
-			array( $this, 'render_settings_page' )
-		);
 	}
 
 	/**

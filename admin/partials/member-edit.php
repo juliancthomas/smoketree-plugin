@@ -164,11 +164,6 @@ $member_id = $member['member_id'] ?? 0;
 				// Transaction history section
 				$transaction_history_data = array( 'member_id' => $member_id );
 				include plugin_dir_path( __FILE__ ) . 'member-transaction-history.php';
-
-				// Balance management modals
-				$modal_data = array( 'member_id' => $member_id );
-				include plugin_dir_path( __FILE__ ) . 'adjust-balance-modal.php';
-				include plugin_dir_path( __FILE__ ) . 'record-payment-modal.php';
 			}
 			?>
 
@@ -361,6 +356,15 @@ $member_id = $member['member_id'] ?? 0;
 		</p>
 	</form>
 </div>
+
+<?php
+if ( $is_edit ) {
+	// Balance management modals must live outside the member form to avoid nested forms.
+	$modal_data = array( 'member_id' => $member_id );
+	include plugin_dir_path( __FILE__ ) . 'adjust-balance-modal.php';
+	include plugin_dir_path( __FILE__ ) . 'record-payment-modal.php';
+}
+?>
 
 <?php if ( $is_edit ) : ?>
 <script>

@@ -129,8 +129,10 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<!-- Guest Pass Balance Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/guest-pass-balance.php'; ?>
 
-		<!-- Family Members Section -->
-		<?php include plugin_dir_path( __FILE__ ) . '../partials/family-members.php'; ?>
+		<!-- Family Members Section (Household & Duo only) -->
+		<?php if ( ! empty( $membership_type ) && in_array( strtolower( $membership_type['name'] ), array( 'household', 'duo' ), true ) ) : ?>
+			<?php include plugin_dir_path( __FILE__ ) . '../partials/family-members.php'; ?>
+		<?php endif; ?>
 
 		<!-- Extra Members Section -->
 		<?php if ( ! empty( $membership_type ) && 'household' === strtolower( $membership_type['name'] ) ) : ?>

@@ -13,7 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$member_id = isset( $data['member_id'] ) ? absint( $data['member_id'] ) : 0;
+// Support both $modal_data and $data for flexibility
+if ( isset( $modal_data['member_id'] ) ) {
+	$member_id = absint( $modal_data['member_id'] );
+} elseif ( isset( $data['member_id'] ) ) {
+	$member_id = absint( $data['member_id'] );
+} else {
+	$member_id = 0;
+}
 $today     = current_time( 'Y-m-d' );
 ?>
 
