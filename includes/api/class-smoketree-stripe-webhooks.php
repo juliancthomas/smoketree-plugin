@@ -662,6 +662,9 @@ class Smoketree_Stripe_Webhooks {
 		$payment_type = $metadata['payment_type'] ?? '';
 
 		switch ( $payment_type ) {
+			case 'balance_payment':
+				return self::handle_balance_payment_success( $session, $event_id );
+
 			case 'guest_pass':
 				return self::handle_guest_pass_purchase( $session, $event_id );
 
@@ -671,6 +674,175 @@ class Smoketree_Stripe_Webhooks {
 			default:
 				error_log( 'Unknown payment type in checkout session: ' . $payment_type );
 				return true;
+		}
+	}
+
+	/**
+	 * Handle balance payment webhook.
+	 *
+	 * @since    1.1.0
+	 * @param    array    $session    Stripe checkout session
+	 * @param    string   $event_id   Stripe event ID
+	 * @return   bool                 True on success, false on failure
+	 */
+	private static function handle_balance_payment_success( array $session, string $event_id = '' ): bool {
+		$session_id = $session['id'] ?? '';
+		$metadata   = $session['metadata'] ?? array();
+		$member_id  = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
+
+		if ( empty( $session_id ) || $member_id <= 0 ) {
+			error_log( 'Invalid balance payment webhook payload.' );
+			return false;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
+
+		$payment_intent_id = sanitize_text_field( (string) ( $session['payment_intent'] ?? '' ) );
+		$amount_paid       = (float) ( ( $session['amount_total'] ?? 0 ) / 100 );
+
+		if ( $amount_paid <= 0 ) {
+			error_log( 'Balance payment webhook amount is zero or invalid for session: ' . $session_id );
+			return false;
+		}
+
+		// Idempotency: ensure this payment intent was not recorded already.
+		if ( ! empty( $payment_intent_id ) ) {
+			$existing_txn = STSRC_Transaction_DB::get_transaction_by_payment_intent( $payment_intent_id );
+			if ( ! empty( $existing_txn ) ) {
+				return true;
+			}
+		}
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			error_log( 'Balance payment webhook member not found: ' . $member_id );
+			return false;
+		}
+
+		$payment_method = self::detect_payment_method_from_session( $session );
+
+		$transaction = STSRC_Balance_Service::record_stripe_payment(
+			$member_id,
+			$amount_paid,
+			$payment_method,
+			array(
+				'payment_intent_id' => $payment_intent_id,
+				'charge_id'         => sanitize_text_field( (string) ( $session['payment_intent'] ?? '' ) ),
+				'session_id'        => $session_id,
+			),
+			__( 'Balance payment via Stripe checkout', 'smoketree-plugin' )
+		);
+
+		if ( false === $transaction ) {
+			error_log( 'Failed to record balance payment transaction for member: ' . $member_id );
+			return false;
+		}
+
+		$updated_member = STSRC_Member_DB::get_member( $member_id );
+		$new_balance    = (float) ( $updated_member['balance_owed'] ?? 0 );
+
+		self::send_balance_payment_notifications( $updated_member ?: $member, $amount_paid, $new_balance );
+
+		// Notify internal listeners for future email/template integrations.
+		do_action(
+			'stsrc_balance_payment_succeeded',
+			$member_id,
+			$transaction['transaction_id'] ?? 0,
+			$amount_paid,
+			$new_balance,
+			$event_id
+		);
+
+		return true;
+	}
+
+	/**
+	 * Detect likely payment method from checkout session payload.
+	 *
+	 * @since    1.1.0
+	 * @param    array $session Stripe session data.
+	 * @return   string
+	 */
+	private static function detect_payment_method_from_session( array $session ): string {
+		$method_types = $session['payment_method_types'] ?? array();
+		if ( is_array( $method_types ) ) {
+			if ( in_array( 'us_bank_account', $method_types, true ) && 1 === count( $method_types ) ) {
+				return 'us_bank_account';
+			}
+			if ( in_array( 'card', $method_types, true ) ) {
+				return 'card';
+			}
+		}
+
+		return 'card';
+	}
+
+	/**
+	 * Send basic balance payment notifications to member and admins.
+	 *
+	 * @since    1.1.0
+	 * @param    array $member       Member record.
+	 * @param    float $amount_paid  Amount paid.
+	 * @param    float $new_balance  New balance after payment.
+	 * @return   void
+	 */
+	private static function send_balance_payment_notifications( array $member, float $amount_paid, float $new_balance ): void {
+		$member_email = sanitize_email( $member['email'] ?? '' );
+		$member_name  = trim( ( $member['first_name'] ?? '' ) . ' ' . ( $member['last_name'] ?? '' ) );
+
+		if ( ! empty( $member_email ) ) {
+			$subject = __( 'Balance Payment Received', 'smoketree-plugin' );
+			$message = sprintf(
+				/* translators: 1: member name, 2: amount paid, 3: new balance */
+				__( 'Hi %1$s, we received your payment of $%2$s. Your new balance is $%3$s.', 'smoketree-plugin' ),
+				$member_name,
+				number_format( $amount_paid, 2 ),
+				number_format( $new_balance, 2 )
+			);
+			wp_mail( $member_email, $subject, $message );
+		}
+
+		$admin_emails = array_filter(
+			array(
+				get_option( 'admin_email' ),
+				get_option( 'stsrc_secretary_email', '' ),
+			)
+		);
+
+		$admin_users = get_users( array( 'role' => 'administrator' ) );
+		foreach ( $admin_users as $admin_user ) {
+			if ( ! empty( $admin_user->user_email ) && ! in_array( $admin_user->user_email, $admin_emails, true ) ) {
+				$admin_emails[] = $admin_user->user_email;
+			}
+		}
+
+		$admin_subject = __( 'Member Balance Payment Processed', 'smoketree-plugin' );
+		$admin_message = sprintf(
+			/* translators: 1: member name, 2: amount paid, 3: new balance */
+			__( 'Member %1$s paid $%2$s. New balance: $%3$s.', 'smoketree-plugin' ),
+			$member_name,
+			number_format( $amount_paid, 2 ),
+			number_format( $new_balance, 2 )
+		);
+
+		foreach ( $admin_emails as $admin_email ) {
+			wp_mail( $admin_email, $admin_subject, $admin_message );
+		}
+
+		if ( $new_balance < 0 ) {
+			$overpayment_subject = __( 'Overpayment Alert', 'smoketree-plugin' );
+			$overpayment_message = sprintf(
+				/* translators: 1: member name, 2: overpayment amount */
+				__( 'Member %1$s has overpaid by $%2$s. Please review for potential refund.', 'smoketree-plugin' ),
+				$member_name,
+				number_format( abs( $new_balance ), 2 )
+			);
+
+			foreach ( $admin_emails as $admin_email ) {
+				wp_mail( $admin_email, $overpayment_subject, $overpayment_message );
+			}
 		}
 	}
 

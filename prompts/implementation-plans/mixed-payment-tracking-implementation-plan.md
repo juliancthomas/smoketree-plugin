@@ -239,14 +239,15 @@
 
 ## Section 8: Stripe Webhook Integration
 
-- [ ] Step 8.1: Webhook Handler - Balance Payment Success
+- [x] Step 8.1: Webhook Handler - Balance Payment Success
   - **Task**: Create or enhance Stripe webhook handler to process successful balance payments. Handle checkout.session.completed events where metadata.payment_type === 'balance_payment'. Extract payment details, create transaction record, update balance and final_payment_method, trigger status change if balance reaches zero, send success emails to member and admin.
   - **Files**: Maximum 2 files
-    - `includes/webhooks/class-stsrc-stripe-webhooks.php`: Create new webhook handler class or enhance existing one with method `handle_balance_payment_success($event)` that verifies signature, extracts metadata and payment details from event, checks idempotency via existing stripe_payment_intent_id, calls Balance Service record_stripe_payment method, checks if balance <= 0 and triggers status change, queues member success email and admin notification email, checks for overpayment and queues admin overpayment alert if balance < 0
-    - `includes/class-stsrc-webhooks.php`: Register webhook endpoint and route checkout.session.completed events with balance_payment metadata to handler
+    - `includes/api/class-smoketree-stripe-webhooks.php`: Enhanced existing webhook handler with `handle_balance_payment_success(...)`, idempotency checks via payment intent, balance transaction recording through `STSRC_Balance_Service`, status update behavior, and member/admin/overpayment notifications
+    - `includes/class-smoketree-plugin.php`: Existing webhook route registration already in place and reused
   - **Step Dependencies**: Step 2.3 (needs Balance Service)
   - **User Instructions**: Use Stripe CLI to send test webhook: `stripe trigger checkout.session.completed`. Verify transaction is created, balance updates, and emails are sent.
   - **Git message**: `feat(webhooks): handle successful balance payments from stripe`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 8.2: Webhook Handler - Payment Failure
   - **Task**: Handle payment_intent.payment_failed webhook events for balance payments. Detect failed balance payments via metadata, log the failure, send failure notification email to member and admin notification. Do not create transaction record for failed payments.
