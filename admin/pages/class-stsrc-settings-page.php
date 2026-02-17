@@ -36,6 +36,8 @@ class STSRC_Settings_Page {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'smoketree-plugin' ) );
 		}
 
+		$balance_tools_result = $this->handle_balance_integrity_tools();
+
 		// Check if ACF is available
 		$acf_available = function_exists( 'acf_get_field_groups' );
 
@@ -43,12 +45,70 @@ class STSRC_Settings_Page {
 		$settings = $this->get_settings();
 
 		$data = array(
-			'settings'      => $settings,
-			'acf_available' => $acf_available,
+			'settings'             => $settings,
+			'acf_available'        => $acf_available,
+			'balance_tools_result' => $balance_tools_result,
 		);
 
 		// Include settings template
 		include plugin_dir_path( dirname( __FILE__ ) ) . 'partials/settings-form.php';
+	}
+
+	/**
+	 * Handle verify/recalculate balance integrity tool actions.
+	 *
+	 * @since    1.1.0
+	 * @return   array|null Action result report, or null when no action was submitted.
+	 */
+	private function handle_balance_integrity_tools(): ?array {
+		$post_data = wp_unslash( $_POST );
+		$action    = sanitize_text_field( $post_data['stsrc_balance_tools_action'] ?? '' );
+
+		if ( empty( $action ) ) {
+			return null;
+		}
+
+		if ( ! in_array( $action, array( 'verify', 'recalculate' ), true ) ) {
+			return array(
+				'type'    => 'error',
+				'message' => __( 'Invalid balance tool action.', 'smoketree-plugin' ),
+			);
+		}
+
+		$nonce = sanitize_text_field( $post_data['stsrc_balance_tools_nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_balance_tools' ) ) {
+			return array(
+				'type'    => 'error',
+				'message' => __( 'Security check failed. Please refresh and try again.', 'smoketree-plugin' ),
+			);
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-member-db.php';
+
+		$apply_fixes = ( 'recalculate' === $action );
+		$report      = STSRC_Member_DB::recalculate_all_balances( $apply_fixes );
+
+		$message = $apply_fixes
+			? sprintf(
+				/* translators: 1: checked count, 2: discrepancy count, 3: fixed count */
+				__( 'Recalculation complete. Checked %1$d members, found %2$d discrepancies, fixed %3$d balances.', 'smoketree-plugin' ),
+				(int) ( $report['checked'] ?? 0 ),
+				(int) ( $report['discrepancies_count'] ?? 0 ),
+				(int) ( $report['fixed_count'] ?? 0 )
+			)
+			: sprintf(
+				/* translators: 1: checked count, 2: discrepancy count */
+				__( 'Verification complete. Checked %1$d members and found %2$d discrepancies.', 'smoketree-plugin' ),
+				(int) ( $report['checked'] ?? 0 ),
+				(int) ( $report['discrepancies_count'] ?? 0 )
+			);
+
+		return array(
+			'type'    => 'success',
+			'action'  => $action,
+			'message' => $message,
+			'report'  => $report,
+		);
 	}
 
 	/**

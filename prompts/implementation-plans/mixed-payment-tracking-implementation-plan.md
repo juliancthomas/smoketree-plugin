@@ -327,7 +327,7 @@
 
 ## Section 11: Data Integrity and Admin Tools
 
-- [ ] Step 11.1: Balance Recalculation Tool
+- [x] Step 11.1: Balance Recalculation Tool
   - **Task**: Create admin tool to verify and recalculate member balances from transaction ledger. Add "Recalculate Balances" button in plugin settings or tools page that compares stored balance_owed with calculated sum from transactions, reports discrepancies, and offers to fix them.
   - **Files**: Maximum 3 files
     - `admin/class-stsrc-admin-tools.php`: Create new admin tools page or section with "Verify Balance Integrity" tool that uses Member DB calculate_member_balance for all members or specific member, displays report of discrepancies in table format, provides "Recalculate All" button to fix mismatches
@@ -336,6 +336,7 @@
   - **Step Dependencies**: Step 2.2 (needs Member DB calculate method)
   - **User Instructions**: Navigate to plugin tools page, click "Verify Balance Integrity" and verify tool runs and reports status
   - **Git message**: `feat(admin): add balance integrity verification tool`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 11.2: Admin Activity Logging
   - **Task**: Enhance admin actions to log important balance-related activities for audit trail. Log adjustments, manual payments, status overrides, and bulk operations with admin user, timestamp, and action details.

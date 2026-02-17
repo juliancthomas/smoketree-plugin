@@ -436,6 +436,81 @@ class STSRC_Member_DB {
 	}
 
 	/**
+	 * Verify and optionally recalculate all member balances from the transaction ledger.
+	 *
+	 * Compares stored `balance_owed` values against recalculated values from transactions.
+	 * When `$apply_fixes` is true, mismatches are updated in the members table.
+	 *
+	 * @since    1.1.0
+	 * @param    bool $apply_fixes Whether to write corrected balances back to the database.
+	 * @return   array             Report with totals and discrepancy details.
+	 */
+	public static function recalculate_all_balances( bool $apply_fixes = true ): array {
+		global $wpdb;
+
+		$members_table = $wpdb->prefix . 'stsrc_members';
+		$members       = $wpdb->get_results(
+			"SELECT member_id, first_name, last_name, email, status, balance_owed
+			FROM {$members_table}
+			ORDER BY member_id ASC",
+			ARRAY_A
+		);
+
+		$report = array(
+			'checked'             => 0,
+			'discrepancies_count' => 0,
+			'fixed_count'         => 0,
+			'applied_fixes'       => $apply_fixes,
+			'discrepancies'       => array(),
+		);
+
+		if ( empty( $members ) ) {
+			return $report;
+		}
+
+		foreach ( $members as $member ) {
+			$member_id         = (int) $member['member_id'];
+			$stored_balance    = (float) ( $member['balance_owed'] ?? 0.00 );
+			$calculated_balance = self::calculate_member_balance( $member_id );
+			$report['checked']++;
+
+			if ( null === $calculated_balance ) {
+				continue;
+			}
+
+			$difference = round( $calculated_balance - $stored_balance, 2 );
+			if ( abs( $difference ) < 0.01 ) {
+				continue;
+			}
+
+			$entry = array(
+				'member_id'          => $member_id,
+				'member_name'        => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+				'email'              => (string) ( $member['email'] ?? '' ),
+				'status'             => (string) ( $member['status'] ?? '' ),
+				'stored_balance'     => $stored_balance,
+				'calculated_balance' => $calculated_balance,
+				'difference'         => $difference,
+				'fixed'              => false,
+			);
+
+			$report['discrepancies_count']++;
+
+			if ( $apply_fixes ) {
+				$updated = self::update_balance( $member_id, $calculated_balance );
+				if ( $updated ) {
+					$entry['fixed'] = true;
+					$report['fixed_count']++;
+				}
+			}
+
+			$report['discrepancies'][] = $entry;
+		}
+
+		return $report;
+	}
+
+	/**
 	 * Backfill balance fields for existing members.
 	 *
 	 * For existing members:

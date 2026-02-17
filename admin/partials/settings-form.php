@@ -311,3 +311,73 @@ jQuery(document).ready(function($) {
 </script>
 <?php endif; ?>
 
+<?php $balance_tools_result = $data['balance_tools_result'] ?? null; ?>
+
+<div class="stsrc-form-section" style="margin-top:24px;">
+	<h2><?php echo esc_html__( 'Balance Integrity Tools', 'smoketree-plugin' ); ?></h2>
+	<p class="description">
+		<?php echo esc_html__( 'Verify member balances against the transaction ledger and optionally fix mismatches.', 'smoketree-plugin' ); ?>
+	</p>
+
+	<?php if ( is_array( $balance_tools_result ) && ! empty( $balance_tools_result['message'] ) ) : ?>
+		<div class="notice <?php echo ( 'error' === ( $balance_tools_result['type'] ?? '' ) ) ? 'notice-error' : 'notice-success'; ?> inline">
+			<p><?php echo esc_html( $balance_tools_result['message'] ); ?></p>
+		</div>
+	<?php endif; ?>
+
+	<form method="post">
+		<input type="hidden" name="stsrc_balance_tools_nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_balance_tools' ) ); ?>">
+		<p>
+			<button type="submit" class="button" name="stsrc_balance_tools_action" value="verify">
+				<?php echo esc_html__( 'Verify Balance Integrity', 'smoketree-plugin' ); ?>
+			</button>
+			<button type="submit" class="button button-primary" name="stsrc_balance_tools_action" value="recalculate" style="margin-left:8px;">
+				<?php echo esc_html__( 'Recalculate All Balances', 'smoketree-plugin' ); ?>
+			</button>
+		</p>
+	</form>
+
+	<?php if ( is_array( $balance_tools_result ) && ! empty( $balance_tools_result['report'] ) ) : ?>
+		<?php $report = $balance_tools_result['report']; ?>
+		<p>
+			<strong><?php echo esc_html__( 'Checked:', 'smoketree-plugin' ); ?></strong>
+			<?php echo esc_html( (string) (int) ( $report['checked'] ?? 0 ) ); ?>
+			&nbsp;|&nbsp;
+			<strong><?php echo esc_html__( 'Discrepancies:', 'smoketree-plugin' ); ?></strong>
+			<?php echo esc_html( (string) (int) ( $report['discrepancies_count'] ?? 0 ) ); ?>
+			&nbsp;|&nbsp;
+			<strong><?php echo esc_html__( 'Fixed:', 'smoketree-plugin' ); ?></strong>
+			<?php echo esc_html( (string) (int) ( $report['fixed_count'] ?? 0 ) ); ?>
+		</p>
+
+		<?php if ( ! empty( $report['discrepancies'] ) && is_array( $report['discrepancies'] ) ) : ?>
+			<table class="widefat striped" style="max-width:100%; margin-top:12px;">
+				<thead>
+					<tr>
+						<th><?php echo esc_html__( 'Member ID', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Name', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Email', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Stored Balance', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Calculated Balance', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Difference', 'smoketree-plugin' ); ?></th>
+						<th><?php echo esc_html__( 'Fixed', 'smoketree-plugin' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $report['discrepancies'] as $row ) : ?>
+						<tr>
+							<td><?php echo esc_html( (string) (int) ( $row['member_id'] ?? 0 ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['member_name'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['email'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( '$' . number_format( (float) ( $row['stored_balance'] ?? 0 ), 2 ) ); ?></td>
+							<td><?php echo esc_html( '$' . number_format( (float) ( $row['calculated_balance'] ?? 0 ), 2 ) ); ?></td>
+							<td><?php echo esc_html( '$' . number_format( (float) ( $row['difference'] ?? 0 ), 2 ) ); ?></td>
+							<td><?php echo esc_html( ! empty( $row['fixed'] ) ? __( 'Yes', 'smoketree-plugin' ) : __( 'No', 'smoketree-plugin' ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+	<?php endif; ?>
+</div>
+
