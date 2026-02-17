@@ -22,8 +22,10 @@
 		const $preview = $('#stsrc-balance-after-preview');
 		const $error = $('#stsrc-balance-payment-error');
 		const $submit = $('#stsrc-continue-to-payment');
+		const defaultSubmitText = $submit.text();
 		const minimumValue = Number((window.stsrcBalancePayment && window.stsrcBalancePayment.minimumPayment) || $('#stsrc-minimum-balance-payment-value').val() || 10);
 		const currentBalance = Number($('#stsrc-current-balance-value').val() || 0);
+		const ajaxUrl = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) || window.ajaxurl || '';
 
 		function openModal() {
 			$modal.removeClass('stsrc-hidden').attr('aria-hidden', 'false');
@@ -34,6 +36,7 @@
 		function closeModal() {
 			$modal.addClass('stsrc-hidden').attr('aria-hidden', 'true');
 			$error.addClass('stsrc-hidden').text('');
+			$submit.prop('disabled', false).text(defaultSubmitText);
 		}
 
 		function validateAndPreview() {
@@ -79,9 +82,35 @@
 			if (!validateAndPreview()) {
 				return;
 			}
+			$submit.prop('disabled', true).text('Redirecting...');
+			$error.addClass('stsrc-hidden').text('');
 
-			// AJAX checkout redirect integration is implemented in Step 6.5.
-			$error.removeClass('stsrc-hidden').text('Ready to continue. Payment session integration is in the next step.');
+			$.ajax({
+				url: ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'stsrc_create_balance_payment',
+					member_id: $('#stsrc-pay-balance-form input[name="member_id"]').val(),
+					amount: $amountInput.val(),
+					nonce: $('#stsrc-pay-balance-form input[name="nonce"]').val()
+				},
+				success: function(response) {
+					if (response && response.success && response.data && response.data.session_url) {
+						window.location.href = response.data.session_url;
+						return;
+					}
+
+					const message = response && response.data && response.data.message
+						? response.data.message
+						: 'Unable to start payment. Please try again.';
+					$error.removeClass('stsrc-hidden').text(message);
+					$submit.prop('disabled', false).text(defaultSubmitText);
+				},
+				error: function() {
+					$error.removeClass('stsrc-hidden').text('A network error occurred. Please try again.');
+					$submit.prop('disabled', false).text(defaultSubmitText);
+				}
+			});
 		});
 	});
 })(jQuery);

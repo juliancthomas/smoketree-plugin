@@ -106,11 +106,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 			</div>
 		</div>
 
-		<?php if ( 'success' === $payment_status ) : ?>
-			<div class="stsrc-notice success">
-				<p><?php echo esc_html__( 'Payment processed successfully!', 'smoketree-plugin' ); ?></p>
-			</div>
-		<?php endif; ?>
+		<?php STSRC_Member_Portal::render_payment_status_notice( $payment_status ); ?>
 
 		<?php if ( 'success' === $extra_member_state ) : ?>
 			<div class="stsrc-notice success">

@@ -215,7 +215,7 @@
   - **Git message**: `feat(ajax): add balance payment session creation handler`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 6.5: Balance Payment - Stripe Redirect Integration
+- [x] Step 6.5: Balance Payment - Stripe Redirect Integration
   - **Task**: Connect pay balance modal submission to AJAX handler. On successful session creation, redirect member to Stripe checkout page. Handle errors gracefully with user-friendly messages. Configure success and cancel return URLs.
   - **Files**: Maximum 2 files
     - `public/js/balance-payment.js`: Add AJAX form submission for pay balance, send amount and member_id to endpoint, handle loading state during request, on success redirect to Stripe session URL, on error display message in modal, configure success URL as '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' and cancel URL as '/member-portal?payment=cancelled'
@@ -223,6 +223,7 @@
   - **Step Dependencies**: Steps 6.3, 6.4 (needs modal and AJAX handler)
   - **User Instructions**: Test full payment flow - submit payment, verify redirect to Stripe, complete test payment, verify redirect back to portal with success message
   - **Git message**: `feat(portal): connect balance payment to Stripe checkout`
+  - **Status**: ✅ COMPLETED
 
 ## Section 7: Registration Flow Enhancement
 

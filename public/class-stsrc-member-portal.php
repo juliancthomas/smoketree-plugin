@@ -59,4 +59,23 @@ class STSRC_Member_Portal {
 
 		include plugin_dir_path( __FILE__ ) . 'partials/member-balance-card.php';
 	}
+
+	/**
+	 * Render payment status notice from member portal query params.
+	 *
+	 * @param string $payment_status Payment status query value.
+	 * @return void
+	 */
+	public static function render_payment_status_notice( string $payment_status ): void {
+		$payment_status = sanitize_text_field( $payment_status );
+
+		if ( 'success' === $payment_status ) {
+			echo '<div class="stsrc-notice success"><p>' . esc_html__( 'Payment processed successfully!', 'smoketree-plugin' ) . '</p></div>';
+			return;
+		}
+
+		if ( 'cancelled' === $payment_status ) {
+			echo '<div class="stsrc-notice warning"><p>' . esc_html__( 'Payment was cancelled. You can try again whenever you are ready.', 'smoketree-plugin' ) . '</p></div>';
+		}
+	}
 }
