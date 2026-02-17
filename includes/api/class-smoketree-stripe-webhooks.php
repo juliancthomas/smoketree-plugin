@@ -666,6 +666,7 @@ class Smoketree_Stripe_Webhooks {
 	 */
 	private static function handle_balance_payment_failure( array $payment_intent, array $event ): bool {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 
 		$payment_intent_id = sanitize_text_field( (string) ( $payment_intent['id'] ?? '' ) );
 		$metadata          = $payment_intent['metadata'] ?? array();
@@ -698,19 +699,8 @@ class Smoketree_Stripe_Webhooks {
 		$current_balance = (float) ( $member['balance_owed'] ?? 0 );
 
 		if ( ! empty( $member_email ) ) {
-			$member_subject = __( 'Balance Payment Failed', 'smoketree-plugin' );
-			$member_message = sprintf(
-				/* translators: 1: member name, 2: attempted amount, 3: reason, 4: current balance */
-				__(
-					'Hi %1$s, we could not process your balance payment of $%2$s. Reason: %3$s. Your current outstanding balance is $%4$s. Please return to the member portal to try again.',
-					'smoketree-plugin'
-				),
-				$member_name,
-				number_format( $attempted_amount, 2 ),
-				$reason,
-				number_format( $current_balance, 2 )
-			);
-			wp_mail( $member_email, $member_subject, $member_message );
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_balance_payment_failed_email( $member_id, $attempted_amount, $reason );
 		}
 
 		$admin_emails = array_filter(
@@ -849,8 +839,6 @@ class Smoketree_Stripe_Webhooks {
 		$updated_member = STSRC_Member_DB::get_member( $member_id );
 		$new_balance    = (float) ( $updated_member['balance_owed'] ?? 0 );
 
-		self::send_balance_payment_notifications( $updated_member ?: $member, $amount_paid, $new_balance );
-
 		// Notify internal listeners for future email/template integrations.
 		do_action(
 			'stsrc_balance_payment_succeeded',
@@ -883,73 +871,6 @@ class Smoketree_Stripe_Webhooks {
 		}
 
 		return 'card';
-	}
-
-	/**
-	 * Send basic balance payment notifications to member and admins.
-	 *
-	 * @since    1.1.0
-	 * @param    array $member       Member record.
-	 * @param    float $amount_paid  Amount paid.
-	 * @param    float $new_balance  New balance after payment.
-	 * @return   void
-	 */
-	private static function send_balance_payment_notifications( array $member, float $amount_paid, float $new_balance ): void {
-		$member_email = sanitize_email( $member['email'] ?? '' );
-		$member_name  = trim( ( $member['first_name'] ?? '' ) . ' ' . ( $member['last_name'] ?? '' ) );
-
-		if ( ! empty( $member_email ) ) {
-			$subject = __( 'Balance Payment Received', 'smoketree-plugin' );
-			$message = sprintf(
-				/* translators: 1: member name, 2: amount paid, 3: new balance */
-				__( 'Hi %1$s, we received your payment of $%2$s. Your new balance is $%3$s.', 'smoketree-plugin' ),
-				$member_name,
-				number_format( $amount_paid, 2 ),
-				number_format( $new_balance, 2 )
-			);
-			wp_mail( $member_email, $subject, $message );
-		}
-
-		$admin_emails = array_filter(
-			array(
-				get_option( 'admin_email' ),
-				get_option( 'stsrc_secretary_email', '' ),
-			)
-		);
-
-		$admin_users = get_users( array( 'role' => 'administrator' ) );
-		foreach ( $admin_users as $admin_user ) {
-			if ( ! empty( $admin_user->user_email ) && ! in_array( $admin_user->user_email, $admin_emails, true ) ) {
-				$admin_emails[] = $admin_user->user_email;
-			}
-		}
-
-		$admin_subject = __( 'Member Balance Payment Processed', 'smoketree-plugin' );
-		$admin_message = sprintf(
-			/* translators: 1: member name, 2: amount paid, 3: new balance */
-			__( 'Member %1$s paid $%2$s. New balance: $%3$s.', 'smoketree-plugin' ),
-			$member_name,
-			number_format( $amount_paid, 2 ),
-			number_format( $new_balance, 2 )
-		);
-
-		foreach ( $admin_emails as $admin_email ) {
-			wp_mail( $admin_email, $admin_subject, $admin_message );
-		}
-
-		if ( $new_balance < 0 ) {
-			$overpayment_subject = __( 'Overpayment Alert', 'smoketree-plugin' );
-			$overpayment_message = sprintf(
-				/* translators: 1: member name, 2: overpayment amount */
-				__( 'Member %1$s has overpaid by $%2$s. Please review for potential refund.', 'smoketree-plugin' ),
-				$member_name,
-				number_format( abs( $new_balance ), 2 )
-			);
-
-			foreach ( $admin_emails as $admin_email ) {
-				wp_mail( $admin_email, $overpayment_subject, $overpayment_message );
-			}
-		}
 	}
 
 	/**

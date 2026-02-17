@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load required classes
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 
 /**
@@ -195,6 +196,13 @@ class STSRC_Balance_Ajax {
 		if ( false === $transaction ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to record payment. Please try again.', 'smoketree-plugin' ) ) );
 			return;
+		}
+
+		// Balance service sends confirmation email; fallback here if send failed.
+		$transaction_id = isset( $transaction['transaction_id'] ) ? absint( $transaction['transaction_id'] ) : 0;
+		if ( $transaction_id > 0 && empty( $transaction['manual_payment_email_sent'] ) ) {
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_manual_payment_confirmation_email( $member_id, $transaction_id );
 		}
 
 		$member = STSRC_Member_DB::get_member( $member_id );

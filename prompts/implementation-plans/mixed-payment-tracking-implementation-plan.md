@@ -292,7 +292,7 @@
   - **Git message**: `feat(emails): add admin balance payment notifications`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 9.4: Manual Payment Confirmation Email (Member)
+- [x] Step 9.4: Manual Payment Confirmation Email (Member)
   - **Task**: Create email template sent to member when admin records a manual payment on their behalf. Confirm payment received, show payment method and amount, date received, new balance (or "Paid in Full"), and activation message if applicable.
   - **Files**: Maximum 2 files
     - `emails/manual-payment-received.php`: Create template confirming manual payment receipt, display payment method (check, Zelle, cash) with check number if applicable, show amount and date received, display new balance or "Paid in Full" badge, include activation message if balance = 0
@@ -300,8 +300,9 @@
   - **Step Dependencies**: None
   - **User Instructions**: Record a manual payment via admin and verify member receives confirmation email
   - **Git message**: `feat(emails): add manual payment confirmation template`
+  - **Status**: ✅ COMPLETED
 
-- [ ] Step 9.5: Integrate Email Sending into Workflow
+- [x] Step 9.5: Integrate Email Sending into Workflow
   - **Task**: Hook email sending into appropriate workflow points: Balance Service methods, webhook handlers, and AJAX handlers. Ensure emails are triggered after successful transaction creation and balance updates.
   - **Files**: Maximum 3 files
     - `includes/services/class-stsrc-balance-service.php`: Add email trigger calls in record_manual_payment (send manual payment confirmation), record_stripe_payment (send success and admin notification), and auto-activation logic
@@ -310,6 +311,7 @@
   - **Step Dependencies**: Steps 9.1-9.4 (email templates must exist)
   - **User Instructions**: Test all payment flows and verify emails are sent at correct times with accurate data
   - **Git message**: `feat(emails): integrate email notifications into payment workflows`
+  - **Status**: ✅ COMPLETED
 
 ## Section 10: Status Management and Auto-Activation
 

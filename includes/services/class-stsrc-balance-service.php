@@ -17,6 +17,7 @@
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 
 /**
  * Balance Service Class.
@@ -100,6 +101,11 @@ class STSRC_Balance_Service {
 
 		// Return transaction data
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( $transaction ) {
+			$email_service = new STSRC_Email_Service();
+			$email_sent    = $email_service->send_manual_payment_confirmation_email( $member_id, $transaction_id );
+			$transaction['manual_payment_email_sent'] = $email_sent;
+		}
 
 		return $transaction;
 	}
@@ -192,6 +198,16 @@ class STSRC_Balance_Service {
 
 		// Return transaction data
 		$transaction = STSRC_Transaction_DB::get_transaction( $transaction_id );
+		if ( $transaction ) {
+			$email_service = new STSRC_Email_Service();
+
+			$email_service->send_balance_payment_success_email( $member_id, $transaction_id );
+			$email_service->send_admin_balance_payment_notification( $member_id, $transaction_id );
+
+			if ( $new_balance < 0 ) {
+				$email_service->send_admin_overpayment_alert( $member_id, $transaction_id );
+			}
+		}
 
 		return $transaction;
 	}
