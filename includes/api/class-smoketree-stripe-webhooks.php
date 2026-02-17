@@ -528,6 +528,13 @@ class Smoketree_Stripe_Webhooks {
 		$payment_intent_id = $payment_intent['id'] ?? '';
 		$error_message = $payment_intent['last_payment_error']['message'] ?? 'Payment failed';
 		$error_code = $payment_intent['last_payment_error']['code'] ?? '';
+		$metadata = $payment_intent['metadata'] ?? array();
+		$payment_type_from_metadata = $metadata['payment_type'] ?? '';
+
+		// Dedicated flow for balance payment failures.
+		if ( 'balance_payment' === $payment_type_from_metadata ) {
+			return self::handle_balance_payment_failure( $payment_intent, $event );
+		}
 
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-payment-log-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
@@ -645,6 +652,105 @@ class Smoketree_Stripe_Webhooks {
 			// Payment log not found - log error but don't fail
 			error_log( 'Payment failed but no payment log found: ' . $payment_intent_id . ' - ' . $error_message );
 		}
+
+		return true;
+	}
+
+	/**
+	 * Handle balance payment failure notifications.
+	 *
+	 * @since    1.1.0
+	 * @param    array $payment_intent Stripe payment intent object payload.
+	 * @param    array $event          Stripe event data.
+	 * @return   bool
+	 */
+	private static function handle_balance_payment_failure( array $payment_intent, array $event ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		$payment_intent_id = sanitize_text_field( (string) ( $payment_intent['id'] ?? '' ) );
+		$metadata          = $payment_intent['metadata'] ?? array();
+		$member_id         = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
+		$attempted_amount  = isset( $metadata['payment_amount'] )
+			? (float) $metadata['payment_amount']
+			: (float) ( ( $payment_intent['amount'] ?? 0 ) / 100 );
+		$reason            = $payment_intent['last_payment_error']['message'] ?? __( 'Payment failed', 'smoketree-plugin' );
+
+		error_log(
+			sprintf(
+				'Balance payment failed. Intent: %s | Member: %d | Reason: %s',
+				$payment_intent_id,
+				$member_id,
+				$reason
+			)
+		);
+
+		if ( $member_id <= 0 ) {
+			return true;
+		}
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			return true;
+		}
+
+		$member_email = sanitize_email( $member['email'] ?? '' );
+		$member_name  = trim( ( $member['first_name'] ?? '' ) . ' ' . ( $member['last_name'] ?? '' ) );
+		$current_balance = (float) ( $member['balance_owed'] ?? 0 );
+
+		if ( ! empty( $member_email ) ) {
+			$member_subject = __( 'Balance Payment Failed', 'smoketree-plugin' );
+			$member_message = sprintf(
+				/* translators: 1: member name, 2: attempted amount, 3: reason, 4: current balance */
+				__(
+					'Hi %1$s, we could not process your balance payment of $%2$s. Reason: %3$s. Your current outstanding balance is $%4$s. Please return to the member portal to try again.',
+					'smoketree-plugin'
+				),
+				$member_name,
+				number_format( $attempted_amount, 2 ),
+				$reason,
+				number_format( $current_balance, 2 )
+			);
+			wp_mail( $member_email, $member_subject, $member_message );
+		}
+
+		$admin_emails = array_filter(
+			array(
+				get_option( 'admin_email' ),
+				get_option( 'stsrc_secretary_email', '' ),
+			)
+		);
+		$admin_users = get_users( array( 'role' => 'administrator' ) );
+		foreach ( $admin_users as $admin_user ) {
+			if ( ! empty( $admin_user->user_email ) && ! in_array( $admin_user->user_email, $admin_emails, true ) ) {
+				$admin_emails[] = $admin_user->user_email;
+			}
+		}
+
+		$admin_subject = __( 'Member Balance Payment Failed', 'smoketree-plugin' );
+		$admin_message = sprintf(
+			/* translators: 1: member name, 2: member email, 3: attempted amount, 4: reason */
+			__(
+				'Balance payment failed for %1$s (%2$s). Attempted amount: $%3$s. Reason: %4$s.',
+				'smoketree-plugin'
+			),
+			$member_name,
+			$member_email,
+			number_format( $attempted_amount, 2 ),
+			$reason
+		);
+
+		foreach ( $admin_emails as $admin_email ) {
+			wp_mail( $admin_email, $admin_subject, $admin_message );
+		}
+
+		do_action(
+			'stsrc_balance_payment_failed',
+			$member_id,
+			$payment_intent_id,
+			$attempted_amount,
+			$reason,
+			$event['id'] ?? ''
+		);
 
 		return true;
 	}

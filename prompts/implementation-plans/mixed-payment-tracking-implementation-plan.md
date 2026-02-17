@@ -249,14 +249,15 @@
   - **Git message**: `feat(webhooks): handle successful balance payments from stripe`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 8.2: Webhook Handler - Payment Failure
+- [x] Step 8.2: Webhook Handler - Payment Failure
   - **Task**: Handle payment_intent.payment_failed webhook events for balance payments. Detect failed balance payments via metadata, log the failure, send failure notification email to member and admin notification. Do not create transaction record for failed payments.
   - **Files**: Maximum 2 files
-    - `includes/webhooks/class-stsrc-stripe-webhooks.php`: Add method `handle_balance_payment_failure($event)` that checks metadata for payment_type === 'balance_payment', logs failure details, queues member failure email with retry instructions and admin notification email
-    - `includes/class-stsrc-webhooks.php`: Route payment_intent.payment_failed events to handler
+    - `includes/api/class-smoketree-stripe-webhooks.php`: Added `handle_balance_payment_failure(...)`, metadata-based routing from `payment_intent.payment_failed`, failure logging, member/admin notifications, and no transaction creation on failure
+    - `includes/class-smoketree-plugin.php`: Existing webhook route registration reused (no new router required)
   - **Step Dependencies**: Step 8.1 (uses same webhook infrastructure)
   - **User Instructions**: Test with declined test card. Verify member receives failure email with retry link and no transaction is created.
   - **Git message**: `feat(webhooks): handle failed balance payments and notifications`
+  - **Status**: ✅ COMPLETED
 
 ## Section 9: Email Templates
 
