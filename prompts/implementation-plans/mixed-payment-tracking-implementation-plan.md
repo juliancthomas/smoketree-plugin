@@ -227,14 +227,15 @@
 
 ## Section 7: Registration Flow Enhancement
 
-- [ ] Step 7.1: Update Registration for Non-Stripe Payments
+- [x] Step 7.1: Update Registration for Non-Stripe Payments
   - **Task**: Modify the member registration flow to handle non-Stripe payment methods (check, Zelle, pay_later). When a member registers with these methods, set original_membership_price and balance_owed to membership type price, create initial transaction record, and set status to 'pending'.
   - **Files**: Maximum 2 files
-    - `includes/class-stsrc-registration.php`: Enhance registration completion method to detect non-Stripe payment methods, set balance_owed and original_membership_price to membership type price, call Transaction DB to create initial transaction (type: 'initial', method: 'initial', amount: 0.00, balance_after: membership price), set member status to 'pending'
-    - `includes/database/class-stsrc-transaction-db.php`: Ensure create_transaction method supports initial transaction type with appropriate defaults
+    - `includes/api/class-stsrc-ajax-handler.php`: Enhance manual registration payment flow to initialize balance fields for non-Stripe payment methods, create initial transaction, and keep status as pending
+    - `includes/database/class-stsrc-transaction-db.php`: Reuse existing initial transaction support in create_transaction for registration ledger entries
   - **Step Dependencies**: Step 2.1 (needs Transaction DB)
   - **User Instructions**: Test registration with payment method "check" - verify member is created with status 'pending', balance_owed equals membership price, and initial transaction exists
   - **Git message**: `feat(registration): add balance tracking for non-stripe registrations`
+  - **Status**: ✅ COMPLETED
 
 ## Section 8: Stripe Webhook Integration
 

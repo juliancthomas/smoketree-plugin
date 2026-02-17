@@ -501,10 +501,49 @@ class STSRC_Ajax_Handler {
 	private function process_manual_payment( array $data, int $member_id ): bool|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
 
 		// Get membership type for amount
 		$membership_type = STSRC_Membership_DB::get_membership_type( $data['membership_type_id'] );
-		$amount_due = $membership_type['price'] ?? 0;
+		if ( ! $membership_type ) {
+			return new WP_Error( 'invalid_membership', 'Invalid membership type selected.' );
+		}
+		$amount_due = (float) ( $membership_type['price'] ?? 0 );
+
+		// For non-Stripe registrations, set initial balance fields and ensure pending status.
+		$member_updated = STSRC_Member_DB::update_member(
+			$member_id,
+			array(
+				'status'                    => 'pending',
+				'balance_owed'              => $amount_due,
+				'original_membership_price' => $amount_due,
+			)
+		);
+
+		if ( ! $member_updated ) {
+			return new WP_Error( 'member_update_failed', 'Failed to initialize balance for manual payment registration.' );
+		}
+
+		// Record initial balance transaction for audit trail.
+		$initial_transaction_id = STSRC_Transaction_DB::create_transaction(
+			$member_id,
+			array(
+				'transaction_type' => 'initial',
+				'payment_method'   => 'initial',
+				'amount'           => 0.00,
+				'balance_after'    => $amount_due,
+				'description'      => sprintf(
+					/* translators: %s: payment type */
+					__( 'Initial registration with %s payment. Balance recorded.', 'smoketree-plugin' ),
+					sanitize_text_field( $data['payment_type'] ?? 'manual' )
+				),
+			)
+		);
+
+		if ( false === $initial_transaction_id ) {
+			return new WP_Error( 'initial_transaction_failed', 'Failed to create initial balance transaction.' );
+		}
 
 		// Send emails
 		$email_service = new STSRC_Email_Service();
