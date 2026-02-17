@@ -205,14 +205,15 @@
   - **Git message**: `feat(portal): create pay balance modal with validation`
   - **Status**: ✅ COMPLETED
 
-- [ ] Step 6.4: Balance Payment AJAX Handler
+- [x] Step 6.4: Balance Payment AJAX Handler
   - **Task**: Create AJAX endpoint for members to request a balance payment checkout session. Validate member ownership, nonce, minimum amount, and that member has outstanding balance. Call Payment Service to create Stripe checkout session and return session URL or error.
   - **Files**: Maximum 2 files
-    - `includes/ajax/class-stsrc-balance-ajax.php`: Add method `handle_create_balance_payment()` that validates nonce, verifies current user owns the member_id, validates amount against minimum and balance owed, calls Payment Service create_balance_payment_checkout_session, returns JSON with session URL or error message
-    - `includes/class-stsrc-ajax.php`: Register AJAX action hooks (wp_ajax_stsrc_create_balance_payment) to route to handler
+    - `includes/api/class-stsrc-balance-ajax.php`: Add method `handle_create_balance_payment()` that validates nonce, verifies current user owns the member_id, validates amount against minimum and balance owed, calls Payment Service create_balance_payment_checkout_session, returns JSON with session URL or error message
+    - `includes/class-smoketree-plugin.php`: Register AJAX action hook (`wp_ajax_stsrc_create_balance_payment`) to route to handler
   - **Step Dependencies**: Step 2.4 (needs Payment Service balance payment method)
   - **User Instructions**: None (tested in next step)
   - **Git message**: `feat(ajax): add balance payment session creation handler`
+  - **Status**: ✅ COMPLETED
 
 - [ ] Step 6.5: Balance Payment - Stripe Redirect Integration
   - **Task**: Connect pay balance modal submission to AJAX handler. On successful session creation, redirect member to Stripe checkout page. Handle errors gracefully with user-friendly messages. Configure success and cancel return URLs.

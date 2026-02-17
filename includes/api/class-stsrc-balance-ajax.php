@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load required classes
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 
 /**
@@ -204,6 +205,90 @@ class STSRC_Balance_Ajax {
 				'message'        => __( 'Manual payment recorded successfully.', 'smoketree-plugin' ),
 				'transaction_id' => $transaction['transaction_id'] ?? null,
 				'new_balance'    => $new_balance,
+			)
+		);
+	}
+
+	/**
+	 * Create Stripe checkout session for member balance payment.
+	 *
+	 * @since  1.1.0
+	 * @return void
+	 */
+	public function handle_create_balance_payment(): void {
+		$post_data = wp_unslash( $_POST );
+
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => __( 'Please log in to continue.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_balance_payment_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token. Please refresh the page and try again.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$member_id = absint( $post_data['member_id'] ?? 0 );
+		$amount    = (float) ( $post_data['amount'] ?? 0 );
+
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		if ( $amount <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Payment amount must be greater than zero.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => __( 'Member record not found.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$current_user_id = get_current_user_id();
+		$member_user_id  = (int) ( $member['user_id'] ?? 0 );
+		$is_admin        = current_user_can( 'manage_options' );
+
+		if ( ! $is_admin && $member_user_id !== $current_user_id ) {
+			wp_send_json_error( array( 'message' => __( 'You are not authorized to pay this balance.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$balance_owed = (float) ( $member['balance_owed'] ?? 0 );
+		if ( $balance_owed <= 0.01 ) {
+			wp_send_json_error( array( 'message' => __( 'This account does not have an outstanding balance.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		if ( $amount > $balance_owed ) {
+			wp_send_json_error( array( 'message' => __( 'Payment amount cannot exceed your outstanding balance.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$payment_service  = new STSRC_Payment_Service();
+		$minimum_payment  = $payment_service->get_minimum_balance_payment();
+		if ( $amount < $minimum_payment ) {
+			wp_send_json_error(
+				array(
+					/* translators: %s: minimum payment amount */
+					'message' => sprintf( __( 'Minimum payment amount is $%s.', 'smoketree-plugin' ), number_format( $minimum_payment, 2 ) ),
+				)
+			);
+			return;
+		}
+
+		$session_url = $payment_service->create_balance_payment_checkout_session( $member_id, $amount );
+		if ( false === $session_url || empty( $session_url ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unable to create payment session. Please try again.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'session_url' => esc_url_raw( $session_url ),
 			)
 		);
 	}

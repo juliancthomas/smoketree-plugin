@@ -307,6 +307,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_use_guest_pass', $ajax_handler, 'use_guest_pass' );
 		$this->loader->add_action( 'wp_ajax_stsrc_get_customer_portal_url', $ajax_handler, 'get_customer_portal_url' );
 		$this->loader->add_action( 'wp_ajax_stsrc_toggle_auto_renewal', $ajax_handler, 'toggle_auto_renewal' );
+		$this->loader->add_action( 'wp_ajax_stsrc_create_balance_payment', $balance_ajax, 'handle_create_balance_payment' );
 
 		// Admin endpoints (admin capability required)
 		$this->loader->add_action( 'wp_ajax_stsrc_create_member', $ajax_handler, 'create_member' );
