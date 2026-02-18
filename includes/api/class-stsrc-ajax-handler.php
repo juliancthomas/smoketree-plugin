@@ -3551,5 +3551,96 @@ class STSRC_Ajax_Handler {
 		);
 	}
 
+	/**
+	 * Manually trigger auto-renewal notification emails (admin only).
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function trigger_renewal_notifications(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-auto-renewal-service.php';
+
+		$service = new STSRC_Auto_Renewal_Service();
+		$results = $service->send_renewal_notifications( true );
+
+		if ( ! empty( $results['error'] ) ) {
+			wp_send_json_error( array(
+				'message' => $results['error'],
+				'results' => $results,
+			) );
+			return;
+		}
+
+		$message = sprintf(
+			/* translators: %1$d: sent count, %2$d: failed count, %3$d: total count */
+			__( 'Notifications sent: %1$d, Failed: %2$d, Total eligible: %3$d', 'smoketree-plugin' ),
+			(int) ( $results['sent'] ?? 0 ),
+			(int) ( $results['failed'] ?? 0 ),
+			(int) ( $results['total'] ?? 0 )
+		);
+
+		wp_send_json_success( array(
+			'message' => $message,
+			'results' => $results,
+		) );
+	}
+
+	/**
+	 * Manually trigger auto-renewal payment processing (admin only).
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function trigger_renewal_processing(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-auto-renewal-service.php';
+
+		$service = new STSRC_Auto_Renewal_Service();
+		$results = $service->process_renewals( true );
+
+		if ( ! empty( $results['error'] ) ) {
+			wp_send_json_error( array(
+				'message' => $results['error'],
+				'results' => $results,
+			) );
+			return;
+		}
+
+		$message = sprintf(
+			/* translators: %1$d: succeeded, %2$d: failed, %3$d: skipped, %4$d: total */
+			__( 'Succeeded: %1$d, Failed: %2$d, Skipped: %3$d, Total eligible: %4$d', 'smoketree-plugin' ),
+			(int) ( $results['succeeded'] ?? 0 ),
+			(int) ( $results['failed'] ?? 0 ),
+			(int) ( $results['skipped'] ?? 0 ),
+			(int) ( $results['total'] ?? 0 )
+		);
+
+		wp_send_json_success( array(
+			'message' => $message,
+			'results' => $results,
+		) );
+	}
+
 }
 

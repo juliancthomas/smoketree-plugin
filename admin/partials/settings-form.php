@@ -311,6 +311,88 @@ jQuery(document).ready(function($) {
 </script>
 <?php endif; ?>
 
+<!-- Auto-Renewal Tools -->
+<div class="stsrc-form-section" style="margin-top:24px;">
+	<h2><?php echo esc_html__( 'Auto-Renewal Tools', 'smoketree-plugin' ); ?></h2>
+	<p class="description">
+		<?php echo esc_html__( 'Manually trigger auto-renewal operations. Notifications are normally sent 7 days before the season renewal date, and payments are processed on the renewal date itself.', 'smoketree-plugin' ); ?>
+	</p>
+
+	<div id="stsrc-renewal-tools-result" style="display:none; margin: 12px 0;"></div>
+
+	<p>
+		<button type="button" class="button" id="stsrc-trigger-notifications-btn">
+			<?php echo esc_html__( 'Send Renewal Notifications Now', 'smoketree-plugin' ); ?>
+		</button>
+		<button type="button" class="button button-primary" id="stsrc-trigger-processing-btn" style="margin-left:8px;">
+			<?php echo esc_html__( 'Process Renewals Now', 'smoketree-plugin' ); ?>
+		</button>
+	</p>
+	<p class="description">
+		<?php echo esc_html__( 'These actions bypass the date check and run immediately for all eligible members.', 'smoketree-plugin' ); ?>
+	</p>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+	var renewalNonce = '<?php echo esc_js( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>';
+	var $result = $('#stsrc-renewal-tools-result');
+
+	function showRenewalResult(message, type) {
+		var cls = type === 'error' ? 'notice-error' : 'notice-success';
+		$result.html('<div class="notice ' + cls + ' inline"><p>' + $('<span>').text(message).html() + '</p></div>').show();
+	}
+
+	$('#stsrc-trigger-notifications-btn').on('click', function() {
+		if (!confirm('<?php echo esc_js( __( 'Send renewal notification emails to all eligible members now?', 'smoketree-plugin' ) ); ?>')) {
+			return;
+		}
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('<?php echo esc_js( __( 'Sending...', 'smoketree-plugin' ) ); ?>');
+		$result.hide();
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: { action: 'stsrc_trigger_renewal_notifications', nonce: renewalNonce },
+			success: function(response) {
+				showRenewalResult(response.data.message, response.success ? 'success' : 'error');
+			},
+			error: function() {
+				showRenewalResult('<?php echo esc_js( __( 'Request failed. Please try again.', 'smoketree-plugin' ) ); ?>', 'error');
+			},
+			complete: function() {
+				$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Send Renewal Notifications Now', 'smoketree-plugin' ) ); ?>');
+			}
+		});
+	});
+
+	$('#stsrc-trigger-processing-btn').on('click', function() {
+		if (!confirm('<?php echo esc_js( __( 'Process auto-renewal payments for all eligible members now? This will charge their saved payment methods.', 'smoketree-plugin' ) ); ?>')) {
+			return;
+		}
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('<?php echo esc_js( __( 'Processing...', 'smoketree-plugin' ) ); ?>');
+		$result.hide();
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: { action: 'stsrc_trigger_renewal_processing', nonce: renewalNonce },
+			success: function(response) {
+				showRenewalResult(response.data.message, response.success ? 'success' : 'error');
+			},
+			error: function() {
+				showRenewalResult('<?php echo esc_js( __( 'Request failed. Please try again.', 'smoketree-plugin' ) ); ?>', 'error');
+			},
+			complete: function() {
+				$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Process Renewals Now', 'smoketree-plugin' ) ); ?>');
+			}
+		});
+	});
+});
+</script>
+
 <?php $balance_tools_result = $data['balance_tools_result'] ?? null; ?>
 
 <div class="stsrc-form-section" style="margin-top:24px;">
