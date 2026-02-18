@@ -288,6 +288,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </form>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.min.js"></script>
+
 <script>
 jQuery(document).ready(function($) {
 	let familyMemberCount = 0;
@@ -349,8 +351,8 @@ jQuery(document).ready(function($) {
 	// Membership type change handler
 	$('#membership_type_id').on('change', function() {
 		const $option = $(this).find('option:selected');
-		const allowsFamily = $option.data('allows-family') === '1';
-		const allowsExtra = $option.data('allows-extra') === '1';
+		const allowsFamily = $option.data('allows-family') === 1;
+		const allowsExtra = $option.data('allows-extra') === 1;
 		familyLimit = parseInt($option.data('family-limit')) || 0;
 		
 		// Show/hide family members section
@@ -537,6 +539,18 @@ jQuery(document).ready(function($) {
 			});
 		}
 	});
+	const firstName = faker.name.firstName();
+	const lastName = faker.name.lastName();
+	document.querySelector('#first_name').value = firstName;
+	document.querySelector('#last_name').value = lastName;
+	document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
+	document.querySelector('#phone').value = faker.phone.phoneNumber();
+	document.querySelector('#street_1').value = faker.address.streetAddress();
+	document.querySelector('#street_2').value = faker.address.secondaryAddress();
+	document.querySelector('#password').value = 'abc123123';
+	document.querySelector('#password_confirm').value = 'abc123123';
+	document.querySelector('#referral_source').value = 'other';
+	document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
 });
 </script>
 
