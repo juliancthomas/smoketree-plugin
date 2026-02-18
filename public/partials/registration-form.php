@@ -520,10 +520,10 @@ jQuery(document).ready(function($) {
 				success: function(response) {
 					if (response.success) {
 						if (response.data.checkout_url) {
-							// Redirect to Stripe checkout
 							window.location.href = response.data.checkout_url;
+						} else if (response.data.redirect_url) {
+							window.location.href = response.data.redirect_url;
 						} else {
-							// Manual payment - show success message
 							$messages.html('<div class="stsrc-notice success"><p>' + response.data.message + '</p></div>');
 							$form[0].reset();
 						}

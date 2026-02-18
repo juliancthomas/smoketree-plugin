@@ -317,9 +317,25 @@ class STSRC_Ajax_Handler {
 				return;
 			}
 
+			// Auto-login the newly registered user so the portal redirect works.
+			$member_record = STSRC_Member_DB::get_member( $member_id );
+			if ( $member_record && ! empty( $member_record['user_id'] ) ) {
+				wp_set_current_user( (int) $member_record['user_id'] );
+				wp_set_auth_cookie( (int) $member_record['user_id'], true );
+			}
+
+			$redirect_url = add_query_arg(
+				array(
+					'registration' => 'success',
+					'payment_type' => sanitize_text_field( $payment_type ),
+				),
+				home_url( '/member-portal/' )
+			);
+
 			wp_send_json_success(
 				array(
-					'message' => 'Registration submitted successfully! You will receive an email confirmation shortly.',
+					'message'      => 'Registration successful! Redirecting to your member portal...',
+					'redirect_url' => $redirect_url,
 				)
 			);
 		}

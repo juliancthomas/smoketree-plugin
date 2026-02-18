@@ -61,6 +61,46 @@ class STSRC_Member_Portal {
 	}
 
 	/**
+	 * Render registration success notice with payment instructions.
+	 *
+	 * Displays a welcome banner and payment-method-specific instructions
+	 * pulled from ACF option fields when a member arrives from registration.
+	 *
+	 * @param string $registration_status Registration query param value.
+	 * @param string $payment_type        Payment type query param value.
+	 * @return void
+	 */
+	public static function render_registration_notice( string $registration_status, string $payment_type ): void {
+		if ( 'success' !== sanitize_text_field( $registration_status ) ) {
+			return;
+		}
+
+		$payment_type = sanitize_text_field( $payment_type );
+
+		echo '<div class="stsrc-notice success">';
+		echo '<p><strong>' . esc_html__( 'Welcome! Your registration was successful.', 'smoketree-plugin' ) . '</strong></p>';
+		echo '<p>' . esc_html__( 'Your membership is pending until payment is received. You will receive an email confirmation shortly.', 'smoketree-plugin' ) . '</p>';
+
+		$acf_field_map = array(
+			'zelle'     => 'stsrc_payment_instructions_zelle',
+			'check'     => 'stsrc_payment_instructions_check',
+			'pay_later' => 'stsrc_payment_instructions_pay_later',
+		);
+
+		if ( isset( $acf_field_map[ $payment_type ] ) && function_exists( 'get_field' ) ) {
+			$instructions = get_field( $acf_field_map[ $payment_type ], 'option' );
+			if ( ! empty( $instructions ) ) {
+				echo '<div style="margin-top: 10px; padding: 12px; background: #f9f9f9; border-left: 3px solid #0073aa; border-radius: 3px;">';
+				echo '<strong>' . esc_html__( 'Payment Instructions:', 'smoketree-plugin' ) . '</strong>';
+				echo '<div style="margin-top: 6px;">' . wp_kses_post( $instructions ) . '</div>';
+				echo '</div>';
+			}
+		}
+
+		echo '</div>';
+	}
+
+	/**
 	 * Render payment status notice from member portal query params.
 	 *
 	 * @param string $payment_status Payment status query value.

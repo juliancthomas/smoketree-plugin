@@ -87,9 +87,11 @@ $data = array(
 	'access_codes'    => $access_codes,
 );
 
-$request_params     = wp_unslash( $_GET );
-$payment_status     = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
-$extra_member_state = isset( $request_params['extra_member'] ) ? sanitize_text_field( $request_params['extra_member'] ) : '';
+$request_params        = wp_unslash( $_GET );
+$payment_status        = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
+$extra_member_state    = isset( $request_params['extra_member'] ) ? sanitize_text_field( $request_params['extra_member'] ) : '';
+$registration_status   = isset( $request_params['registration'] ) ? sanitize_text_field( $request_params['registration'] ) : '';
+$registration_pay_type = isset( $request_params['payment_type'] ) ? sanitize_text_field( $request_params['payment_type'] ) : '';
 
 // Load plugin header
 require_once plugin_dir_path( __FILE__ ) . 'header.php';
@@ -106,6 +108,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 			</div>
 		</div>
 
+		<?php STSRC_Member_Portal::render_registration_notice( $registration_status, $registration_pay_type ); ?>
 		<?php STSRC_Member_Portal::render_payment_status_notice( $payment_status ); ?>
 
 		<?php if ( 'success' === $extra_member_state ) : ?>
