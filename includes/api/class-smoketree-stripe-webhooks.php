@@ -969,17 +969,29 @@ class Smoketree_Stripe_Webhooks {
 			)
 		);
 
+		// Generate single-use auto-login token for the email link (valid 7 days).
+		$portal_token = bin2hex( random_bytes( 32 ) );
+		set_transient(
+			'stsrc_portal_token_' . $portal_token,
+			array(
+				'member_id' => $member_id,
+				'user_id'   => $member['user_id'],
+			),
+			7 * DAY_IN_SECONDS
+		);
+
 		// Send confirmation email to member
 		$email_service = new STSRC_Email_Service();
 		$email_service->send_email(
 			'guest-pass-purchase.php',
 			array(
-				'first_name' => $member['first_name'],
-				'last_name'  => $member['last_name'],
-				'email'      => $member['email'],
-				'quantity'   => $quantity,
-				'amount'     => $amount_total,
-				'balance'    => STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id ),
+				'first_name'   => $member['first_name'],
+				'last_name'    => $member['last_name'],
+				'email'        => $member['email'],
+				'quantity'     => $quantity,
+				'amount'       => $amount_total,
+				'balance'      => STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id ),
+				'portal_token' => $portal_token,
 			),
 			$member['email'],
 			'Guest Pass Purchase Confirmation - Smoketree Swim and Recreation Club'

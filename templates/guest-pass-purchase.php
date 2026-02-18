@@ -1,6 +1,9 @@
 <?php
 $club_name         = 'Smoketree Swim and Recreation Club';
-$guest_pass_portal = home_url( '/guest-pass-portal/' );
+$portal_token      = $portal_token ?? '';
+$guest_pass_portal = $portal_token
+	? add_query_arg( 'token', $portal_token, home_url( '/guest-pass-portal/' ) )
+	: home_url( '/guest-pass-portal/' );
 $portal_url        = home_url( '/member-portal/' );
 $support_url       = home_url( '/contact/' );
 $quantity_label    = $quantity ?? '';
