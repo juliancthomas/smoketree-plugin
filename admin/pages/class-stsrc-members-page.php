@@ -90,6 +90,9 @@ class STSRC_Members_Page {
 		if ( ! empty( $request['balance_status'] ) ) {
 			$filters['balance_status'] = sanitize_text_field( $request['balance_status'] );
 		}
+		if ( isset( $request['auto_renewal'] ) && '' !== $request['auto_renewal'] ) {
+			$filters['auto_renewal'] = sanitize_text_field( $request['auto_renewal'] );
+		}
 
 		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';
 		$order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';

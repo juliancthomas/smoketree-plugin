@@ -30,6 +30,7 @@ $balance_sort_url = add_query_arg(
 		'date_from'          => $filters['date_from'] ?? '',
 		'date_to'            => $filters['date_to'] ?? '',
 		'balance_status'     => $filters['balance_status'] ?? '',
+		'auto_renewal'       => $filters['auto_renewal'] ?? '',
 		'orderby'            => 'balance',
 		'order'              => $next_balance_order,
 	),
@@ -96,6 +97,15 @@ $balance_sort_url = add_query_arg(
 						<option value="paid_in_full" <?php selected( $filters['balance_status'] ?? '', 'paid_in_full' ); ?>><?php echo esc_html__( 'Paid in Full', 'smoketree-plugin' ); ?></option>
 						<option value="outstanding" <?php selected( $filters['balance_status'] ?? '', 'outstanding' ); ?>><?php echo esc_html__( 'Outstanding', 'smoketree-plugin' ); ?></option>
 						<option value="overpaid" <?php selected( $filters['balance_status'] ?? '', 'overpaid' ); ?>><?php echo esc_html__( 'Overpaid', 'smoketree-plugin' ); ?></option>
+					</select>
+				</div>
+
+				<div class="stsrc-filter-group">
+					<label for="auto_renewal"><?php echo esc_html__( 'Auto-Renewal', 'smoketree-plugin' ); ?>:</label>
+					<select name="auto_renewal" id="auto_renewal">
+						<option value=""><?php echo esc_html__( 'All', 'smoketree-plugin' ); ?></option>
+						<option value="1" <?php selected( $filters['auto_renewal'] ?? '', '1' ); ?>><?php echo esc_html__( 'Enabled', 'smoketree-plugin' ); ?></option>
+						<option value="0" <?php selected( $filters['auto_renewal'] ?? '', '0' ); ?>><?php echo esc_html__( 'Disabled', 'smoketree-plugin' ); ?></option>
 					</select>
 				</div>
 
@@ -200,6 +210,7 @@ $balance_sort_url = add_query_arg(
 						<th class="manage-column"><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column"><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column"><?php echo esc_html__( 'Payment Type', 'smoketree-plugin' ); ?></th>
+						<th class="manage-column stsrc-auto-renewal-column" title="<?php echo esc_attr__( 'Auto-Renewal', 'smoketree-plugin' ); ?>"><?php echo esc_html__( 'AR', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column stsrc-balance-column">
 							<a href="<?php echo esc_url( $balance_sort_url ); ?>" class="stsrc-sort-link">
 								<?php echo esc_html__( 'Balance', 'smoketree-plugin' ); ?>
@@ -252,6 +263,13 @@ $balance_sort_url = add_query_arg(
 									</span>
 								</td>
 								<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $member['payment_type'] ) ) ); ?></td>
+								<td class="stsrc-auto-renewal-column">
+									<?php if ( ! empty( $member['auto_renewal_enabled'] ) ) : ?>
+										<span class="dashicons dashicons-update" style="color: #00a32a;" title="<?php echo esc_attr__( 'Auto-renewal enabled', 'smoketree-plugin' ); ?>"></span>
+									<?php else : ?>
+										<span class="dashicons dashicons-minus" style="color: #b0b0b0;" title="<?php echo esc_attr__( 'Auto-renewal disabled', 'smoketree-plugin' ); ?>"></span>
+									<?php endif; ?>
+								</td>
 								<?php
 								$balance = (float) ( $member['balance_owed'] ?? 0 );
 								$balance_class = $balance > 0.01 ? 'stsrc-balance-positive' : ( $balance < -0.01 ? 'stsrc-balance-negative' : 'stsrc-balance-zero' );
@@ -268,7 +286,7 @@ $balance_sort_url = add_query_arg(
 						<?php endforeach; ?>
 					<?php else : ?>
 						<tr>
-							<td colspan="8"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
+							<td colspan="9"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>

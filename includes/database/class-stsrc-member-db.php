@@ -281,6 +281,11 @@ class STSRC_Member_DB {
 			$where_values[]  = $search_term;
 		}
 
+		if ( isset( $filters['auto_renewal'] ) && '' !== $filters['auto_renewal'] ) {
+			$where_clauses[] = 'auto_renewal_enabled = %d';
+			$where_values[]  = intval( $filters['auto_renewal'] );
+		}
+
 		// Build query
 		$query = "SELECT * FROM {$table_name}";
 
