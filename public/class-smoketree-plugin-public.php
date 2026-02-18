@@ -466,6 +466,31 @@ class Smoketree_Plugin_Public {
 	}
 
 	/**
+	 * Hide the WordPress admin bar for members.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function hide_admin_bar_for_members(): void {
+		if ( is_user_logged_in() && ! current_user_can( 'edit_posts' ) ) {
+			show_admin_bar( false );
+		}
+	}
+
+	/**
+	 * Block wp-admin access for members and redirect to member portal.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function block_dashboard_for_members(): void {
+		if ( is_admin() && ! current_user_can( 'edit_posts' ) && ! wp_doing_ajax() ) {
+			wp_safe_redirect( home_url( '/member-portal' ) );
+			exit;
+		}
+	}
+
+	/**
 	 * Customize password reset email.
 	 *
 	 * @since    1.0.0
