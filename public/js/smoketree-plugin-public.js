@@ -16,6 +16,7 @@
 	const STSRCPublic = {
 		ajaxUrl: stsrcPublic.ajaxUrl || ajaxurl,
 		nonce: stsrcPublic.nonce || '',
+		portalNonce: stsrcPublic.portalNonce || '',
 		strings: stsrcPublic.strings || {},
 
 		/**
@@ -472,7 +473,7 @@
 					type: 'POST',
 					data: {
 						action: 'stsrc_get_customer_portal_url',
-						nonce: this.nonce
+						nonce: this.portalNonce || this.nonce
 					},
 					success: (response) => {
 						if (response.success && response.data.portal_url) {

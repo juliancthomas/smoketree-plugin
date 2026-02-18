@@ -120,9 +120,6 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/pay-balance-modal.php'; ?>
 
-		<!-- Transaction History Section -->
-		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>
-
 		<!-- Member Profile Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-profile.php'; ?>
 
@@ -155,6 +152,9 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 				</div>
 			</div>
 		<?php endif; ?>
+
+		<!-- Transaction History Section -->
+		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>
 	</div>
 </div>
 

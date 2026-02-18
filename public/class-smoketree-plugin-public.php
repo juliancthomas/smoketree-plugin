@@ -225,13 +225,10 @@ class Smoketree_Plugin_Public {
 			}
 
 			// Localize script for AJAX
-			wp_localize_script(
-				$this->plugin_name,
-				'stsrcPublic',
-				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'stsrc_registration_nonce' ),
-					'strings' => array(
+			$localize = array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'stsrc_registration_nonce' ),
+				'strings' => array(
 						'saving'    => __( 'Saving...', 'smoketree-plugin' ),
 						'submitting' => __( 'Submitting...', 'smoketree-plugin' ),
 						'loading'   => __( 'Loading...', 'smoketree-plugin' ),
@@ -241,8 +238,15 @@ class Smoketree_Plugin_Public {
 						'autoRenewalDisabled' => __( 'Disabled', 'smoketree-plugin' ),
 						'autoRenewalUpdating' => __( 'Updating preference...', 'smoketree-plugin' ),
 						'autoRenewalError'    => __( 'Unable to update auto-renewal.', 'smoketree-plugin' ),
-					),
-				)
+				),
+			);
+			if ( $this->is_member_portal_page() ) {
+				$localize['portalNonce'] = wp_create_nonce( 'stsrc_portal_nonce' );
+			}
+			wp_localize_script(
+				$this->plugin_name,
+				'stsrcPublic',
+				$localize
 			);
 		}
 	}
