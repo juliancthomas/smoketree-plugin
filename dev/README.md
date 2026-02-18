@@ -48,19 +48,28 @@ Save settings.
 
 ---
 
-### Step 3 – Trigger test events (optional)
+### Step 3 – Run the webhook test runner
 
-With the listener running, trigger fake events in a second terminal:
+With the listener running, open a second terminal and run:
 
 ```bash
-# Interactive menu
-bash dev/stripe-trigger.sh
-
-# Or directly:
-bash dev/stripe-trigger.sh checkout        # checkout.session.completed
-bash dev/stripe-trigger.sh payment_success # payment_intent.succeeded
-bash dev/stripe-trigger.sh payment_failed  # payment_intent.payment_failed
+bash dev/stripe-test-webhooks.sh
 ```
+
+This opens an interactive menu to fire any of the 5 most-used webhook flows with real member/customer metadata pre-filled:
+
+```
+ 1)  checkout.session.completed  →  registration       ($300)
+ 2)  checkout.session.completed  →  balance_payment    ($100)
+ 3)  payment_intent.succeeded
+ 4)  checkout.session.completed  →  guest_pass         (1 × $5)
+ 5)  payment_intent.payment_failed
+ 6)  checkout.session.completed  →  extra_member       ($50)
+ 7)  Run all 5 in sequence
+ 8)  Cleanup / Reset test data
+```
+
+The **Cleanup** option (8) resets member 13's status back to `pending`, removes test payment log rows, deletes the test extra member, and restores balance_owed — so you can re-run tests cleanly.
 
 ---
 
