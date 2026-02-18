@@ -242,3 +242,6 @@ done
 
 # -- Clear idempotency cache (so same events can be re-triggered)
 # DELETE FROM wp_options WHERE option_name = 'stsrc_stripe_processed_events';
+
+# -- Delete guest passes
+# DELETE FROM wp_stsrc_guest_passes WHERE member_id = 13;
