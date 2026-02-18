@@ -89,6 +89,15 @@ class STSRC_Dashboard_Page {
 
 		$total_balance = STSRC_Guest_Pass_DB::get_total_balance();
 
+		// Auto-renewal stats
+		$members_table = $wpdb->prefix . 'stsrc_members';
+		$auto_renewal_count = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$members_table} WHERE auto_renewal_enabled = 1 AND status = 'active'"
+		);
+		$season_renewal_date = function_exists( 'get_field' )
+			? get_field( 'stsrc_season_renewal_date', 'option' )
+			: get_option( 'stsrc_season_renewal_date', '' );
+
 		return array(
 			'active_member_count' => (int) $active_count,
 			'recent_signups'      => $recent_signups,
@@ -97,6 +106,10 @@ class STSRC_Dashboard_Page {
 				'total_purchased' => (int) $total_purchased,
 				'total_used'      => (int) $total_used,
 				'total_balance'   => (int) $total_balance,
+			),
+			'auto_renewal_stats'  => array(
+				'opted_in_count'     => $auto_renewal_count,
+				'season_renewal_date' => $season_renewal_date,
 			),
 		);
 	}

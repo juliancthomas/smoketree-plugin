@@ -15,6 +15,23 @@ $active_count = $data['active_member_count'] ?? 0;
 $recent_signups = $data['recent_signups'] ?? array();
 $pending_count = $data['pending_count'] ?? 0;
 $guest_pass_stats = $data['guest_pass_stats'] ?? array();
+$auto_renewal_stats = $data['auto_renewal_stats'] ?? array();
+$ar_opted_in = $auto_renewal_stats['opted_in_count'] ?? 0;
+$ar_renewal_date = $auto_renewal_stats['season_renewal_date'] ?? '';
+$ar_days_until = '';
+if ( ! empty( $ar_renewal_date ) ) {
+	$ar_ts = strtotime( $ar_renewal_date );
+	if ( false !== $ar_ts ) {
+		$ar_diff = (int) ceil( ( $ar_ts - time() ) / DAY_IN_SECONDS );
+		if ( $ar_diff > 0 ) {
+			$ar_days_until = sprintf( _n( '%s day away', '%s days away', $ar_diff, 'smoketree-plugin' ), number_format_i18n( $ar_diff ) );
+		} elseif ( 0 === $ar_diff ) {
+			$ar_days_until = __( 'Today', 'smoketree-plugin' );
+		} else {
+			$ar_days_until = sprintf( _n( '%s day ago', '%s days ago', abs( $ar_diff ), 'smoketree-plugin' ), number_format_i18n( abs( $ar_diff ) ) );
+		}
+	}
+}
 ?>
 
 <div class="wrap">
@@ -61,6 +78,35 @@ $guest_pass_stats = $data['guest_pass_stats'] ?? array();
 						);
 						?>
 					</p>
+				</div>
+			</div>
+
+			<!-- Auto-Renewal Widget -->
+			<div class="stsrc-widget">
+				<div class="stsrc-widget-header">
+					<h2><?php echo esc_html__( 'Auto-Renewal', 'smoketree-plugin' ); ?></h2>
+				</div>
+				<div class="stsrc-widget-content">
+					<div class="stsrc-stat-number"><?php echo esc_html( number_format( $ar_opted_in ) ); ?></div>
+					<p class="stsrc-stat-description">
+						<?php echo esc_html__( 'Active members opted in', 'smoketree-plugin' ); ?>
+					</p>
+					<?php if ( ! empty( $ar_renewal_date ) ) : ?>
+						<p class="stsrc-stat-description" style="margin-top: 6px;">
+							<strong><?php echo esc_html__( 'Renewal date:', 'smoketree-plugin' ); ?></strong>
+							<?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $ar_renewal_date ) ) ); ?>
+							<?php if ( ! empty( $ar_days_until ) ) : ?>
+								<br><span style="color: #646970;">(<?php echo esc_html( $ar_days_until ); ?>)</span>
+							<?php endif; ?>
+						</p>
+					<?php else : ?>
+						<p class="stsrc-stat-description" style="margin-top: 6px; color: #d63638;">
+							<?php echo esc_html__( 'No renewal date set.', 'smoketree-plugin' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-settings' ) ); ?>">
+								<?php echo esc_html__( 'Configure', 'smoketree-plugin' ); ?>
+							</a>
+						</p>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>
