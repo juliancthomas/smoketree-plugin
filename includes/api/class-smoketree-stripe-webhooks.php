@@ -232,6 +232,7 @@ class Smoketree_Stripe_Webhooks {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-payment-log-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
 
 		$member_service = new STSRC_Member_Service();
 		$email_service = new STSRC_Email_Service();
@@ -281,6 +282,26 @@ class Smoketree_Stripe_Webhooks {
 				),
 			)
 		);
+
+		// Record transaction in the transactions table so it appears in the member portal.
+		$payment_method  = self::detect_payment_method_from_session( $session );
+		$current_balance = (float) ( $member['balance_owed'] ?? 0.00 );
+		$new_balance     = $current_balance - $amount_total;
+
+		STSRC_Transaction_DB::create_transaction(
+			$member_id,
+			array(
+				'transaction_type'         => 'payment',
+				'payment_method'           => $payment_method,
+				'amount'                   => -$amount_total,
+				'balance_after'            => $new_balance,
+				'stripe_payment_intent_id' => $payment_intent_id,
+				'stripe_session_id'        => $session_id,
+				'description'              => 'Registration payment via Stripe checkout',
+			)
+		);
+
+		STSRC_Member_DB::update_balance( $member_id, $new_balance, $payment_method );
 
 		// Activate member
 		$activation_result = $member_service->activate_member( $member_id );
