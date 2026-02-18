@@ -140,18 +140,34 @@ $member_id = $member['member_id'] ?? 0;
 							</select>
 						</td>
 					</tr>
-					<?php if ( $is_edit && ! empty( $member['stripe_customer_id'] ) ) : ?>
-						<tr>
-							<th><label><?php echo esc_html__( 'Stripe Customer ID', 'smoketree-plugin' ); ?></label></th>
-							<td><code><?php echo esc_html( $member['stripe_customer_id'] ); ?></code></td>
-						</tr>
-					<?php endif; ?>
-					<?php if ( $is_edit && ! empty( $member['expiration_date'] ) ) : ?>
-						<tr>
-							<th><label><?php echo esc_html__( 'Expiration Date', 'smoketree-plugin' ); ?></label></th>
-							<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $member['expiration_date'] ) ) ); ?></td>
-						</tr>
-					<?php endif; ?>
+				<?php if ( $is_edit ) : ?>
+					<tr>
+						<th><label for="auto_renewal_enabled"><?php echo esc_html__( 'Auto-Renewal', 'smoketree-plugin' ); ?></label></th>
+						<td>
+							<label>
+								<input type="checkbox" name="auto_renewal_enabled" id="auto_renewal_enabled" value="1" <?php checked( ! empty( $member['auto_renewal_enabled'] ) ); ?>>
+								<?php echo esc_html__( 'Enable automatic renewal', 'smoketree-plugin' ); ?>
+							</label>
+							<?php if ( empty( $member['stripe_customer_id'] ) ) : ?>
+								<p class="description" style="color: #d63638;">
+									<?php echo esc_html__( 'This member has no saved payment method. Auto-renewal charges will fail without one.', 'smoketree-plugin' ); ?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
+				<?php if ( $is_edit && ! empty( $member['stripe_customer_id'] ) ) : ?>
+					<tr>
+						<th><label><?php echo esc_html__( 'Stripe Customer ID', 'smoketree-plugin' ); ?></label></th>
+						<td><code><?php echo esc_html( $member['stripe_customer_id'] ); ?></code></td>
+					</tr>
+				<?php endif; ?>
+				<?php if ( $is_edit && ! empty( $member['expiration_date'] ) ) : ?>
+					<tr>
+						<th><label><?php echo esc_html__( 'Expiration Date', 'smoketree-plugin' ); ?></label></th>
+						<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $member['expiration_date'] ) ) ); ?></td>
+					</tr>
+				<?php endif; ?>
 				</table>
 			</div>
 

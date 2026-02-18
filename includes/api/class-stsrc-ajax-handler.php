@@ -2704,9 +2704,10 @@ class STSRC_Ajax_Handler {
 			'membership_type_id'=> intval( $post_data['membership_type_id'] ),
 			'status'            => sanitize_text_field( $post_data['status'] ),
 			'payment_type'      => sanitize_text_field( $post_data['payment_type'] ),
-			'waiver_full_name'  => sanitize_text_field( $post_data['waiver_full_name'] ),
-			'waiver_signed_date'=> sanitize_text_field( $post_data['waiver_signed_date'] ),
-			'referral_source'   => sanitize_text_field( $post_data['referral_source'] ?? '' ),
+			'waiver_full_name'      => sanitize_text_field( $post_data['waiver_full_name'] ),
+			'waiver_signed_date'    => sanitize_text_field( $post_data['waiver_signed_date'] ),
+			'referral_source'       => sanitize_text_field( $post_data['referral_source'] ?? '' ),
+			'auto_renewal_enabled'  => isset( $post_data['auto_renewal_enabled'] ) ? 1 : 0,
 		);
 
 		// Update member
