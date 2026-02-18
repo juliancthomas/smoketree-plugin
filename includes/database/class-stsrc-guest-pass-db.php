@@ -4,6 +4,7 @@
  * Guest pass database operations class
  *
  * Handles all database operations for guest passes.
+ * Balance is computed from the stsrc_guest_passes ledger table.
  *
  * @link       https://smoketree.us
  * @since      1.0.0
@@ -16,6 +17,7 @@
  * Guest pass database operations class.
  *
  * Provides methods for guest pass balance management and usage logging.
+ * All balance reads are derived from the ledger (no denormalized column).
  *
  * @since      1.0.0
  * @package    Smoketree_Plugin
@@ -25,7 +27,58 @@
 class STSRC_Guest_Pass_DB {
 
 	/**
+	 * Credit types that increase the balance.
+	 *
+	 * @var array
+	 */
+	private static array $credit_types = array( 'purchase', 'admin_credit' );
+
+	/**
+	 * Debit types that decrease the balance.
+	 *
+	 * @var array
+	 */
+	private static array $debit_types = array( 'usage', 'admin_debit', 'reset' );
+
+	/**
+	 * Record a guest pass purchase (increment balance).
+	 *
+	 * @since    1.2.0
+	 * @param    int       $member_id              Member ID.
+	 * @param    int       $quantity                Number of passes purchased.
+	 * @param    float     $amount                  Payment amount.
+	 * @param    string    $stripe_payment_intent   Stripe payment intent ID.
+	 * @param    string    $notes                   Optional notes.
+	 * @return   int|false                           Inserted row ID or false on failure.
+	 */
+	public static function record_purchase( int $member_id, int $quantity, float $amount, string $stripe_payment_intent = '', string $notes = '' ): int|false {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		$data = array(
+			'member_id'                => $member_id,
+			'type'                     => 'purchase',
+			'quantity'                 => $quantity,
+			'amount'                   => $amount,
+			'stripe_payment_intent_id' => $stripe_payment_intent,
+			'payment_status'           => 'succeeded',
+			'admin_adjusted'           => 0,
+			'notes'                    => $notes,
+			'created_at'               => current_time( 'mysql' ),
+		);
+
+		$formats = array( '%d', '%s', '%d', '%f', '%s', '%s', '%d', '%s', '%s' );
+
+		$result = $wpdb->insert( $table, $data, $formats );
+
+		return false !== $result ? $wpdb->insert_id : false;
+	}
+
+	/**
 	 * Update guest pass balance (increment).
+	 *
+	 * Legacy wrapper around record_purchase for backward compatibility.
 	 *
 	 * @since    1.0.0
 	 * @param    int    $member_id    Member ID
@@ -33,31 +86,7 @@ class STSRC_Guest_Pass_DB {
 	 * @return   bool                 True on success, false on failure
 	 */
 	public static function update_guest_pass_balance( int $member_id, int $quantity ): bool {
-		global $wpdb;
-
-		$table_name = $wpdb->prefix . 'stsrc_members';
-
-		// Get current balance
-		$current_balance = self::get_guest_pass_balance( $member_id );
-
-		// Calculate new balance
-		$new_balance = $current_balance + $quantity;
-
-		// Ensure balance doesn't go negative
-		if ( $new_balance < 0 ) {
-			return false;
-		}
-
-		// Update balance
-		$result = $wpdb->update(
-			$table_name,
-			array( 'guest_pass_balance' => $new_balance ),
-			array( 'member_id' => $member_id ),
-			array( '%d' ),
-			array( '%d' )
-		);
-
-		return false !== $result;
+		return false !== self::record_purchase( $member_id, $quantity, 0.00 );
 	}
 
 	/**
@@ -65,103 +94,75 @@ class STSRC_Guest_Pass_DB {
 	 *
 	 * @since    1.0.0
 	 * @param    int       $member_id    Member ID
-	 * @param    string    $notes         Optional notes about the usage
-	 * @return   bool                     True on success, false on failure
+	 * @param    string    $notes        Optional notes about the usage
+	 * @return   bool                    True on success, false on failure
 	 */
 	public static function use_guest_pass( int $member_id, string $notes = '' ): bool {
 		global $wpdb;
 
-		$members_table = $wpdb->prefix . 'stsrc_members';
-		$passes_table  = $wpdb->prefix . 'stsrc_guest_passes';
-
-		// Get current balance
 		$current_balance = self::get_guest_pass_balance( $member_id );
 
 		if ( $current_balance <= 0 ) {
-			return false; // No passes available
-		}
-
-		// Start transaction (WordPress doesn't have transactions, so we'll do it manually)
-		$wpdb->query( 'START TRANSACTION' );
-
-		try {
-			// Decrement balance
-			$new_balance = $current_balance - 1;
-			$result1     = $wpdb->update(
-				$members_table,
-				array( 'guest_pass_balance' => $new_balance ),
-				array( 'member_id' => $member_id ),
-				array( '%d' ),
-				array( '%d' )
-			);
-
-			if ( false === $result1 ) {
-				throw new Exception( 'Failed to update balance' );
-			}
-
-			// Log usage
-			$log_data = array(
-				'member_id'      => $member_id,
-				'quantity'       => 1,
-				'amount'         => 0.00, // Usage doesn't have an amount
-				'used_at'        => current_time( 'mysql' ),
-				'payment_status' => 'paid', // Already paid when purchased
-				'admin_adjusted'  => 0,
-				'notes'          => $notes,
-				'created_at'     => current_time( 'mysql' ),
-			);
-
-			$formats = array(
-				'member_id'      => '%d',
-				'quantity'      => '%d',
-				'amount'        => '%f',
-				'used_at'       => '%s',
-				'payment_status' => '%s',
-				'admin_adjusted' => '%d',
-				'notes'         => '%s',
-				'created_at'    => '%s',
-			);
-
-			$format_array = array();
-			foreach ( array_keys( $log_data ) as $key ) {
-				$format_array[] = $formats[ $key ] ?? '%s';
-			}
-
-			$result2 = $wpdb->insert( $passes_table, $log_data, $format_array );
-
-			if ( false === $result2 ) {
-				throw new Exception( 'Failed to log usage' );
-			}
-
-			$wpdb->query( 'COMMIT' );
-			return true;
-
-		} catch ( Exception $e ) {
-			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
+
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		$data = array(
+			'member_id'      => $member_id,
+			'type'           => 'usage',
+			'quantity'       => 1,
+			'amount'         => 0.00,
+			'used_at'        => current_time( 'mysql' ),
+			'payment_status' => 'paid',
+			'admin_adjusted' => 0,
+			'notes'          => $notes,
+			'created_at'     => current_time( 'mysql' ),
+		);
+
+		$formats = array( '%d', '%s', '%d', '%f', '%s', '%s', '%d', '%s', '%s' );
+
+		$result = $wpdb->insert( $table, $data, $formats );
+
+		return false !== $result;
 	}
 
 	/**
 	 * Get guest pass balance for a member.
 	 *
+	 * Computed from the ledger: SUM(credits) - SUM(debits).
+	 *
 	 * @since    1.0.0
 	 * @param    int    $member_id    Member ID
-	 * @return   int                   Guest pass balance
+	 * @return   int                  Guest pass balance
 	 */
 	public static function get_guest_pass_balance( int $member_id ): int {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . 'stsrc_members';
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		$credits_in = self::sql_in_placeholders( self::$credit_types );
+		$debits_in  = self::sql_in_placeholders( self::$debit_types );
+
+		$all_types = array_merge( array( $member_id ), self::$credit_types, array( $member_id ), self::$debit_types );
 
 		$balance = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT guest_pass_balance FROM {$table_name} WHERE member_id = %d",
-				$member_id
+				"SELECT
+					COALESCE(
+						(SELECT SUM(quantity) FROM {$table} WHERE member_id = %d AND type IN ({$credits_in})),
+						0
+					)
+					-
+					COALESCE(
+						(SELECT SUM(quantity) FROM {$table} WHERE member_id = %d AND type IN ({$debits_in})),
+						0
+					)",
+				...$all_types
 			)
 		);
 
-		return (int) $balance;
+		return max( 0, (int) $balance );
 	}
 
 	/**
@@ -169,7 +170,7 @@ class STSRC_Guest_Pass_DB {
 	 *
 	 * @since    1.0.0
 	 * @param    int    $member_id    Member ID
-	 * @param    array  $filters       Optional filters (date_from, date_to, payment_status)
+	 * @param    array  $filters      Optional filters (date_from, date_to, payment_status)
 	 * @return   array                Array of guest pass log entries
 	 */
 	public static function get_guest_pass_log( int $member_id, array $filters = array() ): array {
@@ -177,7 +178,6 @@ class STSRC_Guest_Pass_DB {
 
 		$table_name = $wpdb->prefix . 'stsrc_guest_passes';
 
-		// Build WHERE clause
 		$where_clauses = array( 'member_id = %d' );
 		$where_values  = array( $member_id );
 
@@ -196,11 +196,9 @@ class STSRC_Guest_Pass_DB {
 			$where_values[]  = sanitize_text_field( $filters['payment_status'] );
 		}
 
-		// Build query
 		$query = "SELECT * FROM {$table_name} WHERE " . implode( ' AND ', $where_clauses );
 		$query .= ' ORDER BY created_at DESC';
 
-		// Execute query with prepared statement
 		$query = $wpdb->prepare( $query, $where_values );
 
 		$results = $wpdb->get_results( $query, ARRAY_A );
@@ -220,78 +218,124 @@ class STSRC_Guest_Pass_DB {
 	public static function admin_adjust_balance( int $member_id, int $adjustment, string $notes = '' ): bool {
 		global $wpdb;
 
-		$members_table = $wpdb->prefix . 'stsrc_members';
-		$passes_table  = $wpdb->prefix . 'stsrc_guest_passes';
+		if ( 0 === $adjustment ) {
+			return false;
+		}
 
-		// Get current balance
+		// For negative adjustments, verify balance won't go below zero.
+		if ( $adjustment < 0 ) {
+			$current_balance = self::get_guest_pass_balance( $member_id );
+			if ( $current_balance + $adjustment < 0 ) {
+				return false;
+			}
+		}
+
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+		$type  = $adjustment > 0 ? 'admin_credit' : 'admin_debit';
+
+		$data = array(
+			'member_id'      => $member_id,
+			'type'           => $type,
+			'quantity'       => abs( $adjustment ),
+			'amount'         => 0.00,
+			'payment_status' => 'paid',
+			'admin_adjusted' => 1,
+			'adjusted_by'    => get_current_user_id(),
+			'notes'          => $notes,
+			'created_at'     => current_time( 'mysql' ),
+		);
+
+		$formats = array( '%d', '%s', '%d', '%f', '%s', '%d', '%d', '%s', '%s' );
+
+		$result = $wpdb->insert( $table, $data, $formats );
+
+		return false !== $result;
+	}
+
+	/**
+	 * Reset guest pass balance for a member by inserting a reset entry.
+	 *
+	 * Debits the full current balance so the net becomes zero.
+	 *
+	 * @since    1.2.0
+	 * @param    int       $member_id    Member ID.
+	 * @param    string    $notes        Optional notes.
+	 * @return   bool                    True on success (or balance already zero), false on failure.
+	 */
+	public static function reset_balance( int $member_id, string $notes = 'Season reset' ): bool {
 		$current_balance = self::get_guest_pass_balance( $member_id );
 
-		// Calculate new balance
-		$new_balance = $current_balance + $adjustment;
-
-		// Ensure balance doesn't go negative
-		if ( $new_balance < 0 ) {
-			return false;
-		}
-
-		// Start transaction
-		$wpdb->query( 'START TRANSACTION' );
-
-		try {
-			// Update balance
-			$result1 = $wpdb->update(
-				$members_table,
-				array( 'guest_pass_balance' => $new_balance ),
-				array( 'member_id' => $member_id ),
-				array( '%d' ),
-				array( '%d' )
-			);
-
-			if ( false === $result1 ) {
-				throw new Exception( 'Failed to update balance' );
-			}
-
-			// Log adjustment
-			$log_data = array(
-				'member_id'       => $member_id,
-				'quantity'       => abs( $adjustment ),
-				'amount'         => 0.00,
-				'payment_status' => 'paid',
-				'admin_adjusted' => 1,
-				'adjusted_by'    => get_current_user_id(),
-				'notes'          => $notes,
-				'created_at'     => current_time( 'mysql' ),
-			);
-
-			$formats = array(
-				'member_id'       => '%d',
-				'quantity'       => '%d',
-				'amount'         => '%f',
-				'payment_status' => '%s',
-				'admin_adjusted' => '%d',
-				'adjusted_by'    => '%d',
-				'notes'          => '%s',
-				'created_at'     => '%s',
-			);
-
-			$format_array = array();
-			foreach ( array_keys( $log_data ) as $key ) {
-				$format_array[] = $formats[ $key ] ?? '%s';
-			}
-
-			$result2 = $wpdb->insert( $passes_table, $log_data, $format_array );
-
-			if ( false === $result2 ) {
-				throw new Exception( 'Failed to log adjustment' );
-			}
-
-			$wpdb->query( 'COMMIT' );
+		if ( 0 === $current_balance ) {
 			return true;
-
-		} catch ( Exception $e ) {
-			$wpdb->query( 'ROLLBACK' );
-			return false;
 		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		$data = array(
+			'member_id'      => $member_id,
+			'type'           => 'reset',
+			'quantity'       => $current_balance,
+			'amount'         => 0.00,
+			'payment_status' => 'paid',
+			'admin_adjusted' => 1,
+			'adjusted_by'    => get_current_user_id(),
+			'notes'          => $notes,
+			'created_at'     => current_time( 'mysql' ),
+		);
+
+		$formats = array( '%d', '%s', '%d', '%f', '%s', '%d', '%d', '%s', '%s' );
+
+		$result = $wpdb->insert( $table, $data, $formats );
+
+		return false !== $result;
+	}
+
+	/**
+	 * Get the total guest pass balance across all members (or for a specific member).
+	 *
+	 * @since    1.2.0
+	 * @param    int|null $member_id    Optional member ID to filter.
+	 * @return   int                    Total balance.
+	 */
+	public static function get_total_balance( ?int $member_id = null ): int {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		$credits_in = self::sql_in_placeholders( self::$credit_types );
+		$debits_in  = self::sql_in_placeholders( self::$debit_types );
+
+		$member_where = '';
+		$params       = array();
+
+		if ( null !== $member_id ) {
+			$member_where = ' AND member_id = %d';
+			$params       = array_merge( self::$credit_types, array( $member_id ), self::$debit_types, array( $member_id ) );
+		} else {
+			$params = array_merge( self::$credit_types, self::$debit_types );
+		}
+
+		$balance = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT
+					COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$credits_in}){$member_where}), 0)
+					-
+					COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$debits_in}){$member_where}), 0)",
+				...$params
+			)
+		);
+
+		return max( 0, (int) $balance );
+	}
+
+	/**
+	 * Generate SQL IN() placeholders for an array of strings.
+	 *
+	 * @param  array $items Array of string values.
+	 * @return string       Comma-separated %s placeholders.
+	 */
+	private static function sql_in_placeholders( array $items ): string {
+		return implode( ',', array_fill( 0, count( $items ), '%s' ) );
 	}
 }
-

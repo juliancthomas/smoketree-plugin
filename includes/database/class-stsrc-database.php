@@ -63,7 +63,6 @@ class STSRC_Database {
 			referral_source VARCHAR(100) DEFAULT NULL,
 			waiver_full_name VARCHAR(255) NOT NULL,
 			waiver_signed_date DATE NOT NULL,
-			guest_pass_balance INT(11) NOT NULL DEFAULT 0,
 			auto_renewal_enabled TINYINT(1) NOT NULL DEFAULT 0,
 			expiration_date DATE DEFAULT NULL,
 			created_at DATETIME NOT NULL,
@@ -138,6 +137,7 @@ class STSRC_Database {
 		$sql_guest_passes = "CREATE TABLE $table_guest_passes (
 			guest_pass_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT(20) UNSIGNED NOT NULL,
+			type VARCHAR(20) NOT NULL DEFAULT 'purchase',
 			quantity INT(11) NOT NULL DEFAULT 1,
 			amount DECIMAL(10,2) NOT NULL,
 			stripe_payment_intent_id VARCHAR(255) DEFAULT NULL,
@@ -149,10 +149,14 @@ class STSRC_Database {
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (guest_pass_id),
 			KEY member_id (member_id),
+			KEY type (type),
 			KEY used_at (used_at),
 			KEY created_at (created_at)
 		) $charset_collate;";
 		dbDelta( $sql_guest_passes );
+
+		// Backfill type column for existing rows that pre-date the column.
+		self::backfill_guest_pass_types();
 
 		// Table: wp_stsrc_email_logs
 		$table_email_logs = $wpdb->prefix . 'stsrc_email_logs';
@@ -219,8 +223,63 @@ class STSRC_Database {
 		// Enhance members table with balance tracking columns (v1.1.0+)
 		STSRC_Member_DB::enhance_table_for_balance_tracking();
 
+		// Drop legacy guest_pass_balance column (v1.2.0+) — balance is now computed from stsrc_guest_passes.
+		self::drop_guest_pass_balance_column();
+
 		// Add foreign key constraints after all tables are created
 		self::add_foreign_key_constraints();
+	}
+
+	/**
+	 * Backfill the `type` column for existing guest pass rows.
+	 *
+	 * Derives the type from existing columns: used_at indicates usage,
+	 * admin_adjusted indicates an admin adjustment, otherwise it's a purchase.
+	 * Only touches rows where type is still the default 'purchase'.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	private static function backfill_guest_pass_types() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'stsrc_guest_passes';
+
+		// Usage rows: used_at is set and not admin-adjusted.
+		$wpdb->query(
+			"UPDATE {$table} SET type = 'usage' WHERE used_at IS NOT NULL AND admin_adjusted = 0 AND type = 'purchase'"
+		);
+
+		// Admin adjustment rows.
+		$wpdb->query(
+			"UPDATE {$table} SET type = 'admin_credit' WHERE admin_adjusted = 1 AND type = 'purchase'"
+		);
+	}
+
+	/**
+	 * Drop the legacy guest_pass_balance column from the members table.
+	 *
+	 * Balance is now computed from the stsrc_guest_passes ledger.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	public static function drop_guest_pass_balance_column() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'stsrc_members';
+
+		$column_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'guest_pass_balance'",
+				DB_NAME,
+				$table
+			)
+		);
+
+		if ( ! empty( $column_exists ) ) {
+			$wpdb->query( "ALTER TABLE {$table} DROP COLUMN guest_pass_balance" );
+		}
 	}
 
 	/**

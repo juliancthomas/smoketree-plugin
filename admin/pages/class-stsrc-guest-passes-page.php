@@ -177,26 +177,18 @@ class STSRC_Guest_Passes_Page {
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
-		// Total purchased (paid passes that haven't been used)
-		$purchased_query = "SELECT SUM(gp.quantity) FROM {$passes_table} gp WHERE {$where_sql} AND gp.used_at IS NULL";
+		// Total purchased (purchase-type rows)
+		$purchased_query = "SELECT SUM(gp.quantity) FROM {$passes_table} gp WHERE {$where_sql} AND gp.type = 'purchase'";
 		$total_purchased = $wpdb->get_var( $wpdb->prepare( $purchased_query, $where_values ) );
 
-		// Total used (paid passes that have been used)
-		$used_query = "SELECT SUM(gp.quantity) FROM {$passes_table} gp WHERE {$where_sql} AND gp.used_at IS NOT NULL";
+		// Total used (usage-type rows)
+		$used_query = "SELECT SUM(gp.quantity) FROM {$passes_table} gp WHERE {$where_sql} AND gp.type = 'usage'";
 		$total_used = $wpdb->get_var( $wpdb->prepare( $used_query, $where_values ) );
 
-		// Total balance across all members
-		$total_balance_query = "SELECT SUM(guest_pass_balance) FROM {$members_table}";
-		$total_balance_values = array();
-		if ( ! empty( $filters['member_id'] ) ) {
-			$total_balance_query .= ' WHERE member_id = %d';
-			$total_balance_values[] = intval( $filters['member_id'] );
-		}
-		if ( ! empty( $total_balance_values ) ) {
-			$total_balance = $wpdb->get_var( $wpdb->prepare( $total_balance_query, $total_balance_values ) );
-		} else {
-			$total_balance = $wpdb->get_var( $total_balance_query );
-		}
+		// Total balance computed from the ledger.
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-guest-pass-db.php';
+		$filter_member_id = ! empty( $filters['member_id'] ) ? intval( $filters['member_id'] ) : null;
+		$total_balance = STSRC_Guest_Pass_DB::get_total_balance( $filter_member_id );
 
 		// Total revenue
 		$total_revenue = $wpdb->get_var(

@@ -177,14 +177,6 @@ class STSRC_Member {
 	public string $waiver_signed_date = '';
 
 	/**
-	 * Guest pass balance.
-	 *
-	 * @since    1.0.0
-	 * @var      int    $guest_pass_balance
-	 */
-	public int $guest_pass_balance = 0;
-
-	/**
 	 * Auto renewal enabled.
 	 *
 	 * @since    1.0.0
@@ -293,7 +285,7 @@ class STSRC_Member {
 		foreach ( $data as $key => $value ) {
 			if ( property_exists( $this, $key ) ) {
 				// Type casting for specific properties
-				if ( 'member_id' === $key || 'user_id' === $key || 'membership_type_id' === $key || 'guest_pass_balance' === $key ) {
+				if ( 'member_id' === $key || 'user_id' === $key || 'membership_type_id' === $key ) {
 					$this->$key = (int) $value;
 				} elseif ( 'auto_renewal_enabled' === $key ) {
 					$this->$key = (bool) $value;
@@ -331,7 +323,6 @@ class STSRC_Member {
 			'referral_source'      => $this->referral_source,
 			'waiver_full_name'     => $this->waiver_full_name,
 			'waiver_signed_date'   => $this->waiver_signed_date,
-			'guest_pass_balance'   => $this->guest_pass_balance,
 			'auto_renewal_enabled' => $this->auto_renewal_enabled ? 1 : 0,
 			'expiration_date'      => $this->expiration_date,
 			'created_at'           => $this->created_at,

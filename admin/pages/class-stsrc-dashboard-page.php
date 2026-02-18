@@ -73,25 +73,21 @@ class STSRC_Dashboard_Page {
 		$pending_count = count( $pending_members );
 
 		// Get guest pass stats
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-guest-pass-db.php';
+
 		global $wpdb;
 		$guest_pass_table = $wpdb->prefix . 'stsrc_guest_passes';
 		$total_purchased = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT SUM(quantity) FROM {$guest_pass_table} WHERE payment_status = %s",
-				'paid'
+				"SELECT SUM(quantity) FROM {$guest_pass_table} WHERE type = 'purchase' AND payment_status = %s",
+				'succeeded'
 			)
 		);
 		$total_used = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT SUM(quantity) FROM {$guest_pass_table} WHERE used_at IS NOT NULL AND payment_status = %s",
-				'paid'
-			)
+			"SELECT SUM(quantity) FROM {$guest_pass_table} WHERE type = 'usage'"
 		);
 
-		$members_table = $wpdb->prefix . 'stsrc_members';
-		$total_balance = $wpdb->get_var(
-			"SELECT SUM(guest_pass_balance) FROM {$members_table}"
-		);
+		$total_balance = STSRC_Guest_Pass_DB::get_total_balance();
 
 		return array(
 			'active_member_count' => (int) $active_count,

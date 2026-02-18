@@ -1003,7 +1003,8 @@ class STSRC_Ajax_Handler {
 			}
 
 			if ( $reset_guest ) {
-				$update_data['guest_pass_balance'] = 0;
+				require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
+				STSRC_Guest_Pass_DB::reset_balance( $member_id, 'Bulk status update reset' );
 			}
 
 			$updated_member = STSRC_Member_DB::update_member( $member_id, $update_data );

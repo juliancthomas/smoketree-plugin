@@ -172,7 +172,6 @@ class STSRC_Legacy_Member_Migrator {
 			'referral_source'      => sanitize_text_field( $old_member['referral'] ),
 			'waiver_full_name'     => sanitize_text_field( $old_member['waiver_full_name'] ),
 			'waiver_signed_date'   => self::convert_date( $old_member['waiver_date'] ),
-			'guest_pass_balance'   => 0, // Will be migrated separately if needed
 			'auto_renewal_enabled' => false,
 			'expiration_date'      => null, // Ignoring as per requirements
 		);

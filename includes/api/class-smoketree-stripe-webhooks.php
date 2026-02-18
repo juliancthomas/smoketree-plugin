@@ -938,47 +938,17 @@ class Smoketree_Stripe_Webhooks {
 		$amount_total = ( $session['amount_total'] ?? 0 ) / 100; // Convert from cents
 		$payment_intent_id = $session['payment_intent'] ?? '';
 
-		// Update guest pass balance
-		$balance_updated = STSRC_Guest_Pass_DB::update_guest_pass_balance( $member_id, $quantity );
-		if ( ! $balance_updated ) {
-			error_log( 'Failed to update guest pass balance for member: ' . $member_id );
+		// Record purchase in guest_passes ledger (single source of truth for balance).
+		$purchase_id = STSRC_Guest_Pass_DB::record_purchase(
+			$member_id,
+			$quantity,
+			$amount_total,
+			$payment_intent_id,
+			'Guest pass purchase via Stripe'
+		);
+		if ( false === $purchase_id ) {
+			error_log( 'Failed to record guest pass purchase for member: ' . $member_id );
 			return false;
-		}
-
-		// Log purchase in guest_passes table
-		global $wpdb;
-		$passes_table = $wpdb->prefix . 'stsrc_guest_passes';
-		$log_data = array(
-			'member_id'       => $member_id,
-			'quantity'        => $quantity,
-			'amount'          => $amount_total,
-			'stripe_payment_intent_id' => $payment_intent_id,
-			'payment_status' => 'succeeded',
-			'admin_adjusted' => 0,
-			'notes'          => 'Guest pass purchase via Stripe',
-			'created_at'     => current_time( 'mysql' ),
-		);
-
-		$formats = array(
-			'member_id'       => '%d',
-			'quantity'        => '%d',
-			'amount'          => '%f',
-			'stripe_payment_intent_id' => '%s',
-			'payment_status' => '%s',
-			'admin_adjusted' => '%d',
-			'notes'          => '%s',
-			'created_at'     => '%s',
-		);
-
-		$format_array = array();
-		foreach ( array_keys( $log_data ) as $key ) {
-			$format_array[] = $formats[ $key ] ?? '%s';
-		}
-
-		$log_result = $wpdb->insert( $passes_table, $log_data, $format_array );
-		if ( false === $log_result ) {
-			error_log( 'Failed to log guest pass purchase for member: ' . $member_id );
-			// Don't return false - balance was updated, just logging failed
 		}
 
 		// Log payment transaction

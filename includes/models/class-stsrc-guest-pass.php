@@ -41,6 +41,14 @@ class STSRC_Guest_Pass {
 	public int $member_id = 0;
 
 	/**
+	 * Entry type: purchase, usage, admin_credit, admin_debit, reset.
+	 *
+	 * @since    1.2.0
+	 * @var      string    $type
+	 */
+	public string $type = 'purchase';
+
+	/**
 	 * Quantity.
 	 *
 	 * @since    1.0.0
@@ -177,6 +185,7 @@ class STSRC_Guest_Pass {
 		return array(
 			'guest_pass_id'            => $this->guest_pass_id,
 			'member_id'               => $this->member_id,
+			'type'                    => $this->type,
 			'quantity'                => $this->quantity,
 			'amount'                  => $this->amount,
 			'stripe_payment_intent_id' => $this->stripe_payment_intent_id,

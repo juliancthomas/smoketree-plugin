@@ -586,14 +586,27 @@ class STSRC_Auto_Renewal_Service {
 
 		$table_name = $wpdb->prefix . 'stsrc_members';
 
+		// Reset guest pass balances via the ledger before the status update.
+		if ( $reset_guest_pass_balance ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
+
+			$member_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT member_id FROM {$table_name} WHERE status = %s",
+					$from_status
+				)
+			);
+
+			foreach ( $member_ids as $mid ) {
+				STSRC_Guest_Pass_DB::reset_balance( (int) $mid, 'Season reset' );
+			}
+		}
+
 		$set_parts   = array( 'status = %s' );
 		$set_values  = array( $to_status );
 
 		if ( $clear_auto_renewal ) {
 			$set_parts[] = 'auto_renewal_enabled = 0';
-		}
-		if ( $reset_guest_pass_balance ) {
-			$set_parts[] = 'guest_pass_balance = 0';
 		}
 
 		$set_parts[] = 'updated_at = %s';
