@@ -59,7 +59,7 @@ run_trigger() {
   echo ""
   echo -e "  ${BOLD}Triggering:${RESET} $label"
   echo -e "  ${YELLOW}────────────────────────────────────────${RESET}"
-  stripe trigger "$@"
+  stripe trigger "$@" </dev/null
   local exit_code=$?
   echo -e "  ${YELLOW}────────────────────────────────────────${RESET}"
   if [ $exit_code -eq 0 ]; then
@@ -168,103 +168,9 @@ run_all() {
   test_payment_intent_failed
 }
 
-cleanup() {
-  header "Cleanup — Reset test data for member ${MEMBER_ID}"
-  warn "This will:"
-  info "  • Set member ${MEMBER_ID} status → pending"
-  info "  • Delete payment log rows for member ${MEMBER_ID} with stripe_event_id matching test events"
-  info "  • Delete the test extra member: ${EXTRA_FIRST} ${EXTRA_LAST}"
-  info "  • Delete test transactions for member ${MEMBER_ID} (amount = ${BALANCE_PAYMENT_AMOUNT})"
-  echo ""
-  read -rp "  Proceed? (y/N): " confirm
-  [[ "$confirm" =~ ^[Yy]$ ]] || return
-
-  # Check WP-CLI availability
-  if ! command -v wp &>/dev/null; then
-    warn "WP-CLI not found. Run cleanup manually in WP Admin or phpMyAdmin."
-    info "SQL to run:"
-    echo ""
-    echo "    -- Reset member status"
-    echo "    UPDATE wp_stsrc_members SET status='pending' WHERE member_id=${MEMBER_ID};"
-    echo ""
-    echo "    -- Remove test payment logs"
-    echo "    DELETE FROM wp_stsrc_payment_log WHERE member_id=${MEMBER_ID} AND stripe_event_id != '';"
-    echo ""
-    echo "    -- Remove test extra member"
-    echo "    DELETE FROM wp_stsrc_extra_members WHERE member_id=${MEMBER_ID} AND first_name='${EXTRA_FIRST}' AND last_name='${EXTRA_LAST}';"
-    echo ""
-    echo "    -- Remove all test transactions"
-    echo "    DELETE FROM wp_stsrc_transactions WHERE member_id=${MEMBER_ID};"
-    echo ""
-    echo "    -- Restore balance_owed to original membership price"
-    echo "    UPDATE wp_stsrc_members SET balance_owed = original_membership_price WHERE member_id=${MEMBER_ID};"
-    echo ""
-    return
-  fi
-
-  echo ""
-  info "Running WP-CLI cleanup..."
-
-  wp --path="${WP_PATH}" eval "
-    global \$wpdb;
-
-    // Reset member status
-    \$updated = \$wpdb->update(
-      \$wpdb->prefix . 'stsrc_members',
-      ['status' => 'pending'],
-      ['member_id' => ${MEMBER_ID}]
-    );
-    echo 'Member status reset: ' . (\$updated !== false ? 'OK' : 'FAILED') . PHP_EOL;
-
-    // Delete test payment logs (non-empty stripe_event_id = came from Stripe)
-    \$deleted_logs = \$wpdb->query(\$wpdb->prepare(
-      \"DELETE FROM {\$wpdb->prefix}stsrc_payment_log WHERE member_id = %d AND stripe_event_id != ''\",
-      ${MEMBER_ID}
-    ));
-    echo 'Payment logs deleted: ' . \$deleted_logs . PHP_EOL;
-
-    // Delete test extra member
-    \$deleted_extra = \$wpdb->delete(
-      \$wpdb->prefix . 'stsrc_extra_members',
-      ['member_id' => ${MEMBER_ID}, 'first_name' => '${EXTRA_FIRST}', 'last_name' => '${EXTRA_LAST}']
-    );
-    echo 'Extra members deleted: ' . (\$deleted_extra !== false ? \$deleted_extra : 'FAILED') . PHP_EOL;
-
-    // Delete all test transactions (registration + balance payments)
-    \$deleted_txn = \$wpdb->query(\$wpdb->prepare(
-      \"DELETE FROM {\$wpdb->prefix}stsrc_transactions WHERE member_id = %d\",
-      ${MEMBER_ID}
-    ));
-    echo 'Transactions deleted: ' . \$deleted_txn . PHP_EOL;
-
-    // Restore balance_owed to original_membership_price
-    \$member = \$wpdb->get_row(\$wpdb->prepare(
-      \"SELECT original_membership_price FROM {\$wpdb->prefix}stsrc_members WHERE member_id = %d\",
-      ${MEMBER_ID}
-    ));
-    if (\$member) {
-      \$original_price = (float)\$member->original_membership_price;
-      \$wpdb->update(
-        \$wpdb->prefix . 'stsrc_members',
-        ['balance_owed' => \$original_price],
-        ['member_id' => ${MEMBER_ID}]
-      );
-      echo 'Balance_owed restored to original price: \$' . \$original_price . PHP_EOL;
-    }
-
-    // Clear idempotency cache so events can be re-triggered
-    delete_option('stsrc_stripe_processed_events');
-    echo 'Processed events cache cleared.' . PHP_EOL;
-  "
-
-  echo ""
-  success "Cleanup complete. Member ${MEMBER_ID} is ready for another test run."
-}
-
 # ── Main menu ────────────────────────────────────────────────
 
-show_menu() {
-  clear
+print_menu() {
   echo ""
   echo -e "${CYAN}${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
   echo -e "${CYAN}${BOLD}║       Stripe Webhook Test Runner — Smoketree         ║${RESET}"
@@ -287,6 +193,11 @@ show_menu() {
   echo "   8)  Cleanup / Reset test data"
   echo "   q)  Quit"
   echo ""
+}
+
+print_menu
+
+while true; do
   read -rp "  Choice: " choice
 
   case "$choice" in
@@ -297,12 +208,37 @@ show_menu() {
     5) test_payment_intent_failed ;;
     6) test_extra_member ;;
     7) run_all ;;
-    8) cleanup ;;
+    8)
+      echo ""
+      echo -e "  ${CYAN}${BOLD}Cleanup runs in a separate script to avoid stdin conflicts.${RESET}"
+      echo ""
+      echo -e "  Open a new terminal and run:"
+      echo ""
+      echo -e "    ${BOLD}bash dev/stripe-cleanup.sh${RESET}"
+      echo ""
+      ;;
     q|Q) echo ""; exit 0 ;;
     *) warn "Invalid choice." ;;
   esac
 
-  show_menu
-}
+  print_menu
+done
 
-show_menu
+
+# -- Reset member status
+# UPDATE wp_stsrc_members SET status = 'pending' WHERE member_id = 13;
+
+# -- Restore balance to original membership price
+# UPDATE wp_stsrc_members SET balance_owed = original_membership_price WHERE member_id = 13;
+
+# -- Delete Stripe payment logs
+# DELETE FROM wp_stsrc_payment_logs WHERE member_id = 13 AND stripe_event_id != '';
+
+# -- Delete all transactions
+# DELETE FROM wp_stsrc_transactions WHERE member_id = 13;
+
+# -- Delete test extra member
+# DELETE FROM wp_stsrc_extra_members WHERE member_id = 13 AND first_name = 'Test' AND last_name = 'Member';
+
+# -- Clear idempotency cache (so same events can be re-triggered)
+# DELETE FROM wp_options WHERE option_name = 'stsrc_stripe_processed_events';
