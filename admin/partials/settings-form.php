@@ -269,47 +269,6 @@ $acf_available = $data['acf_available'] ?? false;
 	<?php endif; ?>
 </div>
 
-<?php if ( ! $acf_available || ! function_exists( 'acf_form' ) ) : ?>
-<script>
-jQuery(document).ready(function($) {
-	// Update CAPTCHA key labels when provider changes
-	$('#captcha_provider').on('change', function() {
-		var provider = $(this).val();
-		var providerName = provider === 'recaptcha' ? 'reCAPTCHA' : 'hCaptcha';
-		$('label[for="captcha_site_key"]').text('<?php echo esc_js( __( 'Site Key', 'smoketree-plugin' ) ); ?> (' + providerName + ')');
-		$('label[for="captcha_secret_key"]').text('<?php echo esc_js( __( 'Secret Key', 'smoketree-plugin' ) ); ?> (' + providerName + ')');
-	});
-
-	// Handle form submission
-	$('#stsrc-settings-form').on('submit', function(e) {
-		e.preventDefault();
-		
-		var formData = $(this).serialize();
-		var $submitBtn = $('#submit');
-		$submitBtn.prop('disabled', true).val('<?php echo esc_js( __( 'Saving...', 'smoketree-plugin' ) ); ?>');
-
-		$.ajax({
-			url: ajaxurl,
-			type: 'POST',
-			data: formData,
-			success: function(response) {
-				if (response.success) {
-					alert('<?php echo esc_js( __( 'Settings saved successfully!', 'smoketree-plugin' ) ); ?>');
-					location.reload();
-				} else {
-					alert('<?php echo esc_js( __( 'Error: ', 'smoketree-plugin' ) ); ?>' + response.data.message);
-					$submitBtn.prop('disabled', false).val('<?php echo esc_js( __( 'Save Settings', 'smoketree-plugin' ) ); ?>');
-				}
-			},
-			error: function() {
-				alert('<?php echo esc_js( __( 'Error saving settings', 'smoketree-plugin' ) ); ?>');
-				$submitBtn.prop('disabled', false).val('<?php echo esc_js( __( 'Save Settings', 'smoketree-plugin' ) ); ?>');
-			}
-		});
-	});
-});
-</script>
-<?php endif; ?>
 
 <!-- Auto-Renewal Tools -->
 <div class="stsrc-form-section" style="margin-top:24px;">
