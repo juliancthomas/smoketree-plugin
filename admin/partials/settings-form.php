@@ -393,6 +393,86 @@ jQuery(document).ready(function($) {
 });
 </script>
 
+<!-- Renewal History Log -->
+<?php
+$renewal_logs = $data['renewal_logs'] ?? array();
+$renewal_member_names = $data['renewal_member_names'] ?? array();
+?>
+<div class="stsrc-form-section" style="margin-top:24px;">
+	<h2><?php echo esc_html__( 'Renewal History', 'smoketree-plugin' ); ?></h2>
+	<p class="description">
+		<?php echo esc_html__( 'Recent auto-renewal payment attempts (most recent first, up to 50 entries).', 'smoketree-plugin' ); ?>
+	</p>
+
+	<?php if ( ! empty( $renewal_logs ) ) : ?>
+		<?php
+		$succeeded_count = count( array_filter( $renewal_logs, static fn( $l ) => 'succeeded' === ( $l['status'] ?? '' ) ) );
+		$failed_count    = count( array_filter( $renewal_logs, static fn( $l ) => 'failed' === ( $l['status'] ?? '' ) ) );
+		$pending_count   = count( array_filter( $renewal_logs, static fn( $l ) => 'pending' === ( $l['status'] ?? '' ) ) );
+		?>
+		<p style="margin: 12px 0;">
+			<strong><?php echo esc_html__( 'Summary:', 'smoketree-plugin' ); ?></strong>
+			<span style="color: #00a32a;"><?php echo esc_html( $succeeded_count ); ?> <?php echo esc_html__( 'succeeded', 'smoketree-plugin' ); ?></span>,
+			<span style="color: #d63638;"><?php echo esc_html( $failed_count ); ?> <?php echo esc_html__( 'failed', 'smoketree-plugin' ); ?></span>,
+			<span style="color: #996800;"><?php echo esc_html( $pending_count ); ?> <?php echo esc_html__( 'pending', 'smoketree-plugin' ); ?></span>
+		</p>
+
+		<table class="widefat striped" style="max-width:100%;">
+			<thead>
+				<tr>
+					<th><?php echo esc_html__( 'Date', 'smoketree-plugin' ); ?></th>
+					<th><?php echo esc_html__( 'Member', 'smoketree-plugin' ); ?></th>
+					<th><?php echo esc_html__( 'Amount', 'smoketree-plugin' ); ?></th>
+					<th><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
+					<th><?php echo esc_html__( 'Renewal Date', 'smoketree-plugin' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $renewal_logs as $log ) :
+					$log_member_id = (int) ( $log['member_id'] ?? 0 );
+					$member_name   = $renewal_member_names[ $log_member_id ] ?? __( 'Unknown', 'smoketree-plugin' );
+					$meta          = is_array( $log['metadata'] ?? null ) ? $log['metadata'] : array();
+					$season_date   = $meta['season_renewal_date'] ?? '';
+					$status_colors = array(
+						'succeeded' => '#00a32a',
+						'failed'    => '#d63638',
+						'pending'   => '#996800',
+					);
+					$status_color = $status_colors[ $log['status'] ?? '' ] ?? '#646970';
+				?>
+					<tr>
+						<td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $log['created_at'] ) ) ); ?></td>
+						<td>
+							<?php if ( $log_member_id > 0 ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $log_member_id ) ); ?>">
+									<?php echo esc_html( $member_name ); ?>
+								</a>
+							<?php else : ?>
+								<?php echo esc_html( $member_name ); ?>
+							<?php endif; ?>
+						</td>
+						<td><?php echo esc_html( '$' . number_format( (float) ( $log['amount'] ?? 0 ), 2 ) ); ?></td>
+						<td>
+							<span style="color: <?php echo esc_attr( $status_color ); ?>; font-weight: 600;">
+								<?php echo esc_html( ucfirst( $log['status'] ?? 'unknown' ) ); ?>
+							</span>
+						</td>
+						<td>
+							<?php if ( ! empty( $season_date ) ) : ?>
+								<?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $season_date ) ) ); ?>
+							<?php else : ?>
+								&mdash;
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php else : ?>
+		<p><?php echo esc_html__( 'No auto-renewal payment attempts yet.', 'smoketree-plugin' ); ?></p>
+	<?php endif; ?>
+</div>
+
 <?php $balance_tools_result = $data['balance_tools_result'] ?? null; ?>
 
 <div class="stsrc-form-section" style="margin-top:24px;">

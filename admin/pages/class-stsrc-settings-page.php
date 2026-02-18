@@ -44,10 +44,28 @@ class STSRC_Settings_Page {
 		// Get current settings
 		$settings = $this->get_settings();
 
+		// Load recent auto-renewal payment logs
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-payment-log-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-member-db.php';
+
+		$renewal_logs = STSRC_Payment_Log_DB::get_payment_logs( array( 'payment_type' => 'auto_renewal' ) );
+		$renewal_logs = array_slice( $renewal_logs, 0, 50 );
+
+		$renewal_member_ids = array_unique( array_filter( array_column( $renewal_logs, 'member_id' ) ) );
+		$renewal_member_names = array();
+		foreach ( $renewal_member_ids as $mid ) {
+			$m = STSRC_Member_DB::get_member( (int) $mid );
+			if ( $m ) {
+				$renewal_member_names[ (int) $mid ] = $m['first_name'] . ' ' . $m['last_name'];
+			}
+		}
+
 		$data = array(
-			'settings'             => $settings,
-			'acf_available'        => $acf_available,
-			'balance_tools_result' => $balance_tools_result,
+			'settings'              => $settings,
+			'acf_available'         => $acf_available,
+			'balance_tools_result'  => $balance_tools_result,
+			'renewal_logs'          => $renewal_logs,
+			'renewal_member_names'  => $renewal_member_names,
 		);
 
 		// Include settings template
