@@ -218,6 +218,36 @@ class STSRC_Balance_Ajax {
 	}
 
 	/**
+	 * Fee rate definitions for each Stripe payment method.
+	 *
+	 * @since  1.2.0
+	 */
+	private const FEE_RATES = array(
+		'card'            => array( 'percent' => 0.029, 'flat' => 0.30, 'cap' => null ),
+		'us_bank_account' => array( 'percent' => 0.008, 'flat' => 0.00, 'cap' => 5.00 ),
+	);
+
+	/**
+	 * Calculate the processing fee for a given amount and payment method.
+	 *
+	 * @since  1.2.0
+	 * @param  float  $amount         Payment amount in dollars.
+	 * @param  string $payment_method One of the keys in FEE_RATES.
+	 * @return float  Fee in dollars, rounded to two decimal places.
+	 */
+	public static function calculate_processing_fee( float $amount, string $payment_method ): float {
+		$rate = self::FEE_RATES[ $payment_method ] ?? null;
+		if ( null === $rate || $amount <= 0 ) {
+			return 0.00;
+		}
+		$fee = $amount * $rate['percent'] + $rate['flat'];
+		if ( null !== $rate['cap'] && $fee > $rate['cap'] ) {
+			$fee = $rate['cap'];
+		}
+		return round( $fee, 2 );
+	}
+
+	/**
 	 * Create Stripe checkout session for member balance payment.
 	 *
 	 * @since  1.1.0
@@ -237,8 +267,9 @@ class STSRC_Balance_Ajax {
 			return;
 		}
 
-		$member_id = absint( $post_data['member_id'] ?? 0 );
-		$amount    = (float) ( $post_data['amount'] ?? 0 );
+		$member_id      = absint( $post_data['member_id'] ?? 0 );
+		$amount         = (float) ( $post_data['amount'] ?? 0 );
+		$payment_method = sanitize_text_field( $post_data['payment_method'] ?? 'card' );
 
 		if ( $member_id <= 0 ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid member.', 'smoketree-plugin' ) ) );
@@ -247,6 +278,12 @@ class STSRC_Balance_Ajax {
 
 		if ( $amount <= 0 ) {
 			wp_send_json_error( array( 'message' => __( 'Payment amount must be greater than zero.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$allowed_methods = array_keys( self::FEE_RATES );
+		if ( ! in_array( $payment_method, $allowed_methods, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid payment method.', 'smoketree-plugin' ) ) );
 			return;
 		}
 
@@ -276,8 +313,9 @@ class STSRC_Balance_Ajax {
 			return;
 		}
 
-		$payment_service  = new STSRC_Payment_Service();
-		$minimum_payment  = $payment_service->get_minimum_balance_payment();
+		$payment_service = new STSRC_Payment_Service();
+		$minimum_payment = $payment_service->get_minimum_balance_payment();
+
 		if ( $amount < $minimum_payment ) {
 			wp_send_json_error(
 				array(
@@ -288,7 +326,24 @@ class STSRC_Balance_Ajax {
 			return;
 		}
 
-		$session_url = $payment_service->create_balance_payment_checkout_session( $member_id, $amount );
+		$remaining = $balance_owed - $amount;
+		if ( $remaining > 0 && $remaining < $minimum_payment ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: 1: remaining amount, 2: minimum payment */
+						__( 'This payment would leave a remaining balance of $%1$s, which is below the minimum payment of $%2$s. Please pay the full balance or reduce your payment.', 'smoketree-plugin' ),
+						number_format( $remaining, 2 ),
+						number_format( $minimum_payment, 2 )
+					),
+				)
+			);
+			return;
+		}
+
+		$processing_fee = self::calculate_processing_fee( $amount, $payment_method );
+
+		$session_url = $payment_service->create_balance_payment_checkout_session( $member_id, $amount, $payment_method, $processing_fee );
 		if ( false === $session_url || empty( $session_url ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unable to create payment session. Please try again.', 'smoketree-plugin' ) ) );
 			return;

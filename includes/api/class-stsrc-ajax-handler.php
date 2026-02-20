@@ -1289,33 +1289,35 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
-	 * Add extra member.
+	 * Add extra member(s).
+	 *
+	 * Accepts one or more extra members from the member portal (up to the
+	 * remaining capacity of 3 total). Admin users bypass payment and add a
+	 * single member directly.
 	 *
 	 * @since    1.0.0
 	 * @return   void
 	 */
 	public function add_extra_member(): void {
-		// Check user is logged in
 		if ( ! is_user_logged_in() ) {
 			wp_send_json_error( array( 'message' => 'You must be logged in.' ) );
 			return;
 		}
 
 		$post_data = wp_unslash( $_POST );
-		$is_admin = current_user_can( 'manage_options' );
+		$is_admin  = current_user_can( 'manage_options' );
 
-		// Verify nonce (different nonce for admin vs member portal)
-		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		$nonce        = sanitize_text_field( $post_data['nonce'] ?? '' );
 		$nonce_action = $is_admin ? 'stsrc_admin_nonce' : 'stsrc_extra_member_nonce';
-		
+
 		if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
 			return;
 		}
 
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
 
-		// Get member ID (either from POST for admin or from current user for member portal)
 		if ( $is_admin ) {
 			$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
 			if ( $member_id <= 0 ) {
@@ -1328,46 +1330,40 @@ class STSRC_Ajax_Handler {
 				return;
 			}
 		} else {
-			// Member portal: get member from current user
-			$user_id = get_current_user_id();
 			$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
-
 			if ( ! $member ) {
 				wp_send_json_error( array( 'message' => 'Member not found.' ) );
 				return;
 			}
-
 			$member_id = (int) $member['member_id'];
 		}
 
-		// Validate input
-		$first_name = sanitize_text_field( $post_data['first_name'] ?? '' );
-		$last_name  = sanitize_text_field( $post_data['last_name'] ?? '' );
-		$email      = sanitize_email( $post_data['email'] ?? '' );
+		$current_count   = STSRC_Extra_Member_DB::count_extra_members( $member_id );
+		$slots_available = 3 - $current_count;
 
-		if ( empty( $first_name ) || empty( $last_name ) ) {
-			wp_send_json_error( array( 'message' => 'First name and last name are required.' ) );
-			return;
-		}
-
-		// Check extra member limit (max 3)
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
-		$current_count = STSRC_Extra_Member_DB::count_extra_members( $member_id );
-		if ( $current_count >= 3 ) {
+		if ( $slots_available <= 0 ) {
 			wp_send_json_error( array( 'message' => 'Maximum of 3 extra members allowed.' ) );
 			return;
 		}
 
-		// Admin bypass: directly add extra member without Stripe payment
-		// Default to "paid" status since admin would have verified offline payment
+		// Admin: single member add (legacy flow, no payment)
 		if ( $is_admin ) {
+			$first_name = sanitize_text_field( $post_data['first_name'] ?? '' );
+			$last_name  = sanitize_text_field( $post_data['last_name'] ?? '' );
+			$email      = sanitize_email( $post_data['email'] ?? '' );
+
+			if ( empty( $first_name ) || empty( $last_name ) ) {
+				wp_send_json_error( array( 'message' => 'First name and last name are required.' ) );
+				return;
+			}
+
 			$extra_member_id = STSRC_Extra_Member_DB::add_extra_member(
 				$member_id,
 				array(
 					'first_name'     => $first_name,
 					'last_name'      => $last_name,
 					'email'          => $email,
-					'payment_status' => 'paid', // Admin-added members default to paid
+					'payment_status' => 'paid',
 				)
 			);
 
@@ -1376,43 +1372,124 @@ class STSRC_Ajax_Handler {
 				return;
 			}
 
-			wp_send_json_success(
+			wp_send_json_success( array( 'message' => 'Extra member added successfully (marked as paid).' ) );
+			return;
+		}
+
+		// Member portal: multi-member flow
+		$raw_members    = $post_data['members'] ?? array();
+		$payment_method = sanitize_text_field( $post_data['payment_method'] ?? 'card' );
+
+		$allowed_methods = array( 'card', 'us_bank_account' );
+		if ( ! in_array( $payment_method, $allowed_methods, true ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid payment method.' ) );
+			return;
+		}
+
+		if ( ! is_array( $raw_members ) || empty( $raw_members ) ) {
+			wp_send_json_error( array( 'message' => 'At least one extra member is required.' ) );
+			return;
+		}
+
+		$members = array();
+		foreach ( $raw_members as $raw ) {
+			$fn = sanitize_text_field( $raw['first_name'] ?? '' );
+			$ln = sanitize_text_field( $raw['last_name'] ?? '' );
+			$em = sanitize_email( $raw['email'] ?? '' );
+
+			if ( empty( $fn ) || empty( $ln ) ) {
+				wp_send_json_error( array( 'message' => 'First name and last name are required for every extra member.' ) );
+				return;
+			}
+			$members[] = array(
+				'first_name' => $fn,
+				'last_name'  => $ln,
+				'email'      => $em,
+			);
+		}
+
+		$quantity = count( $members );
+		if ( $quantity > $slots_available ) {
+			wp_send_json_error(
 				array(
-					'message' => 'Extra member added successfully (marked as paid).',
+					'message' => sprintf(
+						/* translators: %d: number of remaining slots */
+						__( 'You can only add %d more extra member(s).', 'smoketree-plugin' ),
+						$slots_available
+					),
 				)
 			);
 			return;
 		}
 
-		// Member portal: Create Stripe checkout for $50
+		$price_per_member = 50.00;
+		$subtotal         = $quantity * $price_per_member;
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'api/class-stsrc-balance-ajax.php';
+		$processing_fee = STSRC_Balance_Ajax::calculate_processing_fee( $subtotal, $payment_method );
+
+		$subtotal_cents = (int) round( $subtotal * 100 );
+		$fee_cents      = (int) round( $processing_fee * 100 );
+
+		$line_items = array(
+			array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 1 === $quantity
+							? 'Extra Member'
+							: 'Extra Members (' . $quantity . ')',
+					),
+					'unit_amount'  => $subtotal_cents,
+				),
+				'quantity' => 1,
+			),
+		);
+
+		if ( $fee_cents > 0 ) {
+			$line_items[] = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 'Processing Fee',
+					),
+					'unit_amount'  => $fee_cents,
+				),
+				'quantity' => 1,
+			);
+		}
+
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		$payment_service = new STSRC_Payment_Service();
 
 		$checkout_url = $payment_service->create_checkout_session(
 			array(
-				'amount'         => 50.00,
-				'product_name'   => 'Extra Member - ' . $first_name . ' ' . $last_name,
-				'customer_id'    => $member['stripe_customer_id'] ?? null,
-				'customer_email' => $member['email'],
-				'success_url'    => home_url( '/member-portal?extra_member=success&session_id={CHECKOUT_SESSION_ID}' ),
-				'cancel_url'     => home_url( '/member-portal?extra_member=cancelled' ),
-				'metadata'       => array(
-					'payment_type' => 'extra_member',
-					'member_id'    => $member_id,
-					'first_name'   => $first_name,
-					'last_name'    => $last_name,
-					'email'        => $email,
+				'amount'               => $subtotal + $processing_fee,
+				'line_items'           => $line_items,
+				'payment_method_types' => array( $payment_method ),
+				'customer_id'          => $member['stripe_customer_id'] ?? null,
+				'customer_email'       => $member['email'],
+				'success_url'          => home_url( '/member-portal?extra_member=success&session_id={CHECKOUT_SESSION_ID}' ),
+				'cancel_url'           => home_url( '/member-portal?extra_member=cancelled' ),
+				'metadata'             => array(
+					'payment_type'   => 'extra_member',
+					'member_id'      => $member_id,
+					'quantity'       => $quantity,
+					'payment_amount' => $subtotal,
+					'processing_fee' => $processing_fee,
+					'payment_method' => $payment_method,
+					'extra_members'  => wp_json_encode( $members ),
 				),
 			)
 		);
 
 		if ( ! $checkout_url ) {
 			STSRC_Logger::error(
-				'Failed to create Stripe checkout session for extra member.',
+				'Failed to create Stripe checkout session for extra members.',
 				array(
 					'method'    => __METHOD__,
 					'member_id' => $member_id,
-					'name'      => $first_name . ' ' . $last_name,
+					'quantity'  => $quantity,
 				)
 			);
 			wp_send_json_error( array( 'message' => 'Failed to create payment session.' ) );

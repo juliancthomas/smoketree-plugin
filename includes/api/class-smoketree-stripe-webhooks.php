@@ -822,7 +822,12 @@ class Smoketree_Stripe_Webhooks {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
 
 		$payment_intent_id = sanitize_text_field( (string) ( $session['payment_intent'] ?? '' ) );
-		$amount_paid       = (float) ( ( $session['amount_total'] ?? 0 ) / 100 );
+
+		// Use the balance-only amount from metadata so the processing fee
+		// is not applied against the member's balance.
+		$amount_paid = isset( $metadata['payment_amount'] )
+			? (float) $metadata['payment_amount']
+			: (float) ( ( $session['amount_total'] ?? 0 ) / 100 );
 
 		if ( $amount_paid <= 0 ) {
 			error_log( 'Balance payment webhook amount is zero or invalid for session: ' . $session_id );
@@ -886,6 +891,11 @@ class Smoketree_Stripe_Webhooks {
 	 * @return   string
 	 */
 	private static function detect_payment_method_from_session( array $session ): string {
+		$metadata = $session['metadata'] ?? array();
+		if ( ! empty( $metadata['payment_method'] ) ) {
+			return sanitize_text_field( $metadata['payment_method'] );
+		}
+
 		$method_types = $session['payment_method_types'] ?? array();
 		if ( is_array( $method_types ) ) {
 			if ( in_array( 'us_bank_account', $method_types, true ) && 1 === count( $method_types ) ) {
@@ -1044,13 +1054,10 @@ class Smoketree_Stripe_Webhooks {
 			return false;
 		}
 
-		$metadata = $session['metadata'] ?? array();
-		$member_id = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
-		$first_name = sanitize_text_field( $metadata['first_name'] ?? '' );
-		$last_name = sanitize_text_field( $metadata['last_name'] ?? '' );
-		$email = sanitize_email( $metadata['email'] ?? '' );
+		$metadata   = $session['metadata'] ?? array();
+		$member_id  = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
 
-		if ( $member_id <= 0 || empty( $first_name ) || empty( $last_name ) ) {
+		if ( $member_id <= 0 ) {
 			error_log( 'Invalid extra member payment data for session: ' . $session_id );
 			return false;
 		}
@@ -1060,85 +1067,121 @@ class Smoketree_Stripe_Webhooks {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-payment-log-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 
-		// Get member data
 		$member = STSRC_Member_DB::get_member( $member_id );
 		if ( ! $member ) {
 			error_log( 'Member not found for extra member payment: ' . $member_id );
 			return false;
 		}
 
-		// Get payment amount from session ($50 per extra member)
-		$amount_total = ( $session['amount_total'] ?? 0 ) / 100; // Convert from cents
 		$payment_intent_id = $session['payment_intent'] ?? '';
+		$processing_fee    = isset( $metadata['processing_fee'] ) ? (float) $metadata['processing_fee'] : 0.00;
 
-		// Check if extra member already exists (to avoid duplicates)
+		// Use payment_amount from metadata (excludes processing fee) with fallback
+		$payment_amount = isset( $metadata['payment_amount'] )
+			? (float) $metadata['payment_amount']
+			: (float) ( ( $session['amount_total'] ?? 0 ) / 100 );
+
+		// Build the list of extra members — support both new multi-member JSON
+		// format and legacy single-member metadata fields.
+		$members_to_create = array();
+
+		if ( ! empty( $metadata['extra_members'] ) ) {
+			$decoded = json_decode( $metadata['extra_members'], true );
+			if ( is_array( $decoded ) ) {
+				foreach ( $decoded as $em ) {
+					$fn = sanitize_text_field( $em['first_name'] ?? '' );
+					$ln = sanitize_text_field( $em['last_name'] ?? '' );
+					if ( ! empty( $fn ) && ! empty( $ln ) ) {
+						$members_to_create[] = array(
+							'first_name' => $fn,
+							'last_name'  => $ln,
+							'email'      => sanitize_email( $em['email'] ?? '' ),
+						);
+					}
+				}
+			}
+		}
+
+		// Legacy fallback: single member in flat metadata fields
+		if ( empty( $members_to_create ) ) {
+			$fn = sanitize_text_field( $metadata['first_name'] ?? '' );
+			$ln = sanitize_text_field( $metadata['last_name'] ?? '' );
+			if ( ! empty( $fn ) && ! empty( $ln ) ) {
+				$members_to_create[] = array(
+					'first_name' => $fn,
+					'last_name'  => $ln,
+					'email'      => sanitize_email( $metadata['email'] ?? '' ),
+				);
+			}
+		}
+
+		if ( empty( $members_to_create ) ) {
+			error_log( 'No extra member data found in metadata for session: ' . $session_id );
+			return false;
+		}
+
 		$existing_extra_members = STSRC_Extra_Member_DB::get_extra_members( $member_id );
-		$extra_member_exists = false;
-		$extra_member_id = null;
+		$created_ids = array();
 
-		foreach ( $existing_extra_members as $existing ) {
-			if ( $existing['first_name'] === $first_name && $existing['last_name'] === $last_name ) {
-				$extra_member_exists = true;
-				$extra_member_id = $existing['extra_member_id'];
-				break;
+		foreach ( $members_to_create as $new_member ) {
+			$extra_member_exists = false;
+			$extra_member_id     = null;
+
+			foreach ( $existing_extra_members as $existing ) {
+				if ( $existing['first_name'] === $new_member['first_name'] && $existing['last_name'] === $new_member['last_name'] ) {
+					$extra_member_exists = true;
+					$extra_member_id     = $existing['extra_member_id'];
+					break;
+				}
+			}
+
+			if ( $extra_member_exists && $extra_member_id ) {
+				STSRC_Extra_Member_DB::update_extra_member(
+					$extra_member_id,
+					array(
+						'payment_status'           => 'succeeded',
+						'stripe_payment_intent_id' => $payment_intent_id,
+					)
+				);
+			} else {
+				$extra_member_id = STSRC_Extra_Member_DB::add_extra_member(
+					$member_id,
+					array(
+						'first_name'               => $new_member['first_name'],
+						'last_name'                => $new_member['last_name'],
+						'email'                    => $new_member['email'],
+						'payment_status'           => 'succeeded',
+						'stripe_payment_intent_id' => $payment_intent_id,
+					)
+				);
+
+				if ( false === $extra_member_id ) {
+					error_log( 'Failed to create extra member ' . $new_member['first_name'] . ' ' . $new_member['last_name'] . ' for member: ' . $member_id );
+				}
+			}
+
+			if ( $extra_member_id ) {
+				$created_ids[] = $extra_member_id;
 			}
 		}
 
-		if ( $extra_member_exists && $extra_member_id ) {
-			// Update existing extra member payment status
-			$update_result = STSRC_Extra_Member_DB::update_extra_member(
-				$extra_member_id,
-				array(
-					'payment_status'           => 'succeeded',
-					'stripe_payment_intent_id' => $payment_intent_id,
-				)
-			);
-
-			if ( ! $update_result ) {
-				error_log( 'Failed to update extra member payment status: ' . $extra_member_id );
-				return false;
-			}
-		} else {
-			// Create new extra member record
-			$extra_member_id = STSRC_Extra_Member_DB::add_extra_member(
-				$member_id,
-				array(
-					'first_name'               => $first_name,
-					'last_name'                => $last_name,
-					'email'                    => $email,
-					'payment_status'           => 'succeeded',
-					'stripe_payment_intent_id' => $payment_intent_id,
-				)
-			);
-
-			if ( false === $extra_member_id ) {
-				error_log( 'Failed to create extra member for member: ' . $member_id );
-				return false;
-			}
-		}
-
-		// Log payment transaction
 		STSRC_Payment_Log_DB::log_payment(
 			array(
 				'member_id'                  => $member_id,
 				'stripe_payment_intent_id'   => $payment_intent_id,
 				'stripe_checkout_session_id' => $session_id,
-				'amount'                     => $amount_total,
-				'fee_amount'                 => 0.00, // No fee for extra members
+				'amount'                     => $payment_amount,
+				'fee_amount'                 => $processing_fee,
 				'payment_type'               => 'extra_member',
 				'status'                     => 'succeeded',
-				'stripe_event_id'           => $event_id,
-				'metadata'                  => array(
-					'session_id'      => $session_id,
-					'extra_member_id' => $extra_member_id,
-					'first_name'      => $first_name,
-					'last_name'       => $last_name,
+				'stripe_event_id'            => $event_id,
+				'metadata'                   => array(
+					'session_id'       => $session_id,
+					'extra_member_ids' => $created_ids,
+					'quantity'         => count( $members_to_create ),
 				),
 			)
 		);
-
-		// Send confirmation email to member (optional - can be added if needed)
-		// The member service or portal can handle displaying success message
 
 		return true;
 	}

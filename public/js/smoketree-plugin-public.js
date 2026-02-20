@@ -222,16 +222,144 @@
 		 * Initialize extra members
 		 */
 		initExtraMembers: function() {
-			// Add extra member
+			const PRICE_PER_MEMBER = 50;
+			const FEE_RATES = {
+				card:            { percent: 0.029, flat: 0.30, cap: null },
+				us_bank_account: { percent: 0.008, flat: 0,    cap: 5.00 }
+			};
+			const $addModal = $('#stsrc-add-extra-member-modal');
+			const $slotsContainer = $('#stsrc-extra-member-slots');
+			const $addAnotherBtn = $('#stsrc-add-another-member-btn');
+			const slotsAvailable = parseInt($('#stsrc-extra-member-slots-available').val()) || 0;
+			let slotCount = 1;
+
+			function calculateFee(amount, method) {
+				const rate = FEE_RATES[method];
+				if (!rate || amount <= 0) return 0;
+				let fee = amount * rate.percent + rate.flat;
+				if (rate.cap !== null && fee > rate.cap) fee = rate.cap;
+				return Math.round(fee * 100) / 100;
+			}
+
+			function formatCurrency(val) {
+				return '$' + Number(val).toFixed(2);
+			}
+
+			function getSelectedMethod() {
+				return $addModal.find('input[name="payment_method"]:checked').val() || 'card';
+			}
+
+			function updateSummary() {
+				const count = $slotsContainer.children('.stsrc-extra-member-slot').length;
+				const subtotal = count * PRICE_PER_MEMBER;
+				const method = getSelectedMethod();
+				const fee = calculateFee(subtotal, method);
+				const total = subtotal + fee;
+
+				const label = count === 1
+					? 'Extra Member (1)'
+					: 'Extra Members (' + count + ')';
+
+				$('#stsrc-em-summary-label').text(label);
+				$('#stsrc-em-summary-subtotal').text(formatCurrency(subtotal));
+				$('#stsrc-em-summary-fee').text(formatCurrency(fee));
+				$('#stsrc-em-summary-total').text(formatCurrency(total));
+			}
+
+			function addSlot() {
+				if (slotCount >= slotsAvailable) return;
+				const index = slotCount;
+				const $slot = $(
+					'<div class="stsrc-extra-member-slot" data-index="' + index + '">' +
+						'<div class="stsrc-extra-member-slot__header">' +
+							'<strong>Extra Member ' + (index + 1) + '</strong>' +
+							'<button type="button" class="stsrc-extra-member-slot__remove">&times;</button>' +
+						'</div>' +
+						'<div class="stsrc-form-row">' +
+							'<div class="stsrc-form-group">' +
+								'<label>First Name</label>' +
+								'<input type="text" name="members[' + index + '][first_name]" required>' +
+							'</div>' +
+							'<div class="stsrc-form-group">' +
+								'<label>Last Name</label>' +
+								'<input type="text" name="members[' + index + '][last_name]" required>' +
+							'</div>' +
+						'</div>' +
+						'<div class="stsrc-form-group">' +
+							'<label>Email (optional)</label>' +
+							'<input type="email" name="members[' + index + '][email]">' +
+						'</div>' +
+					'</div>'
+				);
+				$slotsContainer.append($slot);
+				slotCount++;
+
+				if (slotCount >= slotsAvailable) {
+					$addAnotherBtn.addClass('stsrc-hidden');
+				}
+				updateSummary();
+			}
+
+			// Open Add modal
 			$('#stsrc-add-extra-member-btn').on('click', () => {
-				$('#stsrc-extra-member-modal-title').text('Add Extra Member');
-				$('#stsrc-extra-member-action').val('stsrc_add_extra_member');
-				$('#stsrc-extra-member-id').val('');
-				$('#stsrc-extra-member-form')[0].reset();
-				$('#stsrc-extra-member-modal').addClass('active');
+				$addModal.addClass('active');
+				updateSummary();
 			});
 
-			// Edit extra member
+			// Add another member slot
+			$addAnotherBtn.on('click', addSlot);
+
+			// Remove a member slot
+			$slotsContainer.on('click', '.stsrc-extra-member-slot__remove', function() {
+				$(this).closest('.stsrc-extra-member-slot').remove();
+				slotCount = $slotsContainer.children('.stsrc-extra-member-slot').length;
+				if (slotCount < slotsAvailable) {
+					$addAnotherBtn.removeClass('stsrc-hidden');
+				}
+				updateSummary();
+			});
+
+			// Payment method change
+			$addModal.find('input[name="payment_method"]').on('change', function() {
+				$addModal.find('.stsrc-pay-balance-method').removeClass('stsrc-pay-balance-method--selected');
+				$(this).closest('.stsrc-pay-balance-method').addClass('stsrc-pay-balance-method--selected');
+				updateSummary();
+			});
+
+			// Submit add form
+			$('#stsrc-add-extra-members-form').on('submit', (e) => {
+				e.preventDefault();
+				const $form = $('#stsrc-add-extra-members-form');
+				const $submitBtn = $('#stsrc-extra-member-submit');
+				const $error = $('#stsrc-extra-member-error');
+				const originalText = $submitBtn.text();
+
+				$submitBtn.prop('disabled', true).text('Redirecting...');
+				$error.addClass('stsrc-hidden').text('');
+
+				$.ajax({
+					url: this.ajaxUrl,
+					type: 'POST',
+					data: $form.serialize(),
+					success: (response) => {
+						if (response.success && response.data.checkout_url) {
+							window.location.href = response.data.checkout_url;
+						} else if (response.success) {
+							this.showNotice(response.data.message, 'success', $('#stsrc-portal-messages'));
+							setTimeout(() => location.reload(), 1000);
+						} else {
+							$error.removeClass('stsrc-hidden').text(response.data.message || 'An error occurred.');
+							$submitBtn.prop('disabled', false).text(originalText);
+						}
+					},
+					error: () => {
+						$error.removeClass('stsrc-hidden').text('A network error occurred. Please try again.');
+						$submitBtn.prop('disabled', false).text(originalText);
+					}
+				});
+			});
+
+			// Edit extra member (opens separate modal)
 			$(document).on('click', '.stsrc-edit-extra-member', function() {
 				const $item = $(this).closest('.stsrc-extra-member-item');
 				const id = $(this).data('id');
@@ -240,8 +368,6 @@
 				const lastName = nameParts.slice(1).join(' ');
 				const email = $item.find('.stsrc-member-email').text() || '';
 
-				$('#stsrc-extra-member-modal-title').text('Edit Extra Member');
-				$('#stsrc-extra-member-action').val('stsrc_update_extra_member');
 				$('#stsrc-extra-member-id').val(id);
 				$('#extra_first_name').val(firstName);
 				$('#extra_last_name').val(lastName);
@@ -270,19 +396,13 @@
 				);
 			});
 
-			// Submit extra member form
+			// Submit edit form (unchanged behavior)
 			$('#stsrc-extra-member-form').on('submit', (e) => {
 				e.preventDefault();
-				const action = $('#stsrc-extra-member-action').val();
-				this.submitAjaxForm($('#stsrc-extra-member-form'), action, (response) => {
+				this.submitAjaxForm($('#stsrc-extra-member-form'), 'stsrc_update_extra_member', (response) => {
 					if (response.success) {
-						if (response.data.checkout_url) {
-							// Redirect to Stripe checkout for payment
-							window.location.href = response.data.checkout_url;
-						} else {
-							this.showNotice(response.data.message, 'success', $('#stsrc-portal-messages'));
-							setTimeout(() => location.reload(), 1000);
-						}
+						this.showNotice(response.data.message, 'success', $('#stsrc-portal-messages'));
+						setTimeout(() => location.reload(), 1000);
 					}
 				});
 			});

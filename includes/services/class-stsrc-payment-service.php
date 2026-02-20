@@ -146,26 +146,28 @@ class STSRC_Payment_Service {
 			return false;
 		}
 
-		// Convert amount to cents
-		$amount_cents = (int) ( $data['amount'] * 100 );
-
-		// Build line items
-		$line_items = array(
-			array(
-				'price_data' => array(
-					'currency'    => 'usd',
-					'product_data' => array(
-						'name' => $data['product_name'] ?? 'Membership',
+		// Use explicit line_items if provided, otherwise build from amount
+		if ( ! empty( $data['line_items'] ) ) {
+			$line_items = $data['line_items'];
+		} else {
+			$amount_cents = (int) round( $data['amount'] * 100 );
+			$line_items   = array(
+				array(
+					'price_data' => array(
+						'currency'     => 'usd',
+						'product_data' => array(
+							'name' => $data['product_name'] ?? 'Membership',
+						),
+						'unit_amount'  => $amount_cents,
 					),
-					'unit_amount' => $amount_cents,
+					'quantity'   => 1,
 				),
-				'quantity'   => 1,
-			),
-		);
+			);
+		}
 
 		// Build session parameters
 		$session_params = array(
-			'payment_method_types' => array( 'card', 'us_bank_account' ),
+			'payment_method_types' => $data['payment_method_types'] ?? array( 'card', 'us_bank_account' ),
 			'line_items'           => $line_items,
 			'mode'                 => 'payment',
 			'success_url'          => $data['success_url'],
@@ -515,17 +517,18 @@ class STSRC_Payment_Service {
 	 * Create balance payment checkout session.
 	 *
 	 * Creates a Stripe checkout session for a member to pay their outstanding balance.
+	 * Produces two line items: the balance payment and the processing fee.
 	 *
 	 * @since    1.1.0
-	 * @param    int    $member_id    Member ID
-	 * @param    float  $amount       Payment amount
-	 * @return   string|false         Checkout session URL or false on failure
+	 * @param    int    $member_id       Member ID.
+	 * @param    float  $amount          Balance payment amount (not including fee).
+	 * @param    string $payment_method  Stripe payment method type ('card' or 'us_bank_account').
+	 * @param    float  $processing_fee  Pre-calculated processing fee in dollars.
+	 * @return   string|false            Checkout session URL or false on failure.
 	 */
-	public function create_balance_payment_checkout_session( int $member_id, float $amount ): string|false {
-		// Get minimum payment setting
+	public function create_balance_payment_checkout_session( int $member_id, float $amount, string $payment_method = 'card', float $processing_fee = 0.00 ): string|false {
 		$minimum_payment = $this->get_minimum_balance_payment();
 
-		// Validate amount meets minimum
 		if ( $amount < $minimum_payment ) {
 			STSRC_Logger::warning(
 				'Balance payment amount below minimum.',
@@ -539,10 +542,8 @@ class STSRC_Payment_Service {
 			return false;
 		}
 
-		// Load member database class
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 
-		// Get member data
 		$member = STSRC_Member_DB::get_member( $member_id );
 		if ( ! $member ) {
 			STSRC_Logger::warning(
@@ -555,7 +556,6 @@ class STSRC_Payment_Service {
 			return false;
 		}
 
-		// Verify member has balance owed
 		$balance_owed = (float) ( $member['balance_owed'] ?? 0.00 );
 		if ( $balance_owed <= 0 ) {
 			STSRC_Logger::info(
@@ -569,30 +569,59 @@ class STSRC_Payment_Service {
 			return false;
 		}
 
-		// Get membership type for description
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 		$membership_type = STSRC_Membership_DB::get_membership_type( $member['membership_type_id'] );
 		$membership_name = $membership_type['name'] ?? 'Membership';
 
-		// Build success URL with session ID placeholder
 		$success_url = home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' );
 		$cancel_url  = home_url( '/member-portal?payment=cancelled' );
 
-		// Create checkout session
+		$amount_cents = (int) round( $amount * 100 );
+		$fee_cents    = (int) round( $processing_fee * 100 );
+
+		$line_items = array(
+			array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 'Balance Payment — ' . $membership_name . ' Membership',
+					),
+					'unit_amount'  => $amount_cents,
+				),
+				'quantity'   => 1,
+			),
+		);
+
+		if ( $fee_cents > 0 ) {
+			$line_items[] = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 'Processing Fee',
+					),
+					'unit_amount'  => $fee_cents,
+				),
+				'quantity'   => 1,
+			);
+		}
+
 		return $this->create_checkout_session(
 			array(
-				'amount'         => $amount,
-				'product_name'   => 'Balance Payment for ' . $membership_name . ' Membership',
-				'customer_id'    => $member['stripe_customer_id'] ?? null,
-				'customer_email' => $member['email'],
-				'customer_name'  => $member['first_name'] . ' ' . $member['last_name'],
-				'success_url'    => $success_url,
-				'cancel_url'     => $cancel_url,
-				'metadata'       => array(
+				'amount'               => $amount + $processing_fee,
+				'line_items'           => $line_items,
+				'payment_method_types' => array( $payment_method ),
+				'customer_id'          => $member['stripe_customer_id'] ?? null,
+				'customer_email'       => $member['email'],
+				'customer_name'        => $member['first_name'] . ' ' . $member['last_name'],
+				'success_url'          => $success_url,
+				'cancel_url'           => $cancel_url,
+				'metadata'             => array(
 					'payment_type'     => 'balance_payment',
 					'member_id'        => $member_id,
 					'original_balance' => $balance_owed,
 					'payment_amount'   => $amount,
+					'processing_fee'   => $processing_fee,
+					'payment_method'   => $payment_method,
 				),
 			)
 		);

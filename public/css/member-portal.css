@@ -206,6 +206,10 @@
 	overflow: hidden;
 }
 
+#stsrc-pay-balance-form {
+	overflow: auto;
+}
+
 .stsrc-portal-modal__header,
 .stsrc-portal-modal__footer {
 	padding: 14px 16px;
@@ -281,6 +285,90 @@
 	min-height: 44px;
 }
 
+/* Payment method selector */
+.stsrc-pay-balance-methods {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.stsrc-pay-balance-method {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px;
+	border: 2px solid #dcdcde;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.stsrc-pay-balance-method:hover {
+	border-color: #a7aaad;
+}
+
+.stsrc-pay-balance-method--selected {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.stsrc-pay-balance-method input[type="radio"] {
+	margin-top: 3px;
+	flex-shrink: 0;
+}
+
+.stsrc-pay-balance-method__label {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.stsrc-pay-balance-method__label strong {
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.stsrc-pay-balance-method__fee {
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Fee summary breakdown */
+.stsrc-pay-balance-summary {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 12px;
+}
+
+.stsrc-pay-balance-summary__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 4px 0;
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.stsrc-pay-balance-summary__row--fee {
+	color: #646970;
+}
+
+.stsrc-pay-balance-summary__row--total {
+	margin-top: 6px;
+	padding-top: 8px;
+	border-top: 1px solid #dcdcde;
+	font-size: 16px;
+}
+
+.stsrc-pay-balance-summary__note {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+	line-height: 1.4;
+}
+
 .stsrc-pay-balance-preview {
 	background: #f0f6fc;
 	border: 1px solid #cde5fa;
@@ -301,6 +389,52 @@
 	background: #ffebee;
 	color: #b71c1c;
 	border: 1px solid #ef9a9a;
+}
+
+/* Extra member form slots */
+.stsrc-extra-member-slot {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 14px;
+	margin-bottom: 10px;
+}
+
+.stsrc-extra-member-slot__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.stsrc-extra-member-slot__header strong {
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.stsrc-extra-member-slot__remove {
+	border: 0;
+	background: transparent;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+	color: #d63638;
+	padding: 0 4px;
+	min-height: 32px;
+	min-width: 32px;
+}
+
+.stsrc-extra-member-slot__remove:hover {
+	color: #b32d2e;
+}
+
+.stsrc-button-small {
+	padding: 6px 14px;
+	font-size: 13px;
+}
+
+#stsrc-add-another-member-btn {
+	margin-bottom: 14px;
 }
 
 /* Accessibility and responsive enhancements */

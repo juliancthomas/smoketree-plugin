@@ -74,6 +74,44 @@ if ( $current_balance <= 0.01 ) {
 					<div id="stsrc-balance-payment-error" class="stsrc-pay-balance-error stsrc-hidden"></div>
 				</div>
 
+				<div class="stsrc-form-group">
+					<label><?php echo esc_html__( 'Payment Method', 'smoketree-plugin' ); ?></label>
+					<div class="stsrc-pay-balance-methods">
+						<label class="stsrc-pay-balance-method stsrc-pay-balance-method--selected">
+							<input type="radio" name="payment_method" value="card" checked />
+							<span class="stsrc-pay-balance-method__label">
+								<strong><?php echo esc_html__( 'Credit / Debit Card', 'smoketree-plugin' ); ?></strong>
+								<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( '2.9% + $0.30 processing fee', 'smoketree-plugin' ); ?></span>
+							</span>
+						</label>
+						<label class="stsrc-pay-balance-method">
+							<input type="radio" name="payment_method" value="us_bank_account" />
+							<span class="stsrc-pay-balance-method__label">
+								<strong><?php echo esc_html__( 'Bank Account (ACH)', 'smoketree-plugin' ); ?></strong>
+								<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( '0.8% processing fee ($5.00 max)', 'smoketree-plugin' ); ?></span>
+							</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="stsrc-pay-balance-summary">
+					<div class="stsrc-pay-balance-summary__row">
+						<span><?php echo esc_html__( 'Balance Payment', 'smoketree-plugin' ); ?></span>
+						<span id="stsrc-summary-payment">$<?php echo esc_html( number_format( $current_balance, 2 ) ); ?></span>
+					</div>
+					<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--fee">
+						<span><?php echo esc_html__( 'Processing Fee', 'smoketree-plugin' ); ?></span>
+						<span id="stsrc-summary-fee">$0.00</span>
+					</div>
+					<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--total">
+						<strong><?php echo esc_html__( 'Total Charge', 'smoketree-plugin' ); ?></strong>
+						<strong id="stsrc-summary-total">$0.00</strong>
+					</div>
+					<p class="stsrc-pay-balance-summary__note">
+						<?php echo esc_html__( 'The processing fee covers the cost of the transaction and does not apply to your balance.', 'smoketree-plugin' ); ?>
+					</p>
+				</div>
+
 				<div class="stsrc-pay-balance-preview">
 					<div>
 						<span><?php echo esc_html__( 'Balance After Payment', 'smoketree-plugin' ); ?></span>
@@ -82,7 +120,7 @@ if ( $current_balance <= 0.01 ) {
 				</div>
 
 				<div class="stsrc-pay-balance-method-info">
-					<?php echo esc_html__( 'Payment is processed securely via Stripe (Card or Bank Account).', 'smoketree-plugin' ); ?>
+					<?php echo esc_html__( 'Payment is processed securely via Stripe.', 'smoketree-plugin' ); ?>
 				</div>
 			</div>
 
