@@ -222,7 +222,7 @@ if ( session_status() === PHP_SESSION_NONE ) {
 				<a href="<?php echo esc_url( home_url( '/my-account/' ) ); ?>" class="stsrc-nav-link"><?php esc_html_e( 'Account', 'smoketree-plugin' ); ?></a>
 				<a href="<?php echo esc_url( wp_logout_url( home_url( '/login?loggedout=true' ) ) ); ?>" class="stsrc-nav-link"><?php esc_html_e( 'Logout', 'smoketree-plugin' ); ?></a>
 			<?php else : ?>
-				<a href="<?php echo esc_url( home_url( '/member-login/' ) ); ?>" class="stsrc-nav-link"><?php esc_html_e( 'Login', 'smoketree-plugin' ); ?></a>
+				<a href="<?php echo esc_url( home_url( '/login/' ) ); ?>" class="stsrc-nav-link"><?php esc_html_e( 'Login', 'smoketree-plugin' ); ?></a>
 			<?php endif; ?>
 		</nav>
 	</div>

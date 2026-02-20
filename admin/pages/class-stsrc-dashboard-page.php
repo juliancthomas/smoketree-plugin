@@ -52,13 +52,7 @@ class STSRC_Dashboard_Page {
 	private function get_dashboard_data(): array {
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-member-db.php';
 
-		// Get active member count (cached)
-		$cache_key = 'stsrc_active_member_count';
-		$active_count = get_transient( $cache_key );
-		if ( false === $active_count ) {
-			$active_count = STSRC_Member_DB::get_active_member_count();
-			set_transient( $cache_key, $active_count, 5 * MINUTE_IN_SECONDS );
-		}
+		$active_count = STSRC_Member_DB::get_active_member_count();
 
 		// Get recent signups (last 10)
 		$recent_signups = STSRC_Member_DB::get_members(
