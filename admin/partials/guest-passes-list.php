@@ -165,7 +165,7 @@ $members = $data['members'] ?? array();
 	<!-- Balance Adjustment Form -->
 	<div class="stsrc-balance-adjustment" style="margin-top: 30px;">
 		<h2><?php echo esc_html__( 'Adjust Guest Pass Balance', 'smoketree-plugin' ); ?></h2>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-adjust-balance-form">
+		<form method="post" id="stsrc-adjust-balance-form" class="stsrc-ajax-form" data-reload="true">
 			<input type="hidden" name="action" value="stsrc_admin_adjust_guest_passes">
 			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
 
