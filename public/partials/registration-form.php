@@ -198,34 +198,45 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- Payment Type -->
 	<div class="stsrc-form-section">
 		<h2><?php echo esc_html__( 'Payment Method', 'smoketree-plugin' ); ?></h2>
-		
+
 		<div class="stsrc-form-group">
 			<label><?php echo esc_html__( 'How would you like to pay?', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-			<div class="stsrc-radio-group">
-				<label>
-					<input type="radio" name="payment_type" value="card" data-fee-text="<?php echo esc_attr( $transaction_fees['card'] ?? '' ); ?>" required>
-					<span><?php echo esc_html__( 'Credit/Debit Card', 'smoketree-plugin' ); ?></span>
+			<div class="stsrc-pay-balance-methods">
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="card" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Credit / Debit Card', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( '2.9% + $0.30 processing fee', 'smoketree-plugin' ); ?></span>
+					</span>
 				</label>
-				<label>
-					<input type="radio" name="payment_type" value="bank_account" data-fee-text="<?php echo esc_attr( $transaction_fees['bank_account'] ?? '' ); ?>" required>
-					<span><?php echo esc_html__( 'Bank Account', 'smoketree-plugin' ); ?></span>
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="bank_account" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Bank Account (ACH)', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( '0.8% processing fee ($5.00 max)', 'smoketree-plugin' ); ?></span>
+					</span>
 				</label>
-				<label>
-					<input type="radio" name="payment_type" value="zelle" data-fee-text="<?php echo esc_attr( $transaction_fees['zelle'] ?? '' ); ?>" required>
-					<span><?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?></span>
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="zelle" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
+					</span>
 				</label>
-				<label>
-					<input type="radio" name="payment_type" value="check" data-fee-text="<?php echo esc_attr( $transaction_fees['check'] ?? '' ); ?>" required>
-					<span><?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?></span>
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="check" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
+					</span>
 				</label>
-				<label>
-					<input type="radio" name="payment_type" value="pay_later" data-fee-text="<?php echo esc_attr( $transaction_fees['pay_later'] ?? '' ); ?>" required>
-					<span><?php echo esc_html__( 'Pay Later (Special Cases Only)', 'smoketree-plugin' ); ?></span>
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="pay_later" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Pay Later (Special Cases Only)', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
+					</span>
 				</label>
-			</div>
-			<div id="stsrc-payment-fee-info" style="display: none; margin-top: 10px; padding: 10px; background-color: #f0f8ff; border-left: 3px solid #0073aa;">
-				<strong><?php echo esc_html__( 'Transaction Fee:', 'smoketree-plugin' ); ?></strong>
-				<span id="stsrc-payment-fee-text"></span>
 			</div>
 		</div>
 	</div>
@@ -233,38 +244,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- Order Summary -->
 	<div class="stsrc-form-section">
 		<h2><?php echo esc_html__( 'Order Summary', 'smoketree-plugin' ); ?></h2>
-		
-		<table class="stsrc-order-summary" style="width: 100%; border-collapse: collapse;">
-			<tbody>
-				<tr>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong><?php echo esc_html__( 'Membership Fee:', 'smoketree-plugin' ); ?></strong></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;" id="stsrc-membership-fee">$0.00</td>
-				</tr>
-				<tr id="stsrc-family-fee-row" style="display: none;">
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><?php echo esc_html__( 'Family Members:', 'smoketree-plugin' ); ?></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;"><?php echo esc_html__( 'Included', 'smoketree-plugin' ); ?></td>
-				</tr>
-				<tr id="stsrc-extra-fee-row" style="display: none;">
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><?php echo esc_html__( 'Extra Members:', 'smoketree-plugin' ); ?></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;" id="stsrc-extra-fee">$0.00</td>
-				</tr>
-				<tr id="stsrc-transaction-fee-row" style="display: none;">
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><?php echo esc_html__( 'Transaction Fee:', 'smoketree-plugin' ); ?></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;" id="stsrc-transaction-fee">--</td>
-				</tr>
-				<tr id="stsrc-tax-row" style="display: none;">
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><?php echo esc_html__( 'Tax:', 'smoketree-plugin' ); ?></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;" id="stsrc-tax">$0.00</td>
-				</tr>
-				<tr>
-					<td style="padding: 12px 8px; font-size: 1.2em;"><strong><?php echo esc_html__( 'Total:', 'smoketree-plugin' ); ?></strong></td>
-					<td style="padding: 12px 8px; text-align: right; font-size: 1.2em;"><strong id="stsrc-total">$0.00</strong></td>
-				</tr>
-			</tbody>
-		</table>
-		<p class="stsrc-description" style="margin-top: 10px; font-size: 0.9em; color: #666;">
-			<?php echo esc_html__( 'The total amount shown is an estimate. Final charges may vary based on the selected payment method.', 'smoketree-plugin' ); ?>
-		</p>
+
+		<div class="stsrc-pay-balance-summary" id="stsrc-registration-summary">
+			<div class="stsrc-pay-balance-summary__row">
+				<span><?php echo esc_html__( 'Membership', 'smoketree-plugin' ); ?></span>
+				<span id="stsrc-membership-fee">$0.00</span>
+			</div>
+			<div class="stsrc-pay-balance-summary__row" id="stsrc-family-fee-row" style="display: none;">
+				<span><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></span>
+				<span><?php echo esc_html__( 'Included', 'smoketree-plugin' ); ?></span>
+			</div>
+			<div class="stsrc-pay-balance-summary__row" id="stsrc-extra-fee-row" style="display: none;">
+				<span><?php echo esc_html__( 'Extra Members', 'smoketree-plugin' ); ?></span>
+				<span id="stsrc-extra-fee">$0.00</span>
+			</div>
+			<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--fee" id="stsrc-transaction-fee-row" style="display: none;">
+				<span><?php echo esc_html__( 'Processing Fee', 'smoketree-plugin' ); ?></span>
+				<span id="stsrc-transaction-fee">$0.00</span>
+			</div>
+			<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--total">
+				<strong><?php echo esc_html__( 'Total', 'smoketree-plugin' ); ?></strong>
+				<strong id="stsrc-total">$0.00</strong>
+			</div>
+		</div>
 	</div>
 
 	<!-- CAPTCHA -->
@@ -296,66 +298,67 @@ jQuery(document).ready(function($) {
 	let extraMemberCount = 0;
 	let familyLimit = 0;
 	const extraMemberFee = <?php echo floatval( $extra_member_fee ?? 50.00 ); ?>;
-	const taxRate = <?php echo floatval( $tax_rate ?? 0 ); ?>;
-	
-	// Update order summary
+
+	const FEE_RATES = {
+		card:         { percent: 0.029, flat: 0.30, cap: null },
+		bank_account: { percent: 0.008, flat: 0,    cap: 5.00 }
+	};
+
+	function calculateFee(amount, method) {
+		var rate = FEE_RATES[method];
+		if (!rate || amount <= 0) return 0;
+		var fee = amount * rate.percent + rate.flat;
+		if (rate.cap !== null && fee > rate.cap) fee = rate.cap;
+		return Math.round(fee * 100) / 100;
+	}
+
+	function formatCurrency(val) {
+		return '$' + Number(val).toFixed(2);
+	}
+
 	function updateOrderSummary() {
 		const $option = $('#membership_type_id').find('option:selected');
 		const membershipPrice = parseFloat($option.data('price')) || 0;
 		const allowsFamily = $option.data('allows-family') === '1';
-		
-		// Membership fee
-		$('#stsrc-membership-fee').text('$' + membershipPrice.toFixed(2));
-		
-		// Family members row
+
+		$('#stsrc-membership-fee').text(formatCurrency(membershipPrice));
+
 		if (allowsFamily && familyMemberCount > 0) {
 			$('#stsrc-family-fee-row').show();
 		} else {
 			$('#stsrc-family-fee-row').hide();
 		}
-		
-		// Extra members fee
+
 		const extraFee = extraMemberCount * extraMemberFee;
 		if (extraMemberCount > 0) {
 			$('#stsrc-extra-fee-row').show();
-			$('#stsrc-extra-fee').text('$' + extraFee.toFixed(2));
+			$('#stsrc-extra-fee').text(formatCurrency(extraFee));
 		} else {
 			$('#stsrc-extra-fee-row').hide();
 		}
-		
-		// Transaction fee (display only, not calculated)
-		const selectedPayment = $('input[name="payment_type"]:checked').val();
-		if (selectedPayment) {
+
+		const subtotal = membershipPrice + extraFee;
+		const selectedPayment = $('input[name="payment_type"]:checked').val() || '';
+		const fee = calculateFee(subtotal, selectedPayment);
+
+		if (fee > 0) {
 			$('#stsrc-transaction-fee-row').show();
-			const feeText = $('input[name="payment_type"]:checked').data('fee-text');
-			$('#stsrc-transaction-fee').text(feeText || '--');
+			$('#stsrc-transaction-fee').text(formatCurrency(fee));
+			$('#stsrc-fee-note').show();
 		} else {
 			$('#stsrc-transaction-fee-row').hide();
+			$('#stsrc-fee-note').hide();
 		}
-		
-		// Tax
-		const subtotal = membershipPrice + extraFee;
-		const tax = (subtotal * taxRate) / 100;
-		if (taxRate > 0) {
-			$('#stsrc-tax-row').show();
-			$('#stsrc-tax').text('$' + tax.toFixed(2));
-		} else {
-			$('#stsrc-tax-row').hide();
-		}
-		
-		// Total
-		const total = subtotal + tax;
-		$('#stsrc-total').text('$' + total.toFixed(2));
+
+		$('#stsrc-total').text(formatCurrency(subtotal + fee));
 	}
-	
-	// Membership type change handler
+
 	$('#membership_type_id').on('change', function() {
 		const $option = $(this).find('option:selected');
 		const allowsFamily = $option.data('allows-family') === 1;
 		const allowsExtra = $option.data('allows-extra') === 1;
 		familyLimit = parseInt($option.data('family-limit')) || 0;
-		
-		// Show/hide family members section
+
 		if (allowsFamily) {
 			$('#stsrc-family-members-section').show();
 		} else {
@@ -363,8 +366,7 @@ jQuery(document).ready(function($) {
 			$('#stsrc-family-members-container').empty();
 			familyMemberCount = 0;
 		}
-		
-		// Show/hide extra members section
+
 		if (allowsExtra) {
 			$('#stsrc-extra-members-section').show();
 		} else {
@@ -372,26 +374,16 @@ jQuery(document).ready(function($) {
 			$('#stsrc-extra-members-container').empty();
 			extraMemberCount = 0;
 		}
-		
-		// Show membership description
+
 		$('.stsrc-membership-description').hide();
 		$('.stsrc-membership-description[data-membership-id="' + $(this).val() + '"]').show();
-		
-		// Update order summary
+
 		updateOrderSummary();
 	});
-	
-	// Payment type change handler
+
 	$('input[name="payment_type"]').on('change', function() {
-		const feeText = $(this).data('fee-text');
-		if (feeText) {
-			$('#stsrc-payment-fee-text').text(feeText);
-			$('#stsrc-payment-fee-info').show();
-		} else {
-			$('#stsrc-payment-fee-info').hide();
-		}
-		
-		// Update order summary
+		$('.stsrc-pay-balance-method').removeClass('stsrc-pay-balance-method--selected');
+		$(this).closest('.stsrc-pay-balance-method').addClass('stsrc-pay-balance-method--selected');
 		updateOrderSummary();
 	});
 	

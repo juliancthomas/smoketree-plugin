@@ -255,23 +255,28 @@ class Smoketree_Stripe_Webhooks {
 			);
 		}
 
-		// Get payment amount from session
-		$amount_total = ( $session['amount_total'] ?? 0 ) / 100; // Convert from cents
-		$amount_subtotal = ( $session['amount_subtotal'] ?? 0 ) / 100;
-		$fee_amount = $amount_total - $amount_subtotal;
+		$metadata = $session['metadata'] ?? array();
 
-		// Get payment intent ID if available
+		// Use the membership price from metadata (excludes processing fee) so
+		// the fee is not credited against the member's balance.
+		$payment_amount = isset( $metadata['payment_amount'] )
+			? (float) $metadata['payment_amount']
+			: (float) ( ( $session['amount_total'] ?? 0 ) / 100 );
+
+		$processing_fee = isset( $metadata['processing_fee'] )
+			? (float) $metadata['processing_fee']
+			: 0.00;
+
 		$payment_intent_id = $session['payment_intent'] ?? '';
-		$session_id = $session['id'] ?? '';
+		$session_id        = $session['id'] ?? '';
 
-		// Log payment transaction
 		STSRC_Payment_Log_DB::log_payment(
 			array(
 				'member_id'                  => $member_id,
 				'stripe_payment_intent_id'   => $payment_intent_id,
 				'stripe_checkout_session_id' => $session_id,
-				'amount'                     => $amount_total,
-				'fee_amount'                 => $fee_amount,
+				'amount'                     => $payment_amount,
+				'fee_amount'                 => $processing_fee,
 				'payment_type'               => $member['payment_type'] ?? 'card',
 				'status'                     => 'succeeded',
 				'stripe_event_id'            => $event['id'] ?? '',
@@ -283,17 +288,16 @@ class Smoketree_Stripe_Webhooks {
 			)
 		);
 
-		// Record transaction in the transactions table so it appears in the member portal.
 		$payment_method  = self::detect_payment_method_from_session( $session );
 		$current_balance = (float) ( $member['balance_owed'] ?? 0.00 );
-		$new_balance     = $current_balance - $amount_total;
+		$new_balance     = $current_balance - $payment_amount;
 
 		STSRC_Transaction_DB::create_transaction(
 			$member_id,
 			array(
 				'transaction_type'         => 'payment',
 				'payment_method'           => $payment_method,
-				'amount'                   => -$amount_total,
+				'amount'                   => -$payment_amount,
 				'balance_after'            => $new_balance,
 				'stripe_payment_intent_id' => $payment_intent_id,
 				'stripe_session_id'        => $session_id,

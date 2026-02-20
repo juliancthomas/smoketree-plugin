@@ -311,41 +311,6 @@ class STSRC_Payment_Service {
 	}
 
 	/**
-	 * Calculate total with flat fee.
-	 *
-	 * @since    1.0.0
-	 * @param    float    $base_amount         Base amount (membership price)
-	 * @param    string   $membership_type_slug    Membership type slug for fee lookup
-	 * @return   float                         Total amount with fee
-	 */
-	public function calculate_total_with_fee( float $base_amount, string $membership_type_slug = '' ): float {
-		$fee = $this->get_flat_fee( $membership_type_slug );
-		return $base_amount + $fee;
-	}
-
-	/**
-	 * Get flat fee for membership type.
-	 *
-	 * @since    1.0.0
-	 * @param    string    $membership_type_slug    Membership type slug (single, duo, household)
-	 * @return   float                              Flat fee amount
-	 */
-	public function get_flat_fee( string $membership_type_slug = '' ): float {
-		// Default flat fees
-		$fees = array(
-			'single'    => 6.00,
-			'duo'       => 8.00,
-			'household' => 10.00,
-		);
-
-		// Normalize slug to lowercase
-		$slug = strtolower( $membership_type_slug );
-
-		// Return fee if found, otherwise return default for single
-		return $fees[ $slug ] ?? $fees['single'];
-	}
-
-	/**
 	 * Handle payment success (legacy method, webhook handles this now).
 	 *
 	 * This method is kept for backward compatibility but actual processing

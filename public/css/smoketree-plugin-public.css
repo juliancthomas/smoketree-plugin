@@ -325,6 +325,54 @@
 	margin: 0;
 }
 
+/* Payment method selector */
+.stsrc-pay-balance-methods {
+	display: flex;
+	flex-direction: column;
+	gap: var(--stsrc-spacing-sm);
+}
+
+.stsrc-pay-balance-method {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--stsrc-spacing-sm);
+	padding: 0.75rem;
+	margin-bottom: 0;
+	border: 2px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-lg);
+	cursor: pointer;
+	transition: var(--stsrc-transition);
+}
+
+.stsrc-pay-balance-method:hover {
+	border-color: var(--stsrc-border-dark);
+	background: var(--stsrc-bg-secondary);
+}
+
+.stsrc-pay-balance-method--selected {
+	border-color: var(--stsrc-primary);
+	background: rgba(34, 113, 177, 0.08);
+}
+
+.stsrc-pay-balance-method input[type="radio"] {
+	width: auto;
+	margin: 0.2rem 0 0;
+	flex-shrink: 0;
+}
+
+.stsrc-pay-balance-method__label {
+	display: block;
+	line-height: 1.3;
+}
+
+.stsrc-pay-balance-method__fee {
+	display: block;
+	margin-top: 0.15rem;
+	font-size: 0.8rem;
+	font-weight: 400;
+	color: var(--stsrc-text-secondary);
+}
+
 .required {
 	color: var(--stsrc-error);
 }

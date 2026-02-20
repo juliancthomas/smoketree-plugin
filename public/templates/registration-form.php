@@ -30,18 +30,10 @@ $captcha_enabled = $captcha_service->is_enabled();
 $captcha_site_key = $captcha_service->get_site_key();
 $captcha_provider = $captcha_service->get_provider();
 
-// Get settings for waiver and fees
+// Get settings for waiver
 $use_acf = function_exists( 'get_field' );
 $waiver_text = $use_acf ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
-$tax_rate = floatval( $use_acf ? get_field( 'stsrc_tax_rate', 'option' ) : get_option( 'stsrc_tax_rate', '0' ) );
-$transaction_fees = array(
-	'card'         => $use_acf ? get_field( 'stsrc_fee_card', 'option' ) : get_option( 'stsrc_fee_card', '' ),
-	'bank_account' => $use_acf ? get_field( 'stsrc_fee_bank_account', 'option' ) : get_option( 'stsrc_fee_bank_account', '' ),
-	'zelle'        => $use_acf ? get_field( 'stsrc_fee_zelle', 'option' ) : get_option( 'stsrc_fee_zelle', '' ),
-	'check'        => $use_acf ? get_field( 'stsrc_fee_check', 'option' ) : get_option( 'stsrc_fee_check', '' ),
-	'pay_later'    => $use_acf ? get_field( 'stsrc_fee_pay_later', 'option' ) : get_option( 'stsrc_fee_pay_later', '' ),
-);
-$extra_member_fee = 50.00; // Fee per extra member
+$extra_member_fee = 50.00;
 
 $request_params = wp_unslash( $_GET );
 $payment_flag   = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';

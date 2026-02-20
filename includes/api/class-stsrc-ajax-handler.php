@@ -448,8 +448,8 @@ class STSRC_Ajax_Handler {
 	private function process_stripe_payment( array $data, int $member_id ): string|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'api/class-stsrc-balance-ajax.php';
 
-		// Get membership type
 		$membership_type = STSRC_Membership_DB::get_membership_type( $data['membership_type_id'] );
 		if ( ! $membership_type ) {
 			STSRC_Logger::error(
@@ -464,28 +464,66 @@ class STSRC_Ajax_Handler {
 			return new WP_Error( 'invalid_membership', 'Invalid membership type selected.' );
 		}
 
-		// Calculate total with fee
-		$payment_service = new STSRC_Payment_Service();
-		$membership_slug = strtolower( str_replace( ' ', '-', $membership_type['name'] ) );
-		$total = $payment_service->calculate_total_with_fee( (float) $membership_type['price'], $membership_slug );
+		// Map form payment_type to Stripe payment method type
+		$payment_type_map = array(
+			'card'         => 'card',
+			'bank_account' => 'us_bank_account',
+		);
+		$form_payment_type  = $data['payment_type'] ?? 'card';
+		$stripe_method_type = $payment_type_map[ $form_payment_type ] ?? 'card';
 
-		// Get Stripe customer ID from data (already created)
+		$membership_price = (float) $membership_type['price'];
+		$processing_fee   = STSRC_Balance_Ajax::calculate_processing_fee( $membership_price, $stripe_method_type );
+
+		$price_cents = (int) round( $membership_price * 100 );
+		$fee_cents   = (int) round( $processing_fee * 100 );
+
+		$line_items = array(
+			array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => $membership_type['name'] . ' Membership',
+					),
+					'unit_amount'  => $price_cents,
+				),
+				'quantity' => 1,
+			),
+		);
+
+		if ( $fee_cents > 0 ) {
+			$line_items[] = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 'Processing Fee',
+					),
+					'unit_amount'  => $fee_cents,
+				),
+				'quantity' => 1,
+			);
+		}
+
 		$stripe_customer_id = $data['stripe_customer_id'] ?? null;
+		$payment_service    = new STSRC_Payment_Service();
 
-		// Create checkout session
 		$checkout_url = $payment_service->create_checkout_session(
 			array(
-				'amount'         => $total,
-				'product_name'   => $membership_type['name'] . ' Membership',
-				'customer_email' => $data['email'],
-				'customer_name'  => $data['first_name'] . ' ' . $data['last_name'],
-				'customer_id'    => $stripe_customer_id, // Use existing Stripe customer
-				'success_url'    => home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' ),
-				'cancel_url'     => home_url( '/register?payment=cancelled' ),
-				'metadata'       => array(
+				'amount'               => $membership_price + $processing_fee,
+				'line_items'           => $line_items,
+				'payment_method_types' => array( $stripe_method_type ),
+				'customer_email'       => $data['email'],
+				'customer_name'        => $data['first_name'] . ' ' . $data['last_name'],
+				'customer_id'          => $stripe_customer_id,
+				'success_url'          => home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' ),
+				'cancel_url'           => home_url( '/register?payment=cancelled' ),
+				'metadata'             => array(
 					'membership_type_id' => $data['membership_type_id'],
 					'payment_type'       => 'registration',
-					'member_id'          => $member_id, // Pass existing member_id to webhook
+					'member_id'          => $member_id,
+					'payment_amount'     => $membership_price,
+					'processing_fee'     => $processing_fee,
+					'payment_method'     => $stripe_method_type,
 				),
 			)
 		);
