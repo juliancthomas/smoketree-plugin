@@ -169,6 +169,9 @@ class STSRC_Settings_Page {
 		// Waiver Settings
 		$settings['waiver_text'] = function_exists( 'get_field' ) ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
 
+		// Auto-Renewal Agreement Settings
+		$settings['auto_renewal_text'] = function_exists( 'get_field' ) ? get_field( 'stsrc_auto_renewal_text', 'option' ) : get_option( 'stsrc_auto_renewal_text', '' );
+
 		// Transaction Fee Settings
 		$settings['fee_card'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_card', 'option' ) : get_option( 'stsrc_fee_card', '' );
 		$settings['fee_bank_account'] = function_exists( 'get_field' ) ? get_field( 'stsrc_fee_bank_account', 'option' ) : get_option( 'stsrc_fee_bank_account', '' );

@@ -241,6 +241,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 	</div>
 
+	<!-- Auto-Renewal Agreement (visible only for Stripe-compatible payment types) -->
+	<div class="stsrc-form-section" id="stsrc-auto-renewal-section" style="display: none;">
+		<h2><?php echo esc_html__( 'Auto-Renewal Agreement', 'smoketree-plugin' ); ?></h2>
+		
+		<?php if ( ! empty( $auto_renewal_text ) ) : ?>
+			<div class="stsrc-form-group">
+				<label for="auto_renewal_text_display"><?php echo esc_html__( 'Please read the auto-renewal agreement below:', 'smoketree-plugin' ); ?></label>
+				<textarea id="auto_renewal_text_display" rows="8" readonly style="width: 100%; resize: vertical; background-color: #f5f5f5; border: 1px solid #ddd; padding: 10px;"><?php echo esc_textarea( $auto_renewal_text ); ?></textarea>
+			</div>
+		<?php endif; ?>
+		
+		<div class="stsrc-form-group">
+			<label class="stsrc-checkbox-label">
+				<input type="checkbox" name="auto_renewal_acknowledged" id="auto_renewal_acknowledged" value="1" required>
+				<span><?php echo esc_html__( 'I have read and agree to the auto-renewal terms above. I understand that my membership will automatically renew and my saved payment method will be charged.', 'smoketree-plugin' ); ?></span>
+			</label>
+			<p class="stsrc-description" style="margin-top: 6px; font-size: 0.875em; color: #666;">
+				<?php echo esc_html__( 'You may opt out of auto-renewal at any time from your Member Portal after registration. If you do not opt out, your membership status will become inactive when the next renewal period begins.', 'smoketree-plugin' ); ?>
+			</p>
+		</div>
+	</div>
+
 	<!-- Order Summary -->
 	<div class="stsrc-form-section">
 		<h2><?php echo esc_html__( 'Order Summary', 'smoketree-plugin' ); ?></h2>
@@ -384,6 +406,17 @@ jQuery(document).ready(function($) {
 	$('input[name="payment_type"]').on('change', function() {
 		$('.stsrc-pay-balance-method').removeClass('stsrc-pay-balance-method--selected');
 		$(this).closest('.stsrc-pay-balance-method').addClass('stsrc-pay-balance-method--selected');
+
+		var stripeTypes = ['card', 'bank_account'];
+		var selected = $(this).val();
+		if (stripeTypes.indexOf(selected) !== -1) {
+			$('#stsrc-auto-renewal-section').show();
+			$('#auto_renewal_acknowledged').prop('required', true);
+		} else {
+			$('#stsrc-auto-renewal-section').hide();
+			$('#auto_renewal_acknowledged').prop('required', false).prop('checked', false);
+		}
+
 		updateOrderSummary();
 	});
 	

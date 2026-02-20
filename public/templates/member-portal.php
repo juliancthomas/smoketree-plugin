@@ -13,6 +13,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Handle magic-link auto-login via ?token= query param.
+$portal_token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+if ( $portal_token ) {
+	$token_data = get_transient( 'stsrc_portal_token_' . $portal_token );
+
+	if ( false !== $token_data && ! empty( $token_data['user_id'] ) ) {
+		delete_transient( 'stsrc_portal_token_' . $portal_token );
+
+		if ( ! is_user_logged_in() || (int) get_current_user_id() !== (int) $token_data['user_id'] ) {
+			wp_set_current_user( $token_data['user_id'] );
+			wp_set_auth_cookie( $token_data['user_id'], true );
+		}
+
+		wp_safe_redirect( home_url( '/member-portal/' ) );
+		exit;
+	}
+}
+
 // Check if user is logged in
 if ( ! is_user_logged_in() ) {
 	wp_safe_redirect( home_url( '/login?redirect_to=' . urlencode( home_url( '/member-portal' ) ) ) );

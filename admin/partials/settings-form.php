@@ -203,6 +203,20 @@ $acf_available = $data['acf_available'] ?? false;
 					</table>
 				</div>
 
+				<!-- Auto-Renewal Agreement Settings -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Auto-Renewal Agreement', 'smoketree-plugin' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="auto_renewal_text"><?php echo esc_html__( 'Auto-Renewal Agreement Text', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<textarea name="auto_renewal_text" id="auto_renewal_text" rows="10" class="large-text"><?php echo esc_textarea( $settings['auto_renewal_text'] ?? '' ); ?></textarea>
+								<p class="description"><?php echo esc_html__( 'This text will be displayed on the registration form when a Stripe-compatible payment method (card or bank account) is selected. Members must check a box to acknowledge and opt in to auto-renewal.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
 				<!-- Transaction Fees Settings -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Transaction Fees', 'smoketree-plugin' ); ?></h2>

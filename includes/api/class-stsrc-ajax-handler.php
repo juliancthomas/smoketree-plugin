@@ -404,6 +404,7 @@ class STSRC_Ajax_Handler {
 		$data['waiver_full_name']    = sanitize_text_field( $post_data['waiver_full_name'] );
 		$data['waiver_signed_date']  = sanitize_text_field( $post_data['waiver_signed_date'] );
 		$data['payment_type']        = sanitize_text_field( $post_data['payment_type'] );
+		$data['auto_renewal_enabled'] = ! empty( $post_data['auto_renewal_acknowledged'] ) ? 1 : 0;
 		$data['status']              = 'pending';
 
 		// Handle family members if provided
@@ -2546,6 +2547,11 @@ class STSRC_Ajax_Handler {
 		// Save waiver text
 		if ( isset( $post_data['waiver_text'] ) ) {
 			update_option( 'stsrc_waiver_text', wp_kses_post( $post_data['waiver_text'] ) );
+		}
+
+		// Save auto-renewal agreement text
+		if ( isset( $post_data['auto_renewal_text'] ) ) {
+			update_option( 'stsrc_auto_renewal_text', wp_kses_post( $post_data['auto_renewal_text'] ) );
 		}
 
 		// Save transaction fees

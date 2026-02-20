@@ -15,6 +15,14 @@
 // - $amount_due
 // - $due_date
 // - $payment_link
+// Renewal-specific (optional):
+// - $is_renewal           (bool)
+// - $membership_name      (string)
+// - $base_amount          (string, e.g. "$200.00")
+// - $extra_member_count   (int)
+// - $extra_member_fee     (string, e.g. "$50.00")
+// - $extra_member_total   (string, e.g. "$150.00")
+// - $flat_fee             (string, e.g. "$10.00")
 ?>
 <?php
 $club_name     = 'Smoketree Swim and Recreation Club';
@@ -23,6 +31,8 @@ $support_url   = home_url( '/contact/' );
 $amount_label  = $amount_due ?? '';
 $due_label     = $due_date ?? '';
 $payment_url   = $payment_link ?? '';
+$is_renewal    = ! empty( $is_renewal );
+$extra_count   = (int) ( $extra_member_count ?? 0 );
 ?>
 <!DOCTYPE html>
 <html>
@@ -42,6 +52,10 @@ $payment_url   = $payment_link ?? '';
 		.summary-card { background:#fff7ed; border:1px solid #f9c675; border-radius:6px; padding:16px 18px; margin:18px 0; }
 		.summary-card p { margin:0 0 8px; font-weight:600; color:#7c2d12; }
 		.summary-card span { display:block; font-weight:400; color:#1d2327; }
+		.breakdown-table { width:100%; border-collapse:collapse; margin:10px 0 4px; }
+		.breakdown-table td { padding:4px 0; font-weight:400; color:#1d2327; }
+		.breakdown-table td:last-child { text-align:right; }
+		.breakdown-table .total-row td { border-top:1px solid #f9c675; padding-top:8px; font-weight:700; }
 		.btn { display:inline-block; padding:12px 24px; background-color:#2271b1; color:#ffffff !important; text-decoration:none; border-radius:4px; font-weight:600; }
 		@media only screen and (max-width:620px) {
 			.email-body { padding:26px 20px; }
@@ -57,48 +71,119 @@ $payment_url   = $payment_link ?? '';
 				<table role="presentation" class="email-container" width="100%" cellspacing="0" cellpadding="0" border="0">
 					<tr>
 						<td class="email-header">
-							<?php echo esc_html__( 'Friendly payment reminder', 'smoketree-plugin' ); ?>
+							<?php if ( $is_renewal ) : ?>
+								<?php echo esc_html__( 'Membership Renewal Notice', 'smoketree-plugin' ); ?>
+							<?php else : ?>
+								<?php echo esc_html__( 'Friendly payment reminder', 'smoketree-plugin' ); ?>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
 						<td class="email-body">
-							<h1><?php echo esc_html__( 'A quick note about your membership dues', 'smoketree-plugin' ); ?></h1>
-							<p>
-								<?php
-								printf(
-									/* translators: %s: First name */
-									esc_html__( 'Hi %s,', 'smoketree-plugin' ),
-									esc_html( $first_name ?? '' )
-								);
-								?>
-							</p>
-							<p><?php echo esc_html__( 'We noticed your membership payment is still outstanding. When you have a moment, please take a second to wrap it up so we can keep your access uninterrupted.', 'smoketree-plugin' ); ?></p>
-
-							<div class="summary-card">
-								<?php if ( ! empty( $amount_label ) ) : ?>
-									<p>
-										<?php echo esc_html__( 'Amount due', 'smoketree-plugin' ); ?>
-										<span><?php echo esc_html( $amount_label ); ?></span>
-									</p>
-								<?php endif; ?>
-								<?php if ( ! empty( $due_label ) ) : ?>
-									<p>
-										<?php echo esc_html__( 'Due date', 'smoketree-plugin' ); ?>
-										<span><?php echo esc_html( $due_label ); ?></span>
-									</p>
-								<?php endif; ?>
-							</div>
-
-							<?php if ( ! empty( $payment_url ) ) : ?>
-								<p style="text-align:center;">
-									<a href="<?php echo esc_url( $payment_url ); ?>" class="btn"><?php echo esc_html__( 'Pay Securely Online', 'smoketree-plugin' ); ?></a>
+							<?php if ( $is_renewal ) : ?>
+								<h1><?php echo esc_html__( 'Your membership renewal is coming up', 'smoketree-plugin' ); ?></h1>
+								<p>
+									<?php
+									printf(
+										esc_html__( 'Hi %s,', 'smoketree-plugin' ),
+										esc_html( $first_name ?? '' )
+									);
+									?>
 								</p>
-							<?php else : ?>
-								<p><?php echo esc_html__( 'You can complete your payment from the member portal or by contacting us directly.', 'smoketree-plugin' ); ?></p>
-							<?php endif; ?>
+								<p>
+									<?php
+									printf(
+										esc_html__( 'Your %s membership will automatically renew on %s. Here is a breakdown of what will be charged to your saved payment method:', 'smoketree-plugin' ),
+										esc_html( $membership_name ?? '' ),
+										esc_html( $due_label )
+									);
+									?>
+								</p>
 
-							<p><?php echo esc_html__( 'If you have already taken care of this, thank you and please disregard this message.', 'smoketree-plugin' ); ?></p>
-							<p><?php echo esc_html__( 'Need a hand or want to confirm your balance? Reply to this email and we will be glad to assist.', 'smoketree-plugin' ); ?></p>
+								<div class="summary-card">
+									<table class="breakdown-table">
+										<tr>
+											<td><?php echo esc_html( $membership_name ?? '' ); ?> <?php echo esc_html__( 'membership', 'smoketree-plugin' ); ?></td>
+											<td><?php echo esc_html( $base_amount ?? '' ); ?></td>
+										</tr>
+										<?php if ( $extra_count > 0 ) : ?>
+											<tr>
+												<td>
+													<?php
+													printf(
+														esc_html__( 'Extra members (%1$d × %2$s)', 'smoketree-plugin' ),
+														$extra_count,
+														esc_html( $extra_member_fee ?? '' )
+													);
+													?>
+												</td>
+												<td><?php echo esc_html( $extra_member_total ?? '' ); ?></td>
+											</tr>
+										<?php endif; ?>
+										<tr>
+											<td><?php echo esc_html__( 'Processing fee', 'smoketree-plugin' ); ?></td>
+											<td><?php echo esc_html( $flat_fee ?? '' ); ?></td>
+										</tr>
+										<tr class="total-row">
+											<td><?php echo esc_html__( 'Total', 'smoketree-plugin' ); ?></td>
+											<td><?php echo esc_html( $amount_label ); ?></td>
+										</tr>
+									</table>
+								</div>
+
+								<?php if ( $extra_count > 0 ) : ?>
+									<p><?php echo esc_html__( 'Want to add or remove extra members before renewal? You can manage your extra members (up to 3) from your Member Portal. Any changes you make before the renewal date will be reflected in the final charge.', 'smoketree-plugin' ); ?></p>
+								<?php else : ?>
+									<p><?php echo esc_html__( 'Need to add extra members to your membership? You can add up to 3 extra members from your Member Portal before the renewal date and they will be included in the charge.', 'smoketree-plugin' ); ?></p>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $payment_url ) ) : ?>
+									<p style="text-align:center;">
+										<a href="<?php echo esc_url( $payment_url ); ?>" class="btn"><?php echo esc_html__( 'Manage My Membership', 'smoketree-plugin' ); ?></a>
+									</p>
+								<?php endif; ?>
+
+								<p><?php echo esc_html__( 'If you would like to opt out of auto-renewal, you can do so from the Member Portal before the renewal date. If you do not opt out, your account will become inactive at renewal.', 'smoketree-plugin' ); ?></p>
+								<p><?php echo esc_html__( 'Questions? Reply to this email and we will be glad to help.', 'smoketree-plugin' ); ?></p>
+
+							<?php else : ?>
+								<h1><?php echo esc_html__( 'A quick note about your membership dues', 'smoketree-plugin' ); ?></h1>
+								<p>
+									<?php
+									printf(
+										esc_html__( 'Hi %s,', 'smoketree-plugin' ),
+										esc_html( $first_name ?? '' )
+									);
+									?>
+								</p>
+								<p><?php echo esc_html__( 'We noticed your membership payment is still outstanding. When you have a moment, please take a second to wrap it up so we can keep your access uninterrupted.', 'smoketree-plugin' ); ?></p>
+
+								<div class="summary-card">
+									<?php if ( ! empty( $amount_label ) ) : ?>
+										<p>
+											<?php echo esc_html__( 'Amount due', 'smoketree-plugin' ); ?>
+											<span><?php echo esc_html( $amount_label ); ?></span>
+										</p>
+									<?php endif; ?>
+									<?php if ( ! empty( $due_label ) ) : ?>
+										<p>
+											<?php echo esc_html__( 'Due date', 'smoketree-plugin' ); ?>
+											<span><?php echo esc_html( $due_label ); ?></span>
+										</p>
+									<?php endif; ?>
+								</div>
+
+								<?php if ( ! empty( $payment_url ) ) : ?>
+									<p style="text-align:center;">
+										<a href="<?php echo esc_url( $payment_url ); ?>" class="btn"><?php echo esc_html__( 'Pay Securely Online', 'smoketree-plugin' ); ?></a>
+									</p>
+								<?php else : ?>
+									<p><?php echo esc_html__( 'You can complete your payment from the member portal or by contacting us directly.', 'smoketree-plugin' ); ?></p>
+								<?php endif; ?>
+
+								<p><?php echo esc_html__( 'If you have already taken care of this, thank you and please disregard this message.', 'smoketree-plugin' ); ?></p>
+								<p><?php echo esc_html__( 'Need a hand or want to confirm your balance? Reply to this email and we will be glad to assist.', 'smoketree-plugin' ); ?></p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>

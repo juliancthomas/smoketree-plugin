@@ -30,9 +30,10 @@ $captcha_enabled = $captcha_service->is_enabled();
 $captcha_site_key = $captcha_service->get_site_key();
 $captcha_provider = $captcha_service->get_provider();
 
-// Get settings for waiver
+// Get settings for waiver and auto-renewal
 $use_acf = function_exists( 'get_field' );
 $waiver_text = $use_acf ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
+$auto_renewal_text = $use_acf ? get_field( 'stsrc_auto_renewal_text', 'option' ) : get_option( 'stsrc_auto_renewal_text', '' );
 $extra_member_fee = 50.00;
 
 $request_params = wp_unslash( $_GET );

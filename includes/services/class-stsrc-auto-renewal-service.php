@@ -243,43 +243,55 @@ class STSRC_Auto_Renewal_Service {
 		);
 
 		foreach ( $members as $member ) {
+			$member_id = (int) ( $member['member_id'] ?? 0 );
+
 			$membership_type = STSRC_Membership_DB::get_membership_type( (int) ( $member['membership_type_id'] ?? 0 ) );
 			if ( ! $membership_type ) {
 				STSRC_Logger::warning(
 					'Auto-renewal notification skipped because membership type is missing.',
 					array(
 						'method'    => __METHOD__,
-						'member_id' => $member['member_id'] ?? null,
+						'member_id' => $member_id,
 					)
 				);
 				$results['failed']++;
 				continue;
 			}
 
-			$amounts = $this->calculate_membership_amounts( $membership_type );
+			$amounts = $this->calculate_membership_amounts( $membership_type, $member_id );
 			$amount_due = '$' . number_format( (float) $amounts['total'], 2 );
 
-			// Best-effort "payment link": customer portal if possible, otherwise member portal.
-			$payment_link = home_url( '/member-portal' );
-			if ( ! empty( $member['stripe_customer_id'] ) ) {
-				$portal_url = $payment_service->get_customer_portal_url(
-					(string) $member['stripe_customer_id'],
-					home_url( '/member-portal' )
+			// Generate magic login token for the member portal.
+			$portal_link = home_url( '/member-portal' );
+			if ( ! empty( $member['user_id'] ) ) {
+				$portal_token = bin2hex( random_bytes( 32 ) );
+				set_transient(
+					'stsrc_portal_token_' . $portal_token,
+					array(
+						'member_id' => $member_id,
+						'user_id'   => (int) $member['user_id'],
+					),
+					7 * DAY_IN_SECONDS
 				);
-				if ( $portal_url ) {
-					$payment_link = $portal_url;
-				}
+				$portal_link = add_query_arg( 'token', $portal_token, $portal_link );
 			}
 
 			$email_context = apply_filters(
 				'stsrc_auto_renewal_email_context',
 				array(
-					'first_name'   => $member['first_name'] ?? '',
-					'last_name'    => $member['last_name'] ?? '',
-					'email'        => $member['email'] ?? '',
-					'amount_due'   => $amount_due,
-					'due_date'     => $renewal_date,
-					'payment_link' => $payment_link,
+					'first_name'         => $member['first_name'] ?? '',
+					'last_name'          => $member['last_name'] ?? '',
+					'email'              => $member['email'] ?? '',
+					'amount_due'         => $amount_due,
+					'due_date'           => $renewal_date,
+					'payment_link'       => $portal_link,
+					'membership_name'    => $membership_type['name'] ?? '',
+					'base_amount'        => '$' . number_format( (float) $amounts['base'], 2 ),
+					'extra_member_count' => (int) $amounts['extra_member_count'],
+					'extra_member_fee'   => '$' . number_format( (float) $amounts['extra_member_fee'], 2 ),
+					'extra_member_total' => '$' . number_format( (float) $amounts['extra_member_total'], 2 ),
+					'flat_fee'           => '$' . number_format( (float) $amounts['fee'], 2 ),
+					'is_renewal'         => true,
 				),
 				$member,
 				$membership_type,
@@ -404,7 +416,7 @@ class STSRC_Auto_Renewal_Service {
 				continue;
 			}
 
-			$amounts = $this->calculate_membership_amounts( $membership_type );
+			$amounts = $this->calculate_membership_amounts( $membership_type, $member_id );
 			$total_amount = (float) $amounts['total'];
 
 			// Always create a payment log for traceability.
@@ -728,20 +740,32 @@ class STSRC_Auto_Renewal_Service {
 	}
 
 	/**
-	 * Calculate membership amounts (base + flat fee + total) based on membership type.
+	 * Calculate membership amounts (base + flat fee + extra members + total).
 	 *
 	 * @since  1.0.0
 	 * @param  array $membership_type Membership type row from DB.
-	 * @return array                  { base, fee, total } as floats.
+	 * @param  int   $member_id       Optional member ID to include extra member fees.
+	 * @return array                  { base, fee, extra_member_count, extra_member_fee, extra_member_total, total }.
 	 */
-	private function calculate_membership_amounts( array $membership_type ): array {
+	private function calculate_membership_amounts( array $membership_type, int $member_id = 0 ): array {
 		$base = (float) ( $membership_type['price'] ?? 0.0 );
 		$fee  = $this->get_flat_fee_from_membership_name( (string) ( $membership_type['name'] ?? '' ) );
 
+		$extra_count = 0;
+		$extra_per   = 50.00;
+		if ( $member_id > 0 ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+			$extra_count = STSRC_Extra_Member_DB::count_extra_members( $member_id );
+		}
+		$extra_total = $extra_count * $extra_per;
+
 		return array(
-			'base'  => $base,
-			'fee'   => $fee,
-			'total' => $base + $fee,
+			'base'               => $base,
+			'fee'                => $fee,
+			'extra_member_count' => $extra_count,
+			'extra_member_fee'   => $extra_per,
+			'extra_member_total' => $extra_total,
+			'total'              => $base + $fee + $extra_total,
 		);
 	}
 
