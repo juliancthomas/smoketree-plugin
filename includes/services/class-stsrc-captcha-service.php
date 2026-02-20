@@ -163,6 +163,25 @@ class STSRC_Captcha_Service {
 	}
 
 	/**
+	 * Retrieve a setting value, trying ACF options first then wp_options.
+	 *
+	 * @since    1.0.0
+	 * @param    string    $option_name    Option/field name.
+	 * @param    mixed     $default        Default value if not found.
+	 * @return   mixed
+	 */
+	private function get_setting( string $option_name, $default = '' ) {
+		if ( function_exists( 'get_field' ) ) {
+			$value = get_field( $option_name, 'option' );
+			if ( null !== $value && '' !== $value && false !== $value ) {
+				return $value;
+			}
+		}
+
+		return get_option( $option_name, $default );
+	}
+
+	/**
 	 * Get CAPTCHA site key.
 	 *
 	 * @since    1.0.0
@@ -171,7 +190,7 @@ class STSRC_Captcha_Service {
 	public function get_site_key(): string {
 		$provider = $this->get_provider();
 		$option_name = 'stsrc_captcha_' . $provider . '_site_key';
-		return get_option( $option_name, '' );
+		return (string) ( $this->get_setting( $option_name, '' ) ?: '' );
 	}
 
 	/**
@@ -183,7 +202,7 @@ class STSRC_Captcha_Service {
 	public function get_secret_key(): string {
 		$provider = $this->get_provider();
 		$option_name = 'stsrc_captcha_' . $provider . '_secret_key';
-		return get_option( $option_name, '' );
+		return (string) ( $this->get_setting( $option_name, '' ) ?: '' );
 	}
 
 	/**
@@ -193,7 +212,7 @@ class STSRC_Captcha_Service {
 	 * @return   bool    True if enabled and configured
 	 */
 	public function is_enabled(): bool {
-		$enabled = get_option( 'stsrc_captcha_enabled', '0' );
+		$enabled = $this->get_setting( 'stsrc_captcha_enabled', '0' );
 		if ( '0' === $enabled || ! $enabled ) {
 			return false;
 		}
@@ -211,7 +230,8 @@ class STSRC_Captcha_Service {
 	 * @return   string    'recaptcha' or 'hcaptcha'
 	 */
 	public function get_provider(): string {
-		$provider = get_option( 'stsrc_captcha_provider', 'recaptcha' );
+		$provider = $this->get_setting( 'stsrc_captcha_provider', 'recaptcha' );
+		$provider = $provider ?: 'recaptcha';
 		return in_array( $provider, array( 'recaptcha', 'hcaptcha' ), true ) ? $provider : 'recaptcha';
 	}
 
@@ -235,8 +255,8 @@ class STSRC_Captcha_Service {
 	 * @return   float    Score threshold (0.0 to 1.0)
 	 */
 	public function get_score_threshold(): float {
-		$threshold = get_option( 'stsrc_captcha_score_threshold', '0.5' );
-		return (float) $threshold;
+		$threshold = $this->get_setting( 'stsrc_captcha_score_threshold', '0.5' );
+		return (float) ( $threshold ?: 0.5 );
 	}
 
 	/**

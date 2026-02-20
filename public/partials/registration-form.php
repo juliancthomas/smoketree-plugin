@@ -267,30 +267,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div class="stsrc-form-section">
 		<h2><?php echo esc_html__( 'Order Summary', 'smoketree-plugin' ); ?></h2>
 
-		<div class="stsrc-pay-balance-summary" id="stsrc-registration-summary">
+		<div class="stsrc-pay-balance-summary" id="stsrc-registration-summary" aria-live="polite">
 			<div class="stsrc-pay-balance-summary__row">
-				<span><?php echo esc_html__( 'Membership', 'smoketree-plugin' ); ?></span>
-				<span id="stsrc-membership-fee">$0.00</span>
+				<span class="stsrc-pay-balance-summary__label"><?php echo esc_html__( 'Membership', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-pay-balance-summary__value" id="stsrc-membership-fee">$0.00</span>
 			</div>
 			<div class="stsrc-pay-balance-summary__row" id="stsrc-family-fee-row" style="display: none;">
-				<span><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></span>
-				<span><?php echo esc_html__( 'Included', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-pay-balance-summary__label"><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-pay-balance-summary__value"><?php echo esc_html__( 'Included', 'smoketree-plugin' ); ?></span>
 			</div>
 			<div class="stsrc-pay-balance-summary__row" id="stsrc-extra-fee-row" style="display: none;">
-				<span><?php echo esc_html__( 'Extra Members', 'smoketree-plugin' ); ?></span>
-				<span id="stsrc-extra-fee">$0.00</span>
+				<span class="stsrc-pay-balance-summary__label"><?php echo esc_html__( 'Extra Members', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-pay-balance-summary__value" id="stsrc-extra-fee">$0.00</span>
 			</div>
 			<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--fee" id="stsrc-transaction-fee-row" style="display: none;">
-				<span><?php echo esc_html__( 'Processing Fee', 'smoketree-plugin' ); ?></span>
-				<span id="stsrc-transaction-fee">$0.00</span>
+				<span class="stsrc-pay-balance-summary__label"><?php echo esc_html__( 'Processing Fee', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-pay-balance-summary__value" id="stsrc-transaction-fee">$0.00</span>
 			</div>
 			<div class="stsrc-pay-balance-summary__row stsrc-pay-balance-summary__row--total">
-				<strong><?php echo esc_html__( 'Total', 'smoketree-plugin' ); ?></strong>
-				<strong id="stsrc-total">$0.00</strong>
+				<strong class="stsrc-pay-balance-summary__label"><?php echo esc_html__( 'Total', 'smoketree-plugin' ); ?></strong>
+				<strong class="stsrc-pay-balance-summary__value" id="stsrc-total">$0.00</strong>
 			</div>
 		</div>
 	</div>
-
+	
 	<!-- CAPTCHA -->
 	<?php if ( $captcha_enabled && ! empty( $captcha_site_key ) ) : ?>
 		<div class="stsrc-form-section">

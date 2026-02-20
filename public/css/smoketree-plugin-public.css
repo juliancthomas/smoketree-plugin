@@ -373,6 +373,55 @@
 	color: var(--stsrc-text-secondary);
 }
 
+/* Registration order summary */
+.stsrc-pay-balance-summary {
+	background: linear-gradient(180deg, #fff 0%, var(--stsrc-bg-secondary) 100%);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-lg);
+	padding: var(--stsrc-spacing-md);
+	box-shadow: var(--stsrc-shadow-sm);
+}
+
+.stsrc-pay-balance-summary__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--stsrc-spacing-sm);
+	padding: 0.45rem 0;
+}
+
+.stsrc-pay-balance-summary__row + .stsrc-pay-balance-summary__row {
+	border-top: 1px solid var(--stsrc-border-light);
+}
+
+.stsrc-pay-balance-summary__label {
+	color: var(--stsrc-text-secondary);
+}
+
+.stsrc-pay-balance-summary__value {
+	font-weight: 600;
+	color: var(--stsrc-text-primary);
+	font-variant-numeric: tabular-nums;
+}
+
+.stsrc-pay-balance-summary__row--fee .stsrc-pay-balance-summary__label,
+.stsrc-pay-balance-summary__row--fee .stsrc-pay-balance-summary__value {
+	color: var(--stsrc-text-secondary);
+}
+
+.stsrc-pay-balance-summary__row--total {
+	margin-top: var(--stsrc-spacing-xs);
+	padding-top: 0.6rem;
+	border-top: 2px solid var(--stsrc-border);
+}
+
+.stsrc-pay-balance-summary__row--total .stsrc-pay-balance-summary__label,
+.stsrc-pay-balance-summary__row--total .stsrc-pay-balance-summary__value {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--stsrc-text-primary);
+}
+
 .required {
 	color: var(--stsrc-error);
 }
