@@ -57,7 +57,6 @@ if ( session_status() === PHP_SESSION_NONE ) {
 	<link rel="icon" type="image/png" sizes="32x32" href="<?php echo esc_url( get_template_directory_uri() . '/favicon-32x32.png' ); ?>">
 	<link rel="icon" type="image/png" sizes="16x16" href="<?php echo esc_url( get_template_directory_uri() . '/favicon-16x16.png' ); ?>">
 	<link rel="manifest" href="<?php echo esc_url( get_template_directory_uri() . '/manifest.json' ); ?>">
-	<meta name="theme-color" content="#212121" media="(prefers-color-scheme: dark)">
 	
 	<!-- Preload Fonts -->
 	<link rel="preload" as="style" href="<?php echo esc_url( get_template_directory_uri() . '/assets/css/fonts.css' ); ?>" onload="this.onload=null;this.rel='stylesheet';">
@@ -101,12 +100,6 @@ if ( session_status() === PHP_SESSION_NONE ) {
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-header {
-			background-color: #1f2937;
-		}
-	}
-	
 	.stsrc-header-container {
 		display: flex;
 		align-items: center;
@@ -141,12 +134,6 @@ if ( session_status() === PHP_SESSION_NONE ) {
 		background: none;
 		border: none;
 		cursor: pointer;
-	}
-	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-menu-toggle {
-			color: #d1d5db;
-		}
 	}
 	
 	@media (min-width: 768px) {
@@ -187,17 +174,7 @@ if ( session_status() === PHP_SESSION_NONE ) {
 	.stsrc-nav-link:hover {
 		color: #059669;
 	}
-	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-nav-link {
-			color: #d1d5db;
-		}
-		
-		.stsrc-nav-link:hover {
-			color: #10b981;
-		}
-	}
-	
+
 	/* Body Padding for Fixed Header */
 	body {
 		padding-top: 74px;

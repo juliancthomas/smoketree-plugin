@@ -57,13 +57,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	.stsrc-footer {
 		background-color: #f9fafb;
 	}
-	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-footer {
-			background-color: #171717;
-		}
-	}
-	
 	.stsrc-footer-links {
 		max-width: 56rem;
 		margin: 0 auto 100px;
@@ -92,24 +85,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 		margin: 0 0 0.5rem 0;
 	}
 	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-footer-heading {
-			color: #ececec;
-		}
-	}
-	
 	.stsrc-footer-list {
 		list-style: none;
 		padding: 0;
 		margin: 0 0 1rem 0;
 		text-align: center;
 		color: #374151;
-	}
-	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-footer-list {
-			color: #ececec;
-		}
 	}
 	
 	.stsrc-footer-list li {
@@ -133,12 +114,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 		color: #6b7280;
 		padding: 1rem;
 		margin-top: 1rem;
-	}
-	
-	@media (prefers-color-scheme: dark) {
-		.stsrc-footer-credit {
-			color: #c7c7c7;
-		}
 	}
 </style>
 

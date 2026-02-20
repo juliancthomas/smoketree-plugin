@@ -60,40 +60,6 @@
 	--stsrc-transition: all 0.2s ease;
 }
 
-/* ==========================================================================
-   Dark Mode Variables
-   ========================================================================== */
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		/* Colors */
-		--stsrc-primary: #72aee6;
-		--stsrc-primary-dark: #2271b1;
-		--stsrc-primary-light: #135e96;
-		
-		/* Background Colors */
-		--stsrc-bg-primary: #1d2327;
-		--stsrc-bg-secondary: #2c3338;
-		--stsrc-bg-tertiary: #3c434a;
-		
-		/* Text Colors */
-		--stsrc-text-primary: #f0f0f1;
-		--stsrc-text-secondary: #c3c4c7;
-		--stsrc-text-tertiary: #8c8f94;
-		--stsrc-text-inverse: #1d2327;
-		
-		/* Border Colors */
-		--stsrc-border: #3c434a;
-		--stsrc-border-light: #2c3338;
-		--stsrc-border-dark: #646970;
-		
-		/* Shadows */
-		--stsrc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-		--stsrc-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
-		--stsrc-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
-	}
-}
-
 /* Manual Dark Mode Toggle (if needed) */
 .stsrc-dark-mode {
 	/* Same as prefers-color-scheme: dark */
