@@ -729,9 +729,10 @@ class STSRC_Email_Service {
 	private function get_admin_notification_recipients(): array {
 		$emails = array_filter(
 			array(
-				sanitize_email( (string) get_option( 'stsrc_president_email' ) ),
-				sanitize_email( (string) get_option( 'stsrc_vice_president_email' ) ),
-				sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
+				sanitize_email( (string) get_field( 'stsrc_president_email', 'option' ) ),
+				sanitize_email( (string) get_field( 'stsrc_vice_president_email', 'option' ) ),
+				sanitize_email( (string) get_field( 'stsrc_treasurer_email', 'option' ) ),
+				sanitize_email( (string) get_field( 'stsrc_secretary_email', 'option' ) ),
 			)
 		);
 

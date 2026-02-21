@@ -644,10 +644,11 @@ class STSRC_Ajax_Handler {
 		);
 
 		// Email to admin/treasurer
-		$president_email = get_option( 'stsrc_president_email' );
-		$vice_president_email = get_option( 'stsrc_vice_president_email' );
-		$secretary_email = get_option( 'stsrc_secretary_email', '' );
-		$admin_emails = array_filter( array( $president_email, $vice_president_email, $secretary_email ) );
+		$president_email = get_field( 'stsrc_president_email', 'option' );
+		$vice_president_email = get_field( 'stsrc_vice_president_email', 'option' );
+		$treasurer_email = get_field( 'stsrc_treasurer_email', 'option' );
+		$secretary_email = get_field( 'stsrc_secretary_email', 'option' );
+		$admin_emails = array_filter( array( $president_email, $vice_president_email, $treasurer_email, $secretary_email ) );
 
 		foreach ( $admin_emails as $admin_email_address ) {
 			$email_service->send_email(
@@ -1738,10 +1739,11 @@ class STSRC_Ajax_Handler {
 			// Send admin notification
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 			$email_service = new STSRC_Email_Service();
-			$president_email = get_option( 'stsrc_president_email' );
-			$vice_president_email = get_option( 'stsrc_vice_president_email' );
-			$secretary_email = get_option( 'stsrc_secretary_email', '' );
-			$admin_emails = array_filter( array( $president_email, $vice_president_email, $secretary_email ) );
+			$president_email = get_field( 'stsrc_president_email', 'option' );
+			$vice_president_email = get_field( 'stsrc_vice_president_email', 'option' );
+			$treasurer_email = get_field( 'stsrc_treasurer_email', 'option' );
+			$secretary_email = get_field( 'stsrc_secretary_email', 'option' );
+			$admin_emails = array_filter( array( $president_email, $vice_president_email, $treasurer_email, $secretary_email ) );
 
 			foreach ( $admin_emails as $admin_email_address ) {
 				$email_service->send_email(
