@@ -36,7 +36,7 @@ if ( ! $sponsors->have_posts() ) {
 							loading="lazy"
 							src="<?php echo esc_url( $logo ); ?>"
 							alt="<?php the_title(); ?>"
-							class="w-[600px] h-[600px] object-contain"
+							class="max-w-[150px] max-h-[100px] w-full object-contain"
 						>
 					</a>
 				</div>
