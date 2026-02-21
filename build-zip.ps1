@@ -8,7 +8,7 @@ $pluginSlug = "smoketree-plugin"
 $desktopDir = [Environment]::GetFolderPath('Desktop')
 $zipFile    = Join-Path $desktopDir "${pluginSlug}.zip"
 
-$excludeDirs = @('.git', 'prompts', 'docs', 'dev')
+$excludeDirs = @('.git', '.github', 'prompts', 'docs', 'dev')
 $excludeFiles = @(
     'build-zip.ps1',
     '.gitignore',

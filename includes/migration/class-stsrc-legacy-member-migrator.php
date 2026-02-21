@@ -171,7 +171,9 @@ class STSRC_Legacy_Member_Migrator {
 			'country'              => sanitize_text_field( $old_member['country'] ),
 			'referral_source'      => sanitize_text_field( $old_member['referral'] ),
 			'waiver_full_name'     => sanitize_text_field( $old_member['waiver_full_name'] ),
-			'waiver_signed_date'   => self::convert_date( $old_member['waiver_date'] ),
+			'waiver_signed_date'   => self::convert_date( $old_member['waiver_date'] )
+			                          ?? self::convert_date( $old_member['created_at'] )
+			                          ?? gmdate( 'Y-m-d' ),
 			'auto_renewal_enabled' => false,
 			'expiration_date'      => null, // Ignoring as per requirements
 		);

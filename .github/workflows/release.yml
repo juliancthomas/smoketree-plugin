@@ -1,0 +1,54 @@
+name: Build Plugin Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build clean plugin zip
+        run: |
+          PLUGIN_SLUG="smoketree-plugin"
+          mkdir -p dist/$PLUGIN_SLUG
+
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='prompts' \
+            --exclude='docs' \
+            --exclude='dev' \
+            --exclude='build-zip.ps1' \
+            --exclude='.gitignore' \
+            --exclude='.cursorignore' \
+            --exclude='tailwind.config.js' \
+            --exclude='tailwind.plugin.config.js' \
+            --exclude='CHANGELOG.md' \
+            --exclude='README.md' \
+            --exclude='README.txt' \
+            --exclude='LICENSE.txt' \
+            --exclude='languages/plugin-name.pot' \
+            --exclude='vendor/stripe/stripe-php/CHANGELOG.md' \
+            --exclude='vendor/stripe/stripe-php/README.md' \
+            --exclude='vendor/stripe/stripe-php/CONTRIBUTING.md' \
+            --exclude='vendor/stripe/stripe-php/justfile' \
+            --exclude='vendor/stripe/stripe-php/.gitignore' \
+            --exclude='vendor/stripe/stripe-php/API_VERSION' \
+            --exclude='vendor/stripe/stripe-php/OPENAPI_VERSION' \
+            --exclude='vendor/stripe/stripe-php/VERSION' \
+            . dist/$PLUGIN_SLUG/
+
+          cd dist
+          zip -r ../$PLUGIN_SLUG.zip $PLUGIN_SLUG
+
+      - name: Upload zip to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: smoketree-plugin.zip
