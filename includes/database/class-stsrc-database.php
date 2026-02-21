@@ -68,11 +68,11 @@ class STSRC_Database {
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (member_id),
-			UNIQUE KEY email (email),
+			UNIQUE KEY email (email(191)),
 			UNIQUE KEY user_id (user_id),
 			KEY membership_type_id (membership_type_id),
 			KEY status (status),
-			KEY stripe_customer_id (stripe_customer_id),
+			KEY stripe_customer_id (stripe_customer_id(191)),
 			KEY created_at (created_at)
 		) $charset_collate;";
 		dbDelta( $sql_members );
@@ -211,7 +211,7 @@ class STSRC_Database {
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (payment_log_id),
 			KEY member_id (member_id),
-			KEY stripe_payment_intent_id (stripe_payment_intent_id),
+			KEY stripe_payment_intent_id (stripe_payment_intent_id(191)),
 			KEY status (status),
 			KEY created_at (created_at)
 		) $charset_collate;";

@@ -60,7 +60,7 @@ class STSRC_Transaction_DB {
 			KEY member_id (member_id),
 			KEY transaction_type (transaction_type),
 			KEY created_at (created_at),
-			KEY stripe_payment_intent_id (stripe_payment_intent_id)
+			KEY stripe_payment_intent_id (stripe_payment_intent_id(191))
 		) $charset_collate;";
 
 		dbDelta( $sql );

@@ -621,11 +621,11 @@ class STSRC_Member_DB {
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (member_id),
-			UNIQUE KEY email (email),
+			UNIQUE KEY email (email(191)),
 			UNIQUE KEY user_id (user_id),
 			KEY membership_type_id (membership_type_id),
 			KEY status (status),
-			KEY stripe_customer_id (stripe_customer_id),
+			KEY stripe_customer_id (stripe_customer_id(191)),
 			KEY created_at (created_at),
 			KEY balance_owed (balance_owed)
 		) $charset_collate;";
