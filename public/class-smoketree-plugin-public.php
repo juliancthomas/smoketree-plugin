@@ -121,6 +121,10 @@ class Smoketree_Plugin_Public {
 	 * @return   bool    True if plugin page
 	 */
 	private function is_plugin_page(): bool {
+		if ( is_front_page() && ! is_home() ) {
+			return true;
+		}
+
 		global $post;
 
 		if ( ! $post ) {
@@ -297,6 +301,7 @@ class Smoketree_Plugin_Public {
 	public function register_page_templates(): void {
 		add_filter( 'page_template', array( $this, 'assign_page_template' ) );
 		add_filter( 'theme_page_templates', array( $this, 'add_page_templates' ) );
+		add_filter( 'template_include', array( $this, 'override_front_page_template' ) );
 	}
 
 	/**
@@ -359,6 +364,27 @@ class Smoketree_Plugin_Public {
 			$template = plugin_dir_path( __FILE__ ) . 'templates/guest-pass-portal.php';
 		}
 
+		return $template;
+	}
+
+	/**
+	 * Override the front page template.
+	 *
+	 * WordPress's template hierarchy resolves front-page.php from the theme
+	 * before checking page templates, so the page_template filter never fires.
+	 * The template_include filter fires last and can override everything.
+	 *
+	 * @since    1.0.0
+	 * @param    string    $template    Resolved template path
+	 * @return   string                 Template path
+	 */
+	public function override_front_page_template( string $template ): string {
+		if ( is_front_page() && ! is_home() ) {
+			$plugin_template = plugin_dir_path( __FILE__ ) . 'templates/front-page.php';
+			if ( file_exists( $plugin_template ) ) {
+				return $plugin_template;
+			}
+		}
 		return $template;
 	}
 

@@ -375,6 +375,13 @@ jQuery(document).ready(function($) {
 		$('#stsrc-total').text(formatCurrency(subtotal + fee));
 	}
 
+	// Auto-select membership type from URL query string
+	var urlParams = new URLSearchParams(window.location.search);
+	var preselectedId = urlParams.get('membership_type_id');
+	if (preselectedId && $('#membership_type_id option[value="' + preselectedId + '"]').length) {
+		$('#membership_type_id').val(preselectedId).trigger('change');
+	}
+
 	$('#membership_type_id').on('change', function() {
 		const $option = $(this).find('option:selected');
 		const allowsFamily = $option.data('allows-family') === 1;
