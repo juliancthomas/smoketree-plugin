@@ -26,8 +26,9 @@ foreach ( $membership_types as $type ) {
 }
 
 $hero_url = is_user_logged_in()
-	? home_url( '/my-account' )
+	? home_url( '/member-portal' )
 	: home_url( '/register' . ( $most_expensive ? '?membership_type_id=' . $most_expensive['membership_type_id'] : '' ) );
+$hero_cta_label = is_user_logged_in() ? 'My Account' : 'Join Now';
 
 $events = new WP_Query( [
 	'post_type'      => 'event',
