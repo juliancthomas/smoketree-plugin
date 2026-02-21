@@ -730,6 +730,7 @@ class STSRC_Email_Service {
 		$emails = array_filter(
 			array(
 				sanitize_email( (string) get_option( 'stsrc_president_email' ) ),
+				sanitize_email( (string) get_option( 'stsrc_vice_president_email' ) ),
 				sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
 			)
 		);
