@@ -61,6 +61,23 @@ $partials_dir = plugin_dir_path( __FILE__ ) . '../partials/front-page/';
 require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
+<style>
+	main > section {
+		opacity: 0;
+		transform: translateY(24px);
+		transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+	}
+	main > section.is-visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	/* Hero shouldn't fade in — it's above the fold */
+	main > #hero_section {
+		opacity: 1;
+		transform: none;
+	}
+</style>
+
 <main>
 	<?php require $partials_dir . 'hero-section.php'; ?>
 
@@ -77,6 +94,25 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 	<?php require $partials_dir . 'signal-newsletter.php'; ?>
 	<?php if ( $sponsors->have_posts() ) { require $partials_dir . 'sponsors.php'; } ?>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	var sections = document.querySelectorAll('main > section:not(#hero_section)');
+	if (!('IntersectionObserver' in window)) {
+		sections.forEach(function (s) { s.classList.add('is-visible'); });
+		return;
+	}
+	var observer = new IntersectionObserver(function (entries) {
+		entries.forEach(function (entry) {
+			if (entry.isIntersecting) {
+				entry.target.classList.add('is-visible');
+				observer.unobserve(entry.target);
+			}
+		});
+	}, { threshold: 0.15 });
+	sections.forEach(function (s) { observer.observe(s); });
+});
+</script>
 
 <?php
 // Load plugin footer.
