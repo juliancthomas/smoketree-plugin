@@ -439,6 +439,8 @@ jQuery(document).ready(function($) {
 			$required.each(function() {
 				if ($(this).is(':radio')) {
 					if (!$('input[name="' + $(this).attr('name') + '"]:checked').length) allFilled = false;
+				} else if ($(this).is(':checkbox')) {
+					if (!$(this).is(':checked')) allFilled = false;
 				} else if (!$(this).val()) {
 					allFilled = false;
 				}
