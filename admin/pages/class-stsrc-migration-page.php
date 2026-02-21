@@ -39,7 +39,7 @@ class STSRC_Migration_Page {
 	 */
 	public function add_admin_menu(): void {
 		add_submenu_page(
-			'smoketree-plugin',
+			'stsrc-dashboard',
 			__( 'Migration', 'smoketree-plugin' ),
 			__( 'Migration', 'smoketree-plugin' ),
 			'manage_options',

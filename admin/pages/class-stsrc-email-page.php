@@ -67,7 +67,7 @@ class STSRC_Email_Page {
 			foreach ( $files as $file ) {
 				$filename = basename( $file );
 				// Skip admin notification templates for batch emails
-				if ( strpos( $filename, 'notify-admin' ) === false && strpos( $filename, 'treasurer' ) === false ) {
+				if ( strpos( $filename, 'notify-admin' ) === false && strpos( $filename, 'treasurer' ) === false && strpos( $filename, 'batch-custom-message' ) === false ) {
 					$templates[] = $filename;
 				}
 			}

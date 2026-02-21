@@ -98,6 +98,32 @@ class STSRC_Ajax_Handler {
 		wp_set_current_user( $user->ID );
 		wp_set_auth_cookie( $user->ID, $remember );
 
+		// Legacy migrated members must reset their password before proceeding
+		$needs_legacy_reset = get_user_meta( $user->ID, 'stsrc_legacy_password_needs_reset', true );
+		if ( $needs_legacy_reset ) {
+			$reset_key = get_password_reset_key( $user );
+
+			if ( ! is_wp_error( $reset_key ) ) {
+				$redirect_to = add_query_arg(
+					array(
+						'action' => 'stsrc_reset_password',
+						'key'    => $reset_key,
+						'login'  => rawurlencode( $user->user_login ),
+						'legacy' => '1',
+					),
+					home_url( '/member-portal/' )
+				);
+
+				wp_send_json_success(
+					array(
+						'message'      => 'Password reset required.',
+						'redirect_url' => $redirect_to,
+					)
+				);
+				return;
+			}
+		}
+
 		// Determine redirect URL based on user role
 		// If user is admin and no specific redirect was requested, send to wp-admin
 		if ( $is_admin && ( empty( $redirect_to ) || $redirect_to === home_url( '/member-portal' ) ) ) {
@@ -2069,7 +2095,7 @@ class STSRC_Ajax_Handler {
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 			$email_service = new STSRC_Email_Service();
 
-			$email_template = ! empty( $template ) ? $template : 'payment-reminder.php';
+			$email_template = ! empty( $template ) ? $template : 'batch-custom-message.php';
 			$template_data = array(
 				'message'    => $message,
 				'first_name' => 'Admin',
@@ -2132,8 +2158,7 @@ class STSRC_Ajax_Handler {
 			'message' => $message,
 		);
 
-		// Use custom template if provided, otherwise use a default
-		$email_template = ! empty( $template ) ? $template : 'payment-reminder.php';
+		$email_template = ! empty( $template ) ? $template : 'batch-custom-message.php';
 
 		$results = $email_service->send_batch_email(
 			$recipients,
@@ -2162,6 +2187,58 @@ class STSRC_Ajax_Handler {
 				'results' => $results,
 			)
 		);
+	}
+
+	/**
+	 * Preview a rendered email template with sample data.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function preview_email_template(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+			return;
+		}
+
+		$nonce = sanitize_text_field( $_POST['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$template = sanitize_file_name( $_POST['template'] ?? '' );
+		if ( empty( $template ) ) {
+			wp_send_json_error( array( 'message' => 'No template specified.' ) );
+			return;
+		}
+
+		$template_path = plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'templates/' . $template;
+		if ( ! file_exists( $template_path ) ) {
+			wp_send_json_error( array( 'message' => 'Template not found.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+		$email_service = new STSRC_Email_Service();
+
+		$sample_data = array(
+			'first_name'      => 'Jane',
+			'last_name'       => 'Doe',
+			'email'           => 'jane@example.com',
+			'membership_type' => 'Family',
+			'member_id'       => '12345',
+			'message'         => '',
+		);
+
+		$html = $email_service->render_template( $template, $sample_data );
+
+		if ( empty( $html ) ) {
+			wp_send_json_error( array( 'message' => 'Template rendered empty.' ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'html' => $html ) );
 	}
 
 	/**

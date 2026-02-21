@@ -18,7 +18,7 @@ $templates = $data['templates'] ?? array();
 <div class="wrap">
 	<h1><?php echo esc_html__( 'Batch Email Composer', 'smoketree-plugin' ); ?></h1>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-email-composer-form" enctype="multipart/form-data">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-email-composer-form" enctype="multipart/form-data" novalidate>
 		<input type="hidden" name="action" value="stsrc_send_batch_email">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
 
@@ -30,7 +30,7 @@ $templates = $data['templates'] ?? array();
 					<tr>
 						<th><label for="subject"><?php echo esc_html__( 'Subject', 'smoketree-plugin' ); ?> <span class="required">*</span></label></th>
 						<td>
-							<input type="text" name="subject" id="subject" value="" required class="large-text" placeholder="<?php echo esc_attr__( 'Email subject line', 'smoketree-plugin' ); ?>">
+							<input type="text" name="subject" id="subject" value="" class="large-text" placeholder="<?php echo esc_attr__( 'Email subject line', 'smoketree-plugin' ); ?>">
 						</td>
 					</tr>
 					<tr>
@@ -45,7 +45,7 @@ $templates = $data['templates'] ?? array();
 							<p class="description"><?php echo esc_html__( 'Select a template to use, or leave blank to compose a custom message.', 'smoketree-plugin' ); ?></p>
 						</td>
 					</tr>
-					<tr>
+					<tr id="stsrc-message-row">
 						<th><label for="message"><?php echo esc_html__( 'Message', 'smoketree-plugin' ); ?> <span class="required" id="message-required">*</span></label></th>
 						<td>
 							<?php
@@ -60,6 +60,15 @@ $templates = $data['templates'] ?? array();
 							?>
 							<p class="description">
 								<?php echo esc_html__( 'Available placeholders: {first_name}, {last_name}, {email}, {member_id}. Required if no template is selected.', 'smoketree-plugin' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr id="stsrc-template-preview-row" style="display: none;">
+						<th><?php echo esc_html__( 'Template Preview', 'smoketree-plugin' ); ?></th>
+						<td>
+							<div id="stsrc-template-preview-content"></div>
+							<p class="description">
+								<?php echo esc_html__( 'This is a preview with sample data. Placeholders like {first_name} will be replaced with each recipient\'s actual information.', 'smoketree-plugin' ); ?>
 							</p>
 						</td>
 					</tr>

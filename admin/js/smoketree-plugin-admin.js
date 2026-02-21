@@ -34,6 +34,7 @@
 
 			// Delete buttons
 			$(document).on('click', '.stsrc-delete', this.handleDelete);
+			$(document).on('click', '.stsrc-delete-access-code', this.handleDeleteAccessCode);
 
 			// Bulk actions
 			$(document).on('change', '.stsrc-bulk-action-select', this.handleBulkAction);
@@ -375,14 +376,22 @@
 		 * Initialize email composer
 		 */
 		initEmailComposer: function() {
-			// Template change handler
+			var self = this;
+
+			// Template change handler — toggle editor vs preview
 			$('#template').on('change', function() {
-				if ($(this).val()) {
+				var templateVal = $(this).val();
+
+				if (templateVal) {
 					$('#message-required').hide();
-					$('#message').removeAttr('required');
+					$('#stsrc-message-row').hide();
+					$('#stsrc-template-preview-row').show();
+					self.loadTemplatePreview(templateVal);
 				} else {
 					$('#message-required').show();
-					$('#message').attr('required', 'required');
+					$('#stsrc-message-row').show();
+					$('#stsrc-template-preview-row').hide();
+					$('#stsrc-template-preview-content').empty();
 				}
 			});
 
@@ -423,6 +432,10 @@
 			$('#send-test-email-btn').on('click', function(e) {
 				e.preventDefault();
 
+				if (!self.validateEmailComposer()) {
+					return;
+				}
+
 				const $button = $(this);
 				const formData = new FormData($('#stsrc-email-composer-form')[0]);
 				formData.append('action', 'stsrc_send_test_email');
@@ -454,6 +467,14 @@
 			// Send batch email
 			$('#stsrc-email-composer-form').on('submit', function(e) {
 				e.preventDefault();
+
+				if (!self.validateEmailComposer()) {
+					return;
+				}
+
+				if (!confirm('Are you sure you want to send this email to all matching recipients?')) {
+					return;
+				}
 
 				const $form = $(this);
 				const formData = new FormData($form[0]);
@@ -500,48 +521,122 @@
 		},
 
 		/**
+		 * Validate email composer before send.
+		 */
+		validateEmailComposer: function() {
+			var subject = $.trim($('#subject').val());
+			if (!subject) {
+				STSRCAdmin.showNotice('Subject is required.', 'error');
+				$('#subject').focus();
+				return false;
+			}
+
+			var template = $('#template').val();
+			// Sync TinyMCE content to textarea before reading
+			if (typeof tinyMCE !== 'undefined' && tinyMCE.get('message')) {
+				tinyMCE.get('message').save();
+			}
+			var message = $.trim($('#message').val());
+
+			if (!template && !message) {
+				STSRCAdmin.showNotice('Either a message or a template is required.', 'error');
+				return false;
+			}
+
+			return true;
+		},
+
+		/**
+		 * Load a rendered template preview via AJAX.
+		 */
+		loadTemplatePreview: function(template) {
+			var $container = $('#stsrc-template-preview-content');
+			$container.html('<p style="color:#666;"><span class="spinner is-active" style="float:none;margin:0 8px 0 0;"></span> Loading preview&hellip;</p>');
+
+			$.ajax({
+				url: STSRCAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'stsrc_preview_email_template',
+					nonce: STSRCAdmin.nonce,
+					template: template
+				},
+				success: function(response) {
+					if (response.success) {
+						$container.html(
+							'<iframe id="stsrc-template-preview-iframe" ' +
+							'style="width:100%;border:1px solid #c3c4c7;border-radius:4px;background:#fff;" ' +
+							'sandbox="allow-same-origin"></iframe>'
+						);
+						var iframe = document.getElementById('stsrc-template-preview-iframe');
+						var doc = iframe.contentDocument || iframe.contentWindow.document;
+						doc.open();
+						doc.write(response.data.html);
+						doc.close();
+						// Auto-resize iframe to content height
+						var resizeIframe = function() {
+							try {
+								iframe.style.height = doc.documentElement.scrollHeight + 'px';
+							} catch(e) {}
+						};
+						iframe.onload = resizeIframe;
+						setTimeout(resizeIframe, 200);
+					} else {
+						$container.html('<p class="description" style="color:#d63638;">' + (response.data.message || 'Error loading preview.') + '</p>');
+					}
+				},
+				error: function() {
+					$container.html('<p class="description" style="color:#d63638;">Error loading template preview.</p>');
+				}
+			});
+		},
+
+		/**
+		 * Handle delete access code
+		 */
+		handleDeleteAccessCode: function(e) {
+			e.preventDefault();
+
+			const $button = $(this);
+			const codeId = $button.data('id');
+			const code = $button.data('code');
+
+			if (!confirm('Are you sure you want to delete access code "' + code + '"? This action cannot be undone.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).addClass('disabled');
+
+			$.ajax({
+				url: STSRCAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'stsrc_delete_access_code',
+					nonce: STSRCAdmin.nonce,
+					code_id: codeId
+				},
+				success: function(response) {
+					if (response.success) {
+						STSRCAdmin.showNotice(response.data.message || 'Access code deleted successfully.', 'success');
+						$button.closest('tr').fadeOut(300, function() {
+							$(this).remove();
+						});
+					} else {
+						STSRCAdmin.showNotice(response.data.message || 'Failed to delete access code.', 'error');
+						$button.prop('disabled', false).removeClass('disabled');
+					}
+				},
+				error: function() {
+					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
+					$button.prop('disabled', false).removeClass('disabled');
+				}
+			});
+		},
+
+		/**
 		 * Initialize access code form
 		 */
 		initAccessCodeForm: function() {
-			$('.stsrc-delete-access-code').on('click', function(e) {
-				e.preventDefault();
-
-				const $button = $(this);
-				const codeId = $button.data('id');
-				const code = $button.data('code');
-
-				if (!confirm('Are you sure you want to delete access code "' + code + '"? This action cannot be undone.')) {
-					return;
-				}
-
-				$button.prop('disabled', true).addClass('disabled');
-
-				$.ajax({
-					url: STSRCAdmin.ajaxUrl,
-					type: 'POST',
-					data: {
-						action: 'stsrc_delete_access_code',
-						nonce: STSRCAdmin.nonce,
-						id: codeId
-					},
-					success: function(response) {
-						if (response.success) {
-							STSRCAdmin.showNotice(response.data.message || 'Access code deleted successfully.', 'success');
-							$button.closest('tr').fadeOut(300, function() {
-								$(this).remove();
-							});
-						} else {
-							STSRCAdmin.showNotice(response.data.message || 'Failed to delete access code.', 'error');
-							$button.prop('disabled', false).removeClass('disabled');
-						}
-					},
-					error: function() {
-						STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
-						$button.prop('disabled', false).removeClass('disabled');
-					}
-				});
-			});
-
 			$('#stsrc-access-code-form').on('submit', function(e) {
 				e.preventDefault();
 
