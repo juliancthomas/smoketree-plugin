@@ -63,10 +63,17 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 <main>
 	<?php require $partials_dir . 'hero-section.php'; ?>
-	<?php require $partials_dir . 'membership-plans.php'; ?>
-	<?php require $partials_dir . 'about-us.php'; ?>
-	<?php require $partials_dir . 'membership-benefits.php'; ?>
-	<?php if ( $events->have_posts() ) { require $partials_dir . 'upcoming-events.php'; } ?>
+
+	<?php if ( is_user_logged_in() ) : ?>
+		<?php if ( $events->have_posts() ) { require $partials_dir . 'upcoming-events.php'; } ?>
+		<?php require $partials_dir . 'about-us.php'; ?>
+	<?php else : ?>
+		<?php require $partials_dir . 'membership-plans.php'; ?>
+		<?php require $partials_dir . 'about-us.php'; ?>
+		<?php require $partials_dir . 'membership-benefits.php'; ?>
+		<?php if ( $events->have_posts() ) { require $partials_dir . 'upcoming-events.php'; } ?>
+	<?php endif; ?>
+
 	<?php require $partials_dir . 'signal-newsletter.php'; ?>
 	<?php if ( $sponsors->have_posts() ) { require $partials_dir . 'sponsors.php'; } ?>
 </main>
