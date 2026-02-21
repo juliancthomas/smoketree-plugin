@@ -862,6 +862,67 @@
 }
 
 /* ==========================================================================
+   Registration Progress Bar
+   ========================================================================== */
+
+.stsrc-progress-bar {
+	position: sticky;
+	top: 74px;
+	z-index: 99;
+	background: var(--stsrc-bg-primary);
+	padding: 0.6rem var(--stsrc-spacing-md);
+	border-bottom: 1px solid var(--stsrc-border);
+	display: flex;
+	align-items: center;
+	gap: var(--stsrc-spacing-md);
+}
+
+body.admin-bar .stsrc-progress-bar {
+	top: 106px;
+}
+
+@media (min-width: 768px) {
+	.stsrc-progress-bar {
+		top: 50px;
+	}
+
+	body.admin-bar .stsrc-progress-bar {
+		top: 82px;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	body.admin-bar .stsrc-progress-bar {
+		top: 120px;
+	}
+}
+
+.stsrc-progress-bar__track {
+	flex: 1;
+	height: 8px;
+	background: var(--stsrc-bg-tertiary);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.stsrc-progress-bar__fill {
+	height: 100%;
+	width: 0%;
+	background: var(--stsrc-primary);
+	border-radius: 4px;
+	transition: width 0.35s ease;
+}
+
+.stsrc-progress-bar__label {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--stsrc-text-secondary);
+	white-space: nowrap;
+	min-width: 5.5rem;
+	text-align: right;
+}
+
+/* ==========================================================================
    Forms
    ========================================================================== */
 
@@ -918,6 +979,88 @@
 	font-size: 0.875rem;
 }
 
+.stsrc-password-wrapper {
+	position: relative;
+}
+
+.stsrc-password-wrapper input {
+	padding-right: 2.75rem;
+}
+
+.stsrc-password-toggle {
+	position: absolute;
+	right: 0.5rem;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	padding: 0.25rem;
+	cursor: pointer;
+	color: var(--stsrc-text-secondary);
+	line-height: 0;
+	transition: color 0.15s ease;
+}
+
+.stsrc-password-toggle:hover {
+	color: var(--stsrc-text-primary);
+}
+
+/* Password strength meter */
+.stsrc-password-strength {
+	display: flex;
+	align-items: center;
+	gap: var(--stsrc-spacing-sm);
+	margin-top: var(--stsrc-spacing-xs);
+}
+
+.stsrc-password-strength__track {
+	flex: 1;
+	height: 6px;
+	background: var(--stsrc-bg-tertiary);
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.stsrc-password-strength__fill {
+	height: 100%;
+	width: 0%;
+	border-radius: 3px;
+	transition: width 0.3s ease, background 0.3s ease;
+}
+
+.stsrc-password-strength__label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	min-width: 4.5rem;
+	text-align: right;
+}
+
+/* Legal text (waiver / auto-renewal) */
+.stsrc-legal-text {
+	max-height: 250px;
+	overflow-y: auto;
+	padding: var(--stsrc-spacing-md);
+	background: var(--stsrc-bg-secondary);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-md);
+	font-size: 0.875rem;
+	line-height: 1.6;
+	color: var(--stsrc-text-primary);
+}
+
+.stsrc-legal-text:focus {
+	outline: 2px solid var(--stsrc-primary);
+	outline-offset: 1px;
+}
+
+.stsrc-legal-text p {
+	margin: 0 0 0.75rem;
+}
+
+.stsrc-legal-text p:last-child {
+	margin-bottom: 0;
+}
+
 .stsrc-form-row {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -940,6 +1083,76 @@
 .stsrc-radio-group input[type="radio"] {
 	width: auto;
 	margin: 0;
+}
+
+/* Membership selection cards */
+.stsrc-membership-cards {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--stsrc-spacing-md);
+}
+
+@media (min-width: 640px) {
+	.stsrc-membership-cards {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.stsrc-membership-card {
+	position: relative;
+	display: block;
+	cursor: pointer;
+	border: 2px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-lg);
+	background: var(--stsrc-bg-primary);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stsrc-membership-card:hover {
+	border-color: var(--stsrc-border-dark);
+	box-shadow: var(--stsrc-shadow-md);
+}
+
+.stsrc-membership-card--selected {
+	border-color: var(--stsrc-primary);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+}
+
+.stsrc-membership-card__radio {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+}
+
+.stsrc-membership-card__inner {
+	padding: var(--stsrc-spacing-lg);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.stsrc-membership-card__name {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--stsrc-primary);
+	margin: 0;
+}
+
+.stsrc-membership-card__price {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: var(--stsrc-text-primary);
+	margin: 0.25rem 0 0;
+}
+
+.stsrc-membership-card__desc {
+	font-size: 0.875rem;
+	color: var(--stsrc-text-secondary);
+	margin: 0.5rem 0 0;
+	line-height: 1.4;
 }
 
 /* Payment method selector */

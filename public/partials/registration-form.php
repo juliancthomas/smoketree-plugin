@@ -12,6 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
+<div class="stsrc-progress-bar" id="stsrc-progress-bar">
+	<div class="stsrc-progress-bar__track">
+		<div class="stsrc-progress-bar__fill" id="stsrc-progress-fill"></div>
+	</div>
+	<span class="stsrc-progress-bar__label" id="stsrc-progress-label">0% complete</span>
+</div>
+
 <form id="stsrc-registration-form" class="stsrc-registration-form" method="post">
 	<input type="hidden" name="action" value="stsrc_register_member">
 	<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_registration_nonce' ) ); ?>">
@@ -25,24 +32,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
 				<label for="first_name"><?php echo esc_html__( 'First Name', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="text" name="first_name" id="first_name" required>
+				<input type="text" name="first_name" id="first_name" required autocomplete="given-name">
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="last_name"><?php echo esc_html__( 'Last Name', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="text" name="last_name" id="last_name" required>
+				<input type="text" name="last_name" id="last_name" required autocomplete="family-name">
 			</div>
 		</div>
 
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
 				<label for="email"><?php echo esc_html__( 'Email Address', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="email" name="email" id="email" required>
+				<input type="email" name="email" id="email" required autocomplete="email">
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="phone"><?php echo esc_html__( 'Phone Number', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="tel" name="phone" id="phone" required>
+				<input type="tel" name="phone" id="phone" required autocomplete="tel" placeholder="(555) 555-1234" pattern="[\d\s\-\+\(\)\.]{7,20}">
 			</div>
 		</div>
 	</div>
@@ -53,66 +60,99 @@ if ( ! defined( 'ABSPATH' ) ) {
 		
 		<div class="stsrc-form-group">
 			<label for="street_1"><?php echo esc_html__( 'Street Address', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-			<input type="text" name="street_1" id="street_1" required>
+			<input type="text" name="street_1" id="street_1" required autocomplete="address-line1">
 		</div>
 
 		<div class="stsrc-form-group">
 			<label for="street_2"><?php echo esc_html__( 'Apartment, Suite, etc. (optional)', 'smoketree-plugin' ); ?></label>
-			<input type="text" name="street_2" id="street_2">
+			<input type="text" name="street_2" id="street_2" autocomplete="address-line2">
 		</div>
 
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
 				<label for="city"><?php echo esc_html__( 'City', 'smoketree-plugin' ); ?></label>
-				<input type="text" name="city" id="city" value="Tucker">
+				<input type="text" name="city" id="city" value="Tucker" autocomplete="address-level2">
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="state"><?php echo esc_html__( 'State', 'smoketree-plugin' ); ?></label>
-				<input type="text" name="state" id="state" value="GA" maxlength="2">
+				<select name="state" id="state" autocomplete="address-level1">
+					<option value=""><?php echo esc_html__( 'Select...', 'smoketree-plugin' ); ?></option>
+					<?php
+					$us_states = array(
+						'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas',
+						'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut', 'DE' => 'Delaware',
+						'FL' => 'Florida', 'GA' => 'Georgia', 'HI' => 'Hawaii', 'ID' => 'Idaho',
+						'IL' => 'Illinois', 'IN' => 'Indiana', 'IA' => 'Iowa', 'KS' => 'Kansas',
+						'KY' => 'Kentucky', 'LA' => 'Louisiana', 'ME' => 'Maine', 'MD' => 'Maryland',
+						'MA' => 'Massachusetts', 'MI' => 'Michigan', 'MN' => 'Minnesota', 'MS' => 'Mississippi',
+						'MO' => 'Missouri', 'MT' => 'Montana', 'NE' => 'Nebraska', 'NV' => 'Nevada',
+						'NH' => 'New Hampshire', 'NJ' => 'New Jersey', 'NM' => 'New Mexico', 'NY' => 'New York',
+						'NC' => 'North Carolina', 'ND' => 'North Dakota', 'OH' => 'Ohio', 'OK' => 'Oklahoma',
+						'OR' => 'Oregon', 'PA' => 'Pennsylvania', 'RI' => 'Rhode Island', 'SC' => 'South Carolina',
+						'SD' => 'South Dakota', 'TN' => 'Tennessee', 'TX' => 'Texas', 'UT' => 'Utah',
+						'VT' => 'Vermont', 'VA' => 'Virginia', 'WA' => 'Washington', 'WV' => 'West Virginia',
+						'WI' => 'Wisconsin', 'WY' => 'Wyoming', 'DC' => 'District of Columbia',
+					);
+					foreach ( $us_states as $abbr => $name ) :
+					?>
+						<option value="<?php echo esc_attr( $abbr ); ?>" <?php selected( $abbr, 'GA' ); ?>><?php echo esc_html( $name ); ?></option>
+					<?php endforeach; ?>
+				</select>
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="zip"><?php echo esc_html__( 'ZIP Code', 'smoketree-plugin' ); ?></label>
-				<input type="text" name="zip" id="zip" value="30084">
+				<input type="text" name="zip" id="zip" value="30084" autocomplete="postal-code">
 			</div>
 		</div>
 
 		<div class="stsrc-form-group">
 			<label for="country"><?php echo esc_html__( 'Country', 'smoketree-plugin' ); ?></label>
-			<input type="text" name="country" id="country" value="US">
+			<select name="country" id="country" autocomplete="country">
+				<option value="US" selected><?php echo esc_html__( 'United States', 'smoketree-plugin' ); ?></option>
+				<option value="CA"><?php echo esc_html__( 'Canada', 'smoketree-plugin' ); ?></option>
+				<option value="MX"><?php echo esc_html__( 'Mexico', 'smoketree-plugin' ); ?></option>
+				<option value="GB"><?php echo esc_html__( 'United Kingdom', 'smoketree-plugin' ); ?></option>
+				<option value="OTHER"><?php echo esc_html__( 'Other', 'smoketree-plugin' ); ?></option>
+			</select>
 		</div>
 	</div>
 
 	<!-- Membership Selection -->
 	<div class="stsrc-form-section">
-		<h2><?php echo esc_html__( 'Membership Selection', 'smoketree-plugin' ); ?></h2>
-		
-		<div class="stsrc-form-group">
-			<label for="membership_type_id"><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-			<select name="membership_type_id" id="membership_type_id" required>
-				<option value=""><?php echo esc_html__( 'Select a membership type...', 'smoketree-plugin' ); ?></option>
+		<h2><?php echo esc_html__( 'Membership Selection', 'smoketree-plugin' ); ?> <span class="required">*</span></h2>
+
+		<select name="membership_type_id" id="membership_type_id" required style="display:none;">
+			<option value=""><?php echo esc_html__( 'Select a membership type...', 'smoketree-plugin' ); ?></option>
+			<?php foreach ( $membership_types as $type ) : ?>
+				<option value="<?php echo esc_attr( $type['membership_type_id'] ); ?>"
+						data-name="<?php echo esc_attr( strtolower( $type['name'] ) ); ?>"
+						data-price="<?php echo esc_attr( $type['price'] ); ?>"
+						data-allows-family="<?php echo esc_attr( in_array( strtolower( $type['name'] ), array( 'household', 'duo' ), true ) ? '1' : '0' ); ?>"
+						data-allows-extra="<?php echo esc_attr( 'household' === strtolower( $type['name'] ) ? '1' : '0' ); ?>"
+						data-family-limit="<?php echo esc_attr( 'household' === strtolower( $type['name'] ) ? '4' : ( 'duo' === strtolower( $type['name'] ) ? '1' : '0' ) ); ?>">
+					<?php echo esc_html( $type['name'] ); ?> - $<?php echo esc_html( number_format( $type['price'], 2 ) ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+
+		<?php if ( ! empty( $membership_types ) ) : ?>
+			<div class="stsrc-membership-cards">
 				<?php foreach ( $membership_types as $type ) : ?>
-					<option value="<?php echo esc_attr( $type['membership_type_id'] ); ?>" 
-							data-name="<?php echo esc_attr( strtolower( $type['name'] ) ); ?>"
-							data-price="<?php echo esc_attr( $type['price'] ); ?>"
-							data-allows-family="<?php echo esc_attr( in_array( strtolower( $type['name'] ), array( 'household', 'duo' ), true ) ? '1' : '0' ); ?>"
-							data-allows-extra="<?php echo esc_attr( 'household' === strtolower( $type['name'] ) ? '1' : '0' ); ?>"
-							data-family-limit="<?php echo esc_attr( 'household' === strtolower( $type['name'] ) ? '4' : ( 'duo' === strtolower( $type['name'] ) ? '1' : '0' ) ); ?>">
-						<?php echo esc_html( $type['name'] ); ?> - $<?php echo esc_html( number_format( $type['price'], 2 ) ); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
-			<?php if ( ! empty( $membership_types ) ) : ?>
-				<?php foreach ( $membership_types as $type ) : ?>
-					<?php if ( ! empty( $type['description'] ) ) : ?>
-						<div class="stsrc-membership-description" data-membership-id="<?php echo esc_attr( $type['membership_type_id'] ); ?>" style="display: none;">
-							<p><?php echo esc_html( $type['description'] ); ?></p>
+					<label class="stsrc-membership-card" data-value="<?php echo esc_attr( $type['membership_type_id'] ); ?>">
+						<input type="radio" name="membership_card_radio" value="<?php echo esc_attr( $type['membership_type_id'] ); ?>" class="stsrc-membership-card__radio">
+						<div class="stsrc-membership-card__inner">
+							<h3 class="stsrc-membership-card__name"><?php echo esc_html( $type['name'] ); ?></h3>
+							<p class="stsrc-membership-card__price">$<?php echo esc_html( number_format( $type['price'], 2 ) ); ?></p>
+							<?php if ( ! empty( $type['description'] ) ) : ?>
+								<p class="stsrc-membership-card__desc"><?php echo esc_html( $type['description'] ); ?></p>
+							<?php endif; ?>
 						</div>
-					<?php endif; ?>
+					</label>
 				<?php endforeach; ?>
-			<?php endif; ?>
-		</div>
+			</div>
+		<?php endif; ?>
 	</div>
 
 	<!-- Family Members (Dynamic) -->
@@ -140,13 +180,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
 				<label for="password"><?php echo esc_html__( 'Password', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="password" name="password" id="password" required minlength="8">
-				<small><?php echo esc_html__( 'Must be at least 8 characters long.', 'smoketree-plugin' ); ?></small>
+				<div class="stsrc-password-wrapper">
+					<input type="password" name="password" id="password" required minlength="8" autocomplete="new-password">
+					<button type="button" class="stsrc-password-toggle" data-target="password" aria-label="<?php echo esc_attr__( 'Toggle password visibility', 'smoketree-plugin' ); ?>">
+						<svg class="stsrc-icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						<svg class="stsrc-icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+					</button>
+				</div>
+				<div class="stsrc-password-strength" id="stsrc-password-strength" style="display:none;">
+					<div class="stsrc-password-strength__track">
+						<div class="stsrc-password-strength__fill" id="stsrc-password-strength-fill"></div>
+					</div>
+					<span class="stsrc-password-strength__label" id="stsrc-password-strength-label"></span>
+				</div>
+				<small><?php echo esc_html__( 'Must be at least 8 characters. Use uppercase, numbers, and symbols for a stronger password.', 'smoketree-plugin' ); ?></small>
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="password_confirm"><?php echo esc_html__( 'Confirm Password', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="password" name="password_confirm" id="password_confirm" required>
+				<div class="stsrc-password-wrapper">
+					<input type="password" name="password_confirm" id="password_confirm" required autocomplete="new-password">
+					<button type="button" class="stsrc-password-toggle" data-target="password_confirm" aria-label="<?php echo esc_attr__( 'Toggle password visibility', 'smoketree-plugin' ); ?>">
+						<svg class="stsrc-icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						<svg class="stsrc-icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -177,20 +235,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 		
 		<?php if ( ! empty( $waiver_text ) ) : ?>
 			<div class="stsrc-form-group">
-				<label for="waiver_text_display"><?php echo esc_html__( 'Please read the waiver agreement below:', 'smoketree-plugin' ); ?></label>
-				<textarea id="waiver_text_display" rows="10" readonly style="width: 100%; resize: vertical; background-color: #f5f5f5; border: 1px solid #ddd; padding: 10px;"><?php echo esc_textarea( $waiver_text ); ?></textarea>
+				<label><?php echo esc_html__( 'Please read the waiver agreement below:', 'smoketree-plugin' ); ?></label>
+				<div class="stsrc-legal-text" tabindex="0"><?php echo wp_kses_post( $waiver_text ); ?></div>
 			</div>
 		<?php endif; ?>
 		
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
 				<label for="waiver_full_name"><?php echo esc_html__( 'Full Name (as signature)', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="text" name="waiver_full_name" id="waiver_full_name" required>
+				<input type="text" name="waiver_full_name" id="waiver_full_name" required autocomplete="name">
 			</div>
 			
 			<div class="stsrc-form-group">
 				<label for="waiver_signed_date"><?php echo esc_html__( 'Date Signed', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
-				<input type="date" name="waiver_signed_date" id="waiver_signed_date" required value="<?php echo esc_attr( date( 'Y-m-d' ) ); ?>">
+				<input type="date" name="waiver_signed_date" id="waiver_signed_date" required value="<?php echo esc_attr( date( 'Y-m-d' ) ); ?>" readonly>
 			</div>
 		</div>
 	</div>
@@ -247,8 +305,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 		
 		<?php if ( ! empty( $auto_renewal_text ) ) : ?>
 			<div class="stsrc-form-group">
-				<label for="auto_renewal_text_display"><?php echo esc_html__( 'Please read the auto-renewal agreement below:', 'smoketree-plugin' ); ?></label>
-				<textarea id="auto_renewal_text_display" rows="8" readonly style="width: 100%; resize: vertical; background-color: #f5f5f5; border: 1px solid #ddd; padding: 10px;"><?php echo esc_textarea( $auto_renewal_text ); ?></textarea>
+				<label><?php echo esc_html__( 'Please read the auto-renewal agreement below:', 'smoketree-plugin' ); ?></label>
+				<div class="stsrc-legal-text" tabindex="0"><?php echo wp_kses_post( $auto_renewal_text ); ?></div>
 			</div>
 		<?php endif; ?>
 		
@@ -306,8 +364,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<!-- Submit -->
 	<div class="stsrc-form-section">
-		<button type="submit" class="stsrc-button stsrc-button-primary" id="stsrc-submit-registration">
-			<?php echo esc_html__( 'Submit Registration', 'smoketree-plugin' ); ?>
+		<button type="submit" class="stsrc-button stsrc-button-primary stsrc-button-large stsrc-button-full" id="stsrc-submit-registration">
+			<?php echo esc_html__( 'Complete Registration', 'smoketree-plugin' ); ?>
 		</button>
 	</div>
 </form>
@@ -316,6 +374,94 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <script>
 jQuery(document).ready(function($) {
+	// Password visibility toggle
+	$('.stsrc-password-toggle').on('click', function() {
+		var $btn = $(this);
+		var $input = $('#' + $btn.data('target'));
+		var isPassword = $input.attr('type') === 'password';
+		$input.attr('type', isPassword ? 'text' : 'password');
+		$btn.find('.stsrc-icon-eye').toggle(!isPassword);
+		$btn.find('.stsrc-icon-eye-off').toggle(isPassword);
+	});
+
+	// Password strength meter
+	function getPasswordStrength(pw) {
+		var score = 0;
+		if (pw.length >= 8) score++;
+		if (pw.length >= 12) score++;
+		if (/[A-Z]/.test(pw)) score++;
+		if (/[0-9]/.test(pw)) score++;
+		if (/[^A-Za-z0-9]/.test(pw)) score++;
+		return score;
+	}
+
+	var strengthConfig = [
+		{ label: '', pct: 0, color: '' },
+		{ label: '<?php echo esc_js( __( 'Weak', 'smoketree-plugin' ) ); ?>', pct: 20, color: 'var(--stsrc-error)' },
+		{ label: '<?php echo esc_js( __( 'Fair', 'smoketree-plugin' ) ); ?>', pct: 40, color: '#e67e22' },
+		{ label: '<?php echo esc_js( __( 'Good', 'smoketree-plugin' ) ); ?>', pct: 60, color: 'var(--stsrc-warning)' },
+		{ label: '<?php echo esc_js( __( 'Strong', 'smoketree-plugin' ) ); ?>', pct: 80, color: '#27ae60' },
+		{ label: '<?php echo esc_js( __( 'Very Strong', 'smoketree-plugin' ) ); ?>', pct: 100, color: 'var(--stsrc-success)' }
+	];
+
+	$('#password').on('input', function() {
+		var pw = $(this).val();
+		var $meter = $('#stsrc-password-strength');
+		if (!pw) { $meter.hide(); return; }
+		$meter.show();
+		var score = getPasswordStrength(pw);
+		var cfg = strengthConfig[score] || strengthConfig[0];
+		$('#stsrc-password-strength-fill').css({ width: cfg.pct + '%', background: cfg.color });
+		$('#stsrc-password-strength-label').text(cfg.label).css('color', cfg.color);
+	});
+
+	// Scroll to messages helper
+	function scrollToMessages() {
+		var $msg = $('#stsrc-form-messages');
+		if ($msg.length && $msg.children().length) {
+			$('html, body').animate({ scrollTop: $msg.offset().top - 120 }, 300);
+		}
+	}
+
+	// Progress bar — tracks which visible sections have at least one filled required input
+	function updateProgressBar() {
+		var $sections = $('#stsrc-registration-form .stsrc-form-section:visible');
+		var total = $sections.length;
+		if (total === 0) return;
+		var filled = 0;
+		$sections.each(function() {
+			var $required = $(this).find('input[required], select[required], textarea[required]');
+			if ($required.length === 0) {
+				filled++;
+				return;
+			}
+			var allFilled = true;
+			$required.each(function() {
+				if ($(this).is(':radio')) {
+					if (!$('input[name="' + $(this).attr('name') + '"]:checked').length) allFilled = false;
+				} else if (!$(this).val()) {
+					allFilled = false;
+				}
+			});
+			if (allFilled) filled++;
+		});
+		var pct = Math.round((filled / total) * 100);
+		$('#stsrc-progress-fill').css('width', pct + '%');
+		$('#stsrc-progress-label').text(pct + '% complete');
+	}
+
+	$('#stsrc-registration-form').on('input change', 'input, select, textarea', updateProgressBar);
+
+	// Submit button text map
+	var submitLabels = {
+		card: '<?php echo esc_js( __( 'Proceed to Payment', 'smoketree-plugin' ) ); ?>',
+		bank_account: '<?php echo esc_js( __( 'Proceed to Payment', 'smoketree-plugin' ) ); ?>',
+		zelle: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>',
+		check: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>',
+		pay_later: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>'
+	};
+	var defaultSubmitLabel = '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>';
+
 	let familyMemberCount = 0;
 	let extraMemberCount = 0;
 	let familyLimit = 0;
@@ -341,7 +487,7 @@ jQuery(document).ready(function($) {
 	function updateOrderSummary() {
 		const $option = $('#membership_type_id').find('option:selected');
 		const membershipPrice = parseFloat($option.data('price')) || 0;
-		const allowsFamily = $option.data('allows-family') === '1';
+		const allowsFamily = String($option.data('allows-family')) === '1';
 
 		$('#stsrc-membership-fee').text(formatCurrency(membershipPrice));
 
@@ -375,17 +521,26 @@ jQuery(document).ready(function($) {
 		$('#stsrc-total').text(formatCurrency(subtotal + fee));
 	}
 
+	// Membership card selection — sync with hidden <select>
+	$('.stsrc-membership-card').on('click', function() {
+		var val = $(this).data('value');
+		$('.stsrc-membership-card').removeClass('stsrc-membership-card--selected');
+		$(this).addClass('stsrc-membership-card--selected');
+		$(this).find('.stsrc-membership-card__radio').prop('checked', true);
+		$('#membership_type_id').val(val).trigger('change');
+	});
+
 	// Auto-select membership type from URL query string
 	var urlParams = new URLSearchParams(window.location.search);
 	var preselectedId = urlParams.get('membership_type_id');
 	if (preselectedId && $('#membership_type_id option[value="' + preselectedId + '"]').length) {
-		$('#membership_type_id').val(preselectedId).trigger('change');
+		$('.stsrc-membership-card[data-value="' + preselectedId + '"]').trigger('click');
 	}
 
 	$('#membership_type_id').on('change', function() {
 		const $option = $(this).find('option:selected');
-		const allowsFamily = $option.data('allows-family') === 1;
-		const allowsExtra = $option.data('allows-extra') === 1;
+		const allowsFamily = String($option.data('allows-family')) === '1';
+		const allowsExtra = String($option.data('allows-extra')) === '1';
 		familyLimit = parseInt($option.data('family-limit')) || 0;
 
 		if (allowsFamily) {
@@ -404,9 +559,6 @@ jQuery(document).ready(function($) {
 			extraMemberCount = 0;
 		}
 
-		$('.stsrc-membership-description').hide();
-		$('.stsrc-membership-description[data-membership-id="' + $(this).val() + '"]').show();
-
 		updateOrderSummary();
 	});
 
@@ -424,84 +576,114 @@ jQuery(document).ready(function($) {
 			$('#auto_renewal_acknowledged').prop('required', false).prop('checked', false);
 		}
 
+		$('#stsrc-submit-registration').text(submitLabels[selected] || defaultSubmitLabel);
 		updateOrderSummary();
 	});
 	
+	// Re-index visible headings and name attributes after add/remove
+	function reindexMembers(containerSel, prefix, showFee) {
+		$(containerSel).children().each(function(i) {
+			var num = i + 1;
+			var heading = prefix + ' ' + num;
+			if (showFee) heading += ' ($' + extraMemberFee.toFixed(2) + ')';
+			$(this).find('h3').text(heading);
+			$(this).find('input').each(function() {
+				var name = $(this).attr('name') || '';
+				var field = name.replace(/.*\]\[/, '').replace(']', '');
+				if (field) {
+					var arrayName = prefix === 'Family Member' ? 'family_members' : 'extra_members';
+					$(this).attr('name', arrayName + '[' + num + '][' + field + ']');
+				}
+			});
+		});
+	}
+
+	var familyUid = 0;
+	var extraUid = 0;
+
 	// Add family member
 	$('#stsrc-add-family-member').on('click', function() {
-		if (familyMemberCount >= familyLimit) {
+		var currentCount = $('#stsrc-family-members-container').children().length;
+		if (currentCount >= familyLimit) {
 			alert('Maximum of ' + familyLimit + ' family members allowed for this membership type.');
 			return;
 		}
-		
-		familyMemberCount++;
+
+		familyUid++;
+		var num = currentCount + 1;
 		const html = `
-			<div class="stsrc-family-member-item" data-index="${familyMemberCount}">
-				<h3>Family Member ${familyMemberCount}</h3>
+			<div class="stsrc-family-member-item">
+				<h3>Family Member ${num}</h3>
 				<div class="stsrc-form-row">
 					<div class="stsrc-form-group">
 						<label>First Name</label>
-						<input type="text" name="family_members[${familyMemberCount}][first_name]" required>
+						<input type="text" name="family_members[${num}][first_name]" required>
 					</div>
 					<div class="stsrc-form-group">
 						<label>Last Name</label>
-						<input type="text" name="family_members[${familyMemberCount}][last_name]" required>
+						<input type="text" name="family_members[${num}][last_name]" required>
 					</div>
 				</div>
 				<div class="stsrc-form-group">
 					<label>Email (optional)</label>
-					<input type="email" name="family_members[${familyMemberCount}][email]">
+					<input type="email" name="family_members[${num}][email]">
 				</div>
 				<button type="button" class="stsrc-button stsrc-button-danger stsrc-remove-family-member">Remove</button>
 			</div>
 		`;
 		$('#stsrc-family-members-container').append(html);
+		familyMemberCount = currentCount + 1;
 		updateOrderSummary();
 	});
-	
+
 	// Remove family member
 	$(document).on('click', '.stsrc-remove-family-member', function() {
 		$(this).closest('.stsrc-family-member-item').remove();
-		familyMemberCount--;
+		reindexMembers('#stsrc-family-members-container', 'Family Member', false);
+		familyMemberCount = $('#stsrc-family-members-container').children().length;
 		updateOrderSummary();
 	});
-	
+
 	// Add extra member
 	$('#stsrc-add-extra-member').on('click', function() {
-		if (extraMemberCount >= 3) {
+		var currentCount = $('#stsrc-extra-members-container').children().length;
+		if (currentCount >= 3) {
 			alert('Maximum of 3 extra members allowed.');
 			return;
 		}
-		
-		extraMemberCount++;
+
+		extraUid++;
+		var num = currentCount + 1;
 		const html = `
-			<div class="stsrc-extra-member-item" data-index="${extraMemberCount}">
-				<h3>Extra Member ${extraMemberCount} ($${extraMemberFee.toFixed(2)})</h3>
+			<div class="stsrc-extra-member-item">
+				<h3>Extra Member ${num} ($${extraMemberFee.toFixed(2)})</h3>
 				<div class="stsrc-form-row">
 					<div class="stsrc-form-group">
 						<label>First Name</label>
-						<input type="text" name="extra_members[${extraMemberCount}][first_name]" required>
+						<input type="text" name="extra_members[${num}][first_name]" required>
 					</div>
 					<div class="stsrc-form-group">
 						<label>Last Name</label>
-						<input type="text" name="extra_members[${extraMemberCount}][last_name]" required>
+						<input type="text" name="extra_members[${num}][last_name]" required>
 					</div>
 				</div>
 				<div class="stsrc-form-group">
 					<label>Email (optional)</label>
-					<input type="email" name="extra_members[${extraMemberCount}][email]">
+					<input type="email" name="extra_members[${num}][email]">
 				</div>
 				<button type="button" class="stsrc-button stsrc-button-danger stsrc-remove-extra-member">Remove</button>
 			</div>
 		`;
 		$('#stsrc-extra-members-container').append(html);
+		extraMemberCount = currentCount + 1;
 		updateOrderSummary();
 	});
-	
+
 	// Remove extra member
 	$(document).on('click', '.stsrc-remove-extra-member', function() {
 		$(this).closest('.stsrc-extra-member-item').remove();
-		extraMemberCount--;
+		reindexMembers('#stsrc-extra-members-container', 'Extra Member', true);
+		extraMemberCount = $('#stsrc-extra-members-container').children().length;
 		updateOrderSummary();
 	});
 	
@@ -516,6 +698,7 @@ jQuery(document).ready(function($) {
 		// Validate password match
 		if ($('#password').val() !== $('#password_confirm').val()) {
 			$messages.html('<div class="stsrc-notice error"><p>Passwords do not match.</p></div>');
+			scrollToMessages();
 			return;
 		}
 		
@@ -533,6 +716,7 @@ jQuery(document).ready(function($) {
 				const hcaptchaToken = $('textarea[name="h-captcha-response"]').val();
 				if (!hcaptchaToken) {
 					$messages.html('<div class="stsrc-notice error"><p>Please complete the CAPTCHA.</p></div>');
+					scrollToMessages();
 					return;
 				}
 				$('#captcha_token').val(hcaptchaToken);
@@ -557,16 +741,21 @@ jQuery(document).ready(function($) {
 							window.location.href = response.data.redirect_url;
 						} else {
 							$messages.html('<div class="stsrc-notice success"><p>' + response.data.message + '</p></div>');
+							scrollToMessages();
 							$form[0].reset();
 						}
 					} else {
 						$messages.html('<div class="stsrc-notice error"><p>' + response.data.message + '</p></div>');
-						$submitBtn.prop('disabled', false).text('Submit Registration');
+						scrollToMessages();
+						var currentLabel = submitLabels[$('input[name="payment_type"]:checked').val()] || defaultSubmitLabel;
+						$submitBtn.prop('disabled', false).text(currentLabel);
 					}
 				},
 				error: function() {
 					$messages.html('<div class="stsrc-notice error"><p>An error occurred. Please try again.</p></div>');
-					$submitBtn.prop('disabled', false).text('Submit Registration');
+					scrollToMessages();
+					var currentLabel = submitLabels[$('input[name="payment_type"]:checked').val()] || defaultSubmitLabel;
+					$submitBtn.prop('disabled', false).text(currentLabel);
 				}
 			});
 		}
