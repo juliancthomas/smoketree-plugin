@@ -8,6 +8,623 @@
  */
 
 /* ==========================================================================
+   Hero Section
+   ========================================================================== */
+
+.stsrc-hero {
+	position: relative;
+	background-position: center;
+	background-size: cover;
+	min-height: 60vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	overflow: hidden;
+}
+
+@media (min-width: 640px) {
+	.stsrc-hero {
+		min-height: 500px;
+	}
+}
+
+.stsrc-hero__overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.stsrc-hero__content {
+	position: relative;
+	z-index: 10;
+	padding: 0 1rem;
+}
+
+.stsrc-hero__title {
+	color: #fff;
+	font-size: 2.25rem;
+	font-weight: 700;
+	max-width: 28rem;
+	margin: 0 auto;
+	filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.4));
+}
+
+@media (min-width: 640px) {
+	.stsrc-hero__title {
+		font-size: 3rem;
+		max-width: none;
+	}
+}
+
+.stsrc-hero__subtitle {
+	color: #fff;
+	font-size: 1.125rem;
+	font-weight: 600;
+	margin-top: 0.5rem;
+	filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.stsrc-hero__cta {
+	display: inline-block;
+	margin-top: 1.5rem;
+	padding: 0.75rem 2rem;
+	background: #fff;
+	color: #111827;
+	font-weight: 700;
+	font-size: 1.125rem;
+	border-radius: 9999px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+	text-decoration: none;
+	transition: background-color 0.2s ease;
+}
+
+.stsrc-hero__cta:hover {
+	background: #f3f4f6;
+	color: #111827;
+	text-decoration: none;
+}
+
+.stsrc-hero__wave {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 40px;
+	z-index: 10;
+}
+
+@media (min-width: 640px) {
+	.stsrc-hero__wave {
+		height: 60px;
+	}
+}
+
+/* ==========================================================================
+   Membership Plans Section
+   ========================================================================== */
+
+.stsrc-plans {
+	background-color: #5d99bb;
+	padding: 3rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+	.stsrc-plans {
+		padding: 4rem 1.5rem;
+	}
+}
+
+.stsrc-plans__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.stsrc-plans__title {
+	font-size: 2.25rem;
+	color: #fff;
+	margin: 0;
+}
+
+@media (min-width: 768px) {
+	.stsrc-plans__title {
+		font-size: 3rem;
+	}
+}
+
+.stsrc-plans__subtitle {
+	margin-top: 1.5rem;
+	color: #fff;
+	max-width: 42rem;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.stsrc-plans__grid {
+	max-width: 1500px;
+	margin: 2.5rem auto 0;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+	.stsrc-plans__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (min-width: 1024px) {
+	.stsrc-plans__grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.stsrc-plans__card {
+	position: relative;
+	background: #fff;
+	border-radius: 0.5rem;
+	box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+	width: 100%;
+	height: 100%;
+	padding: 1.5rem 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	text-align: center;
+	text-decoration: none;
+	color: inherit;
+	transition: box-shadow 0.3s ease;
+}
+
+.stsrc-plans__card:hover {
+	box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+	text-decoration: none;
+	color: inherit;
+}
+
+.stsrc-plans__card--best-seller {
+	border: 4px solid #a16207;
+	padding-top: 1.25rem;
+}
+
+.stsrc-plans__badge {
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: #a16207;
+	color: #fff;
+	font-size: 0.875rem;
+	padding: 0.25rem 0.5rem;
+	border-bottom-left-radius: 0.5rem;
+}
+
+.stsrc-plans__card-name {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #1d4ed8;
+	margin: 0;
+}
+
+.stsrc-plans__card-price {
+	font-size: 1.25rem;
+	margin: 0.75rem 0;
+}
+
+.stsrc-plans__card-desc {
+	color: #374151;
+}
+
+.stsrc-plans__card-btn {
+	display: block;
+	margin-top: 1rem;
+	width: 100%;
+	padding: 0.5rem 0;
+	background: #1d4ed8;
+	color: #fff;
+	font-weight: 600;
+	border-radius: 0.25rem;
+	transition: background-color 0.2s ease;
+}
+
+.stsrc-plans__card:hover .stsrc-plans__card-btn {
+	background: #1e40af;
+}
+
+.stsrc-plans__footer {
+	margin-top: 4rem;
+	color: #fff;
+}
+
+/* ==========================================================================
+   About Us Section
+   ========================================================================== */
+
+.stsrc-about {
+	padding: 1.5rem;
+	background-color: #48758f;
+}
+
+.stsrc-about a {
+	color: #ececec;
+	text-decoration: underline;
+}
+
+.stsrc-about__inner {
+	max-width: 64rem;
+	margin: 0 auto;
+}
+
+.stsrc-about__title {
+	font-size: 1.875rem;
+	text-align: center;
+	color: #ececec;
+	margin: 0 0 2.5rem;
+}
+
+.stsrc-about__row {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+	margin-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+	.stsrc-about__row {
+		flex-direction: row;
+	}
+
+	.stsrc-about__row--reversed {
+		flex-direction: row-reverse;
+	}
+}
+
+.stsrc-about__text {
+	width: 100%;
+	font-size: 1.125rem;
+	color: #ececec;
+}
+
+@media (min-width: 640px) {
+	.stsrc-about__text {
+		width: 50%;
+	}
+}
+
+.stsrc-about__image-col {
+	width: 100%;
+}
+
+@media (min-width: 640px) {
+	.stsrc-about__image-col {
+		width: 50%;
+	}
+}
+
+.stsrc-about__image {
+	border-radius: 0.5rem;
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+}
+
+/* ==========================================================================
+   Membership Benefits Section
+   ========================================================================== */
+
+.stsrc-benefits {
+	padding: 5rem 1.5rem;
+	background-color: #345365;
+}
+
+.stsrc-benefits__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.stsrc-benefits__title {
+	font-size: 1.875rem;
+	text-align: center;
+	color: #ececec;
+	margin: 0 0 2.5rem;
+}
+
+.stsrc-benefits__table-wrap {
+	overflow-x: auto;
+}
+
+.stsrc-benefits__table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+}
+
+.stsrc-benefits__table th,
+.stsrc-benefits__table td {
+	border: 1px solid #d1d5db;
+	padding: 0.5rem 1rem;
+	color: #ececec;
+}
+
+.stsrc-benefits__table th {
+	text-align: center;
+	min-width: 120px;
+}
+
+.stsrc-benefits__table td {
+	text-align: center;
+}
+
+.stsrc-benefits__table th:first-child,
+.stsrc-benefits__table td:first-child {
+	position: sticky;
+	left: 0;
+	background-color: #345365;
+	text-align: left;
+	min-width: 160px;
+}
+
+/* ==========================================================================
+   Upcoming Events Section
+   ========================================================================== */
+
+.stsrc-events {
+	background: #fff;
+	padding: 5rem 1.5rem;
+}
+
+.stsrc-events__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.stsrc-events__title {
+	font-size: 1.875rem;
+	text-align: center;
+	color: #000;
+	margin: 0 0 2.5rem;
+}
+
+.stsrc-events__grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	justify-content: center;
+}
+
+.stsrc-events__card {
+	width: 350px;
+	background: #fff;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+	border-radius: 0.5rem;
+	overflow: hidden;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.stsrc-events__card a {
+	text-decoration: none;
+	color: inherit;
+}
+
+.stsrc-events__card-img {
+	object-fit: cover;
+	width: 100%;
+	height: 12rem;
+}
+
+.stsrc-events__card-body {
+	padding: 1rem;
+}
+
+.stsrc-events__card-name {
+	font-size: 1.25rem;
+	margin: 0 0 1rem;
+	color: #000;
+}
+
+.stsrc-events__card-table {
+	width: 100%;
+	text-align: left;
+}
+
+.stsrc-events__card-label {
+	font-weight: 700;
+	font-size: 0.875rem;
+	color: #374151;
+}
+
+.stsrc-events__card-value {
+	font-size: 0.875rem;
+	color: #374151;
+}
+
+.stsrc-events__card-date {
+	font-size: 0.875rem;
+	color: #b91c1c;
+}
+
+.stsrc-events__card-cost {
+	font-weight: 700;
+}
+
+.stsrc-events__footer {
+	margin-top: 2.5rem;
+	text-align: center;
+}
+
+.stsrc-events__cta {
+	display: inline-block;
+	background: #3b82f6;
+	color: #fff;
+	padding: 0.5rem 1rem;
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	text-decoration: none;
+	transition: background-color 0.2s ease;
+}
+
+.stsrc-events__cta:hover {
+	background: #1d4ed8;
+	color: #fff;
+	text-decoration: none;
+}
+
+/* ==========================================================================
+   Signal Newsletter Section
+   ========================================================================== */
+
+.stsrc-newsletter {
+	background-color: #f3f4f6;
+	padding: 4rem 1.5rem;
+}
+
+.stsrc-newsletter__header {
+	max-width: 48rem;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.stsrc-newsletter__title {
+	font-size: 1.875rem;
+	font-weight: 700;
+	color: #1f2937;
+	margin: 0 0 1rem;
+}
+
+.stsrc-newsletter__desc {
+	color: #4b5563;
+	margin: 0 0 2rem;
+}
+
+.stsrc-newsletter__latest-cta {
+	display: inline-block;
+	background: #538f85;
+	color: #fff;
+	font-weight: 600;
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.25rem;
+	text-decoration: none;
+	transition: background-color 0.2s ease;
+}
+
+.stsrc-newsletter__latest-cta:hover {
+	background: #3c6b65;
+	color: #fff;
+	text-decoration: none;
+}
+
+.stsrc-newsletter__previous {
+	max-width: 42rem;
+	margin: 3rem auto 0;
+	border-top: 1px solid #d1d5db;
+	padding-top: 2rem;
+}
+
+.stsrc-newsletter__previous-title {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #374151;
+	margin: 0 0 1rem;
+}
+
+.stsrc-newsletter__list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	text-align: left;
+}
+
+.stsrc-newsletter__list li {
+	margin-bottom: 0.75rem;
+}
+
+.stsrc-newsletter__list a {
+	color: #2563eb;
+	text-decoration: none;
+}
+
+.stsrc-newsletter__list a:hover {
+	text-decoration: underline;
+}
+
+.stsrc-newsletter__see-all {
+	display: inline-block;
+	margin-top: 1rem;
+	color: #2563eb;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.stsrc-newsletter__see-all:hover {
+	text-decoration: underline;
+}
+
+/* ==========================================================================
+   Sponsors Section
+   ========================================================================== */
+
+.stsrc-sponsors {
+	background: #fff;
+	padding: 6rem 1.5rem;
+}
+
+.stsrc-sponsors__inner {
+	max-width: 72rem;
+	margin: 0 auto;
+}
+
+.stsrc-sponsors__title {
+	font-size: 1.875rem;
+	text-align: center;
+	color: #000;
+	margin: 0 0 2.5rem;
+}
+
+.stsrc-sponsors__grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 2.5rem;
+}
+
+@media (min-width: 640px) {
+	.stsrc-sponsors__grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (min-width: 768px) {
+	.stsrc-sponsors__grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+@media (min-width: 1024px) {
+	.stsrc-sponsors__grid {
+		grid-template-columns: repeat(5, 1fr);
+	}
+}
+
+.stsrc-sponsors__item {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.stsrc-sponsors__logo {
+	max-width: 150px;
+	max-height: 100px;
+	width: 100%;
+	object-fit: contain;
+}
+
+/* ==========================================================================
    CSS Variables (Light Mode)
    ========================================================================== */
 

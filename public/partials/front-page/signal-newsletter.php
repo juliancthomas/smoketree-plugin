@@ -17,16 +17,16 @@ if ( ! have_rows( 'news_and_announcements', 1032 ) ) {
 }
 ?>
 
-<section id="signal_newsletter" class="bg-[#f3f4f6] dark:bg-[#1f2937] px-6 py-16">
-	<div class="max-w-3xl mx-auto text-center">
-		<h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">The Signal Newsletter</h2>
-		<p class="text-gray-600 dark:text-gray-300 mb-8">
+<section id="signal_newsletter" class="stsrc-newsletter">
+	<div class="stsrc-newsletter__header">
+		<h2 class="stsrc-newsletter__title">The Signal Newsletter</h2>
+		<p class="stsrc-newsletter__desc">
 			Stay updated with our monthly newsletter. Read the latest issue or browse past editions.
 		</p>
 
 		<?php the_row(); $pdf = get_sub_field( 'pdf_upload' ); ?>
 		<?php if ( $pdf ) : ?>
-			<a href="<?php echo esc_url( $pdf['url'] ); ?>" target="_blank" class="inline-block bg-[#538f85] hover:bg-[#3c6b65] text-white font-semibold px-6 py-3 rounded transition">
+			<a href="<?php echo esc_url( $pdf['url'] ); ?>" target="_blank" class="stsrc-newsletter__latest-cta">
 				View Latest Issue (PDF)
 			</a>
 		<?php endif; ?>
@@ -37,16 +37,16 @@ if ( ! have_rows( 'news_and_announcements', 1032 ) ) {
 		$previous_count = 0;
 		$has_more       = false;
 	?>
-	<div class="max-w-2xl mx-auto mt-12 border-t border-gray-300 dark:border-gray-600 pt-8">
-		<h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Previous Issues</h3>
-		<ul class="space-y-3 text-left">
+	<div class="stsrc-newsletter__previous">
+		<h3 class="stsrc-newsletter__previous-title">Previous Issues</h3>
+		<ul class="stsrc-newsletter__list">
 			<?php while ( have_rows( 'news_and_announcements', 1032 ) ) : the_row(); $pdf = get_sub_field( 'pdf_upload' ); ?>
 				<?php if ( $pdf ) : ?>
 					<?php if ( $previous_count >= $max_previous ) : ?>
 						<?php $has_more = true; break; ?>
 					<?php endif; ?>
 					<li>
-						<a href="<?php echo esc_url( $pdf['url'] ); ?>" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">
+						<a href="<?php echo esc_url( $pdf['url'] ); ?>" target="_blank">
 							<?php the_sub_field( 'news_title' ); ?>
 						</a>
 					</li>
@@ -55,7 +55,7 @@ if ( ! have_rows( 'news_and_announcements', 1032 ) ) {
 			<?php endwhile; ?>
 		</ul>
 		<?php if ( $has_more ) : ?>
-			<a href="<?php echo esc_url( get_permalink( 1032 ) ); ?>" class="inline-block mt-4 text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+			<a href="<?php echo esc_url( get_permalink( 1032 ) ); ?>" class="stsrc-newsletter__see-all">
 				See all issues &rarr;
 			</a>
 		<?php endif; ?>

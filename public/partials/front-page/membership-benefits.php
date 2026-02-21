@@ -32,31 +32,27 @@ if ( empty( $all_benefits ) ) {
 }
 ?>
 
-<section id="member_benefits" class="px-6 py-[80px] bg-[#345365]">
-	<div class="container mx-auto">
-		<h2 class="text-3xl text-center text-[#ececec] mb-10">Membership Benefits</h2>
-		<div class="overflow-x-auto">
-			<table class="table-auto w-full border border-gray-300">
+<section id="member_benefits" class="stsrc-benefits">
+	<div class="stsrc-benefits__inner">
+		<h2 class="stsrc-benefits__title">Membership Benefits</h2>
+		<div class="stsrc-benefits__table-wrap">
+			<table class="stsrc-benefits__table">
 				<thead>
 					<tr>
-						<th class="sticky left-0 bg-[#345365] border px-4 py-2 text-left text-[#ececec] min-w-[160px]">Benefit</th>
+						<th>Benefit</th>
 						<?php foreach ( $membership_types as $type ) : ?>
-							<th class="border px-4 py-2 text-center text-[#ececec] min-w-[120px]">
-								<?php echo esc_html( $type['name'] ); ?>
-							</th>
+							<th><?php echo esc_html( $type['name'] ); ?></th>
 						<?php endforeach; ?>
 					</tr>
 				</thead>
 				<tbody>
 					<?php foreach ( $all_benefits as $benefit ) : ?>
 						<tr>
-							<td class="sticky left-0 bg-[#345365] border px-4 py-2 text-[#ececec]"><?php echo esc_html( $benefit ); ?></td>
+							<td><?php echo esc_html( $benefit ); ?></td>
 							<?php foreach ( $membership_types as $type ) :
 								$type_benefits = is_array( $type['benefits'] ) ? $type['benefits'] : [];
 							?>
-								<td class="border px-4 py-2 text-center text-[#ececec]">
-									<?php if ( in_array( $benefit, $type_benefits, true ) ) echo '&#10003;'; ?>
-								</td>
+								<td><?php if ( in_array( $benefit, $type_benefits, true ) ) echo '&#10003;'; ?></td>
 							<?php endforeach; ?>
 						</tr>
 					<?php endforeach; ?>

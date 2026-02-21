@@ -13,30 +13,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<style>
-	#about_us a {
-		color: #ececec;
-		text-decoration: underline;
-	}
-</style>
-
 <?php if ( have_rows( 'about_us' ) ) : ?>
-<section id="about_us" class="p-6 bg-[#48758f]">
-	<div class="container mx-auto max-w-5xl">
-		<h2 class="text-3xl text-center text-[#ececec] mb-10">About Us</h2>
+<section id="about_us" class="stsrc-about">
+	<div class="stsrc-about__inner">
+		<h2 class="stsrc-about__title">About Us</h2>
 
 		<?php $row_index = 0; ?>
 		<?php while ( have_rows( 'about_us' ) ) : the_row(); ?>
 			<?php
 				$text  = get_sub_field( 'text' );
 				$image = get_sub_field( 'image' );
-				$is_reversed = $row_index % 2 !== 0 ? 'sm:flex-row-reverse' : '';
+				$row_classes = 'stsrc-about__row';
+				if ( $row_index % 2 !== 0 ) {
+					$row_classes .= ' stsrc-about__row--reversed';
+				}
 			?>
-			<div class="flex flex-col sm:flex-row items-center justify-between gap-6 mb-16 <?php echo esc_attr( $is_reversed ); ?>">
-				<div class="w-full sm:w-1/2 text-lg text-[#ececec]">
+			<div class="<?php echo esc_attr( $row_classes ); ?>">
+				<div class="stsrc-about__text">
 					<?php echo wp_kses_post( $text ); ?>
 				</div>
-				<div class="w-full sm:w-1/2">
+				<div class="stsrc-about__image-col">
 					<?php
 					$webp_url = str_replace(
 						'/wp-content/uploads/',
@@ -50,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							loading="lazy"
 							src="<?php echo esc_url( $image ); ?>"
 							alt="About Us"
-							class="rounded-lg w-full h-auto object-cover"
+							class="stsrc-about__image"
 						>
 					</picture>
 				</div>
