@@ -17,7 +17,7 @@ if ( ! $sponsors->have_posts() ) {
 }
 ?>
 
-<section id="sponsors" class="px-6 my-24">
+<section id="sponsors" class="bg-white px-6 py-24">
 	<div class="container max-w-6xl mx-auto">
 		<h2 class="text-3xl text-center text-black dark:text-[#ececec] mb-10">Sponsors</h2>
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-10">

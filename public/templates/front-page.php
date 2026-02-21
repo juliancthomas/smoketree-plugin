@@ -55,6 +55,28 @@ $sponsors = new WP_Query( [
 	] ],
 ] );
 
+if ( is_user_logged_in() ) {
+	$hero_next_color = $events->have_posts() ? '#ffffff' : '#48758f';
+} else {
+	$hero_next_color = '#5d99bb';
+}
+
+function stsrc_wave_divider( $bg_color, $fill_color, $variant = 1 ) {
+	$paths = [
+		1 => 'M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z',
+		2 => 'M0,56 C480,0 960,80 1440,24 L1440,80 L0,80 Z',
+		3 => 'M0,24 C320,72 640,8 960,56 C1280,88 1400,48 1440,48 L1440,80 L0,80 Z',
+	];
+	$path = $paths[ $variant ] ?? $paths[1];
+	?>
+	<div class="leading-[0]" style="background-color: <?php echo esc_attr( $bg_color ); ?>;" aria-hidden="true">
+		<svg viewBox="0 0 1440 80" preserveAspectRatio="none" class="block w-full h-[40px] sm:h-[60px]">
+			<path fill="<?php echo esc_attr( $fill_color ); ?>" d="<?php echo $path; ?>"/>
+		</svg>
+	</div>
+	<?php
+}
+
 $partials_dir = plugin_dir_path( __FILE__ ) . '../partials/front-page/';
 
 // Load plugin header.
@@ -62,16 +84,17 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
 <style>
-	main > section {
+	main > section,
+	main > [aria-hidden="true"] {
 		opacity: 0;
 		transform: translateY(24px);
 		transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 	}
-	main > section.is-visible {
+	main > section.is-visible,
+	main > [aria-hidden="true"].is-visible {
 		opacity: 1;
 		transform: translateY(0);
 	}
-	/* Hero shouldn't fade in — it's above the fold */
 	main > #hero_section {
 		opacity: 1;
 		transform: none;
@@ -82,22 +105,46 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 	<?php require $partials_dir . 'hero-section.php'; ?>
 
 	<?php if ( is_user_logged_in() ) : ?>
-		<?php if ( $events->have_posts() ) { require $partials_dir . 'upcoming-events.php'; } ?>
+
+		<?php if ( $events->have_posts() ) : ?>
+			<?php require $partials_dir . 'upcoming-events.php'; ?>
+			<?php stsrc_wave_divider( '#ffffff', '#48758f', 2 ); ?>
+		<?php endif; ?>
+
 		<?php require $partials_dir . 'about-us.php'; ?>
+		<?php stsrc_wave_divider( '#48758f', '#f3f4f6', 3 ); ?>
+
 	<?php else : ?>
+
 		<?php require $partials_dir . 'membership-plans.php'; ?>
+		<?php stsrc_wave_divider( '#5d99bb', '#48758f', 2 ); ?>
+
 		<?php require $partials_dir . 'about-us.php'; ?>
+		<?php stsrc_wave_divider( '#48758f', '#345365', 3 ); ?>
+
 		<?php require $partials_dir . 'membership-benefits.php'; ?>
-		<?php if ( $events->have_posts() ) { require $partials_dir . 'upcoming-events.php'; } ?>
+
+		<?php if ( $events->have_posts() ) : ?>
+			<?php stsrc_wave_divider( '#345365', '#ffffff', 1 ); ?>
+			<?php require $partials_dir . 'upcoming-events.php'; ?>
+			<?php stsrc_wave_divider( '#ffffff', '#f3f4f6', 2 ); ?>
+		<?php else : ?>
+			<?php stsrc_wave_divider( '#345365', '#f3f4f6', 1 ); ?>
+		<?php endif; ?>
+
 	<?php endif; ?>
 
 	<?php require $partials_dir . 'signal-newsletter.php'; ?>
-	<?php if ( $sponsors->have_posts() ) { require $partials_dir . 'sponsors.php'; } ?>
+
+	<?php if ( $sponsors->have_posts() ) : ?>
+		<?php stsrc_wave_divider( '#f3f4f6', '#ffffff', 3 ); ?>
+		<?php require $partials_dir . 'sponsors.php'; ?>
+	<?php endif; ?>
 </main>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-	var sections = document.querySelectorAll('main > section:not(#hero_section)');
+	var sections = document.querySelectorAll('main > section:not(#hero_section), main > [aria-hidden="true"]');
 	if (!('IntersectionObserver' in window)) {
 		sections.forEach(function (s) { s.classList.add('is-visible'); });
 		return;

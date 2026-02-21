@@ -17,7 +17,7 @@ if ( ! $events->have_posts() ) {
 }
 ?>
 
-<section id="upcoming_events" class="px-6 my-20">
+<section id="upcoming_events" class="bg-white px-6 py-20">
 	<div class="container mx-auto">
 		<h2 class="text-3xl text-center text-black dark:text-[#ececec] mb-10">Upcoming Events</h2>
 		<div class="flex flex-wrap gap-6 justify-center">
