@@ -644,9 +644,9 @@ class STSRC_Ajax_Handler {
 		);
 
 		// Email to admin/treasurer
-		$admin_email = get_option( 'admin_email' );
+		$president_email = get_option( 'stsrc_president_email' );
 		$secretary_email = get_option( 'stsrc_secretary_email', '' );
-		$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+		$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 		foreach ( $admin_emails as $admin_email_address ) {
 			$email_service->send_email(
@@ -1737,9 +1737,9 @@ class STSRC_Ajax_Handler {
 			// Send admin notification
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 			$email_service = new STSRC_Email_Service();
-			$admin_email = get_option( 'admin_email' );
+			$president_email = get_option( 'stsrc_president_email' );
 			$secretary_email = get_option( 'stsrc_secretary_email', '' );
-			$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+			$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 			foreach ( $admin_emails as $admin_email_address ) {
 				$email_service->send_email(
@@ -2091,7 +2091,7 @@ class STSRC_Ajax_Handler {
 
 		// Handle test email
 		if ( $is_test ) {
-			$admin_email = get_option( 'admin_email' );
+			$president_email= get_option( 'stsrc_president_email' );
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 			$email_service = new STSRC_Email_Service();
 
@@ -2100,13 +2100,13 @@ class STSRC_Ajax_Handler {
 				'message'    => $message,
 				'first_name' => 'Admin',
 				'last_name'  => 'Test',
-				'email'      => $admin_email,
+				'email'      => $president_email,
 			);
 
-			$result = $email_service->send_email( $email_template, $template_data, $admin_email, '[TEST] ' . $subject );
+			$result = $email_service->send_email( $email_template, $template_data, $president_email, '[TEST] ' . $subject );
 
 			if ( $result ) {
-				wp_send_json_success( array( 'message' => 'Test email sent successfully to ' . $admin_email . '.' ) );
+				wp_send_json_success( array( 'message' => 'Test email sent successfully to ' . $president_email. '.' ) );
 			} else {
 				wp_send_json_error( array( 'message' => 'Failed to send test email.' ) );
 			}

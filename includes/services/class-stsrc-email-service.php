@@ -606,11 +606,11 @@ class STSRC_Email_Service {
 		}
 
 		$sent_any = false;
-		foreach ( $admin_emails as $admin_email ) {
+		foreach ( $admin_emails as $president_email) {
 			$result = $this->send_email(
 				'notify-admin-balance-payment.php',
 				$data,
-				$admin_email,
+				$president_email,
 				$subject
 			);
 			if ( $result ) {
@@ -705,11 +705,11 @@ class STSRC_Email_Service {
 		}
 
 		$sent_any = false;
-		foreach ( $admin_emails as $admin_email ) {
+		foreach ( $admin_emails as $president_email) {
 			$result = $this->send_email(
 				'notify-admin-overpayment.php',
 				$data,
-				$admin_email,
+				$president_email,
 				$subject
 			);
 			if ( $result ) {
@@ -729,7 +729,7 @@ class STSRC_Email_Service {
 	private function get_admin_notification_recipients(): array {
 		$emails = array_filter(
 			array(
-				sanitize_email( (string) get_option( 'admin_email' ) ),
+				sanitize_email( (string) get_option( 'stsrc_president_email' ) ),
 				sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
 			)
 		);

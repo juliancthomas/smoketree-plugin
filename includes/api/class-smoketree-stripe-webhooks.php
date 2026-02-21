@@ -327,9 +327,9 @@ class Smoketree_Stripe_Webhooks {
 		$membership_type_name = $membership_type['name'] ?? '';
 
 		// Send admin notifications (to all admins + secretary)
-		$admin_email = get_option( 'admin_email' );
+		$president_email = get_option( 'stsrc_president_email' );
 		$secretary_email = get_option( 'stsrc_secretary_email', '' );
-		$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+		$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 		// Also get all admin users
 		$admin_users = get_users( array( 'role' => 'administrator' ) );
@@ -470,9 +470,9 @@ class Smoketree_Stripe_Webhooks {
 		$membership_type_name = $membership_type['name'] ?? '';
 
 		// Send admin notifications (to all admins + secretary)
-		$admin_email = get_option( 'admin_email' );
+		$president_email = get_option( 'stsrc_president_email' );
 		$secretary_email = get_option( 'stsrc_secretary_email', '' );
-		$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+		$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 		// Also get all admin users
 		$admin_users = get_users( array( 'role' => 'administrator' ) );
@@ -603,9 +603,9 @@ class Smoketree_Stripe_Webhooks {
 					$email_service = new STSRC_Email_Service();
 
 					// Send failure notification to admins
-					$admin_email = get_option( 'admin_email' );
+					$president_email = get_option( 'stsrc_president_email' );
 					$secretary_email = get_option( 'stsrc_secretary_email', '' );
-					$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+					$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 					// Also get all admin users
 					$admin_users = get_users( array( 'role' => 'administrator' ) );
@@ -649,9 +649,9 @@ class Smoketree_Stripe_Webhooks {
 					error_log( 'Payment failed for ' . $payment_type . ': ' . $payment_intent_id . ' - Member: ' . $member_id );
 				} else {
 					// Registration payment failure
-					$admin_email = get_option( 'admin_email' );
+					$president_email = get_option( 'stsrc_president_email' );
 					$secretary_email = get_option( 'stsrc_secretary_email', '' );
-					$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+					$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 					// Also get all admin users
 					$admin_users = get_users( array( 'role' => 'administrator' ) );
@@ -735,7 +735,7 @@ class Smoketree_Stripe_Webhooks {
 
 		$admin_emails = array_filter(
 			array(
-				get_option( 'admin_email' ),
+				get_option( 'stsrc_president_email' ),
 				get_option( 'stsrc_secretary_email', '' ),
 			)
 		);
@@ -1012,9 +1012,9 @@ class Smoketree_Stripe_Webhooks {
 		);
 
 		// Send admin notification
-		$admin_email = get_option( 'admin_email' );
+		$president_email= get_option( 'stsrc_president_email' );
 		$secretary_email = get_option( 'stsrc_secretary_email', '' );
-		$admin_emails = array_filter( array( $admin_email, $secretary_email ) );
+		$admin_emails = array_filter( array( $president_email, $secretary_email ) );
 
 		// Also get all admin users
 		$admin_users = get_users( array( 'role' => 'administrator' ) );
