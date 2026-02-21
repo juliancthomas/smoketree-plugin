@@ -39,9 +39,9 @@ if ( empty( $all_benefits ) ) {
 			<table class="table-auto w-full border border-gray-300">
 				<thead>
 					<tr>
-						<th class="border px-4 py-2 text-left text-[#ececec]">Benefit</th>
+						<th class="sticky left-0 bg-[#345365] border px-4 py-2 text-left text-[#ececec] min-w-[160px]">Benefit</th>
 						<?php foreach ( $membership_types as $type ) : ?>
-							<th class="border px-4 py-2 text-center text-[#ececec]">
+							<th class="border px-4 py-2 text-center text-[#ececec] min-w-[120px]">
 								<?php echo esc_html( $type['name'] ); ?>
 							</th>
 						<?php endforeach; ?>
@@ -50,7 +50,7 @@ if ( empty( $all_benefits ) ) {
 				<tbody>
 					<?php foreach ( $all_benefits as $benefit ) : ?>
 						<tr>
-							<td class="border px-4 py-2 text-[#ececec]"><?php echo esc_html( $benefit ); ?></td>
+							<td class="sticky left-0 bg-[#345365] border px-4 py-2 text-[#ececec]"><?php echo esc_html( $benefit ); ?></td>
 							<?php foreach ( $membership_types as $type ) :
 								$type_benefits = is_array( $type['benefits'] ) ? $type['benefits'] : [];
 							?>
