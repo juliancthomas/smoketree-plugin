@@ -46,6 +46,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</div>
 							<?php endif; ?>
 						</div>
+						<span class="mt-4 inline-block w-full py-2 bg-blue-700 text-white font-semibold rounded hover:bg-blue-800 transition-colors">
+							Select Plan
+						</span>
 					</a>
 				<?php endforeach; ?>
 			</div>
