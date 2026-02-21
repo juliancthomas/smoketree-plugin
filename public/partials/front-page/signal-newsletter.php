@@ -32,18 +32,32 @@ if ( ! have_rows( 'news_and_announcements', 1032 ) ) {
 		<?php endif; ?>
 	</div>
 
+	<?php
+		$max_previous   = 6;
+		$previous_count = 0;
+		$has_more       = false;
+	?>
 	<div class="max-w-2xl mx-auto mt-12 border-t border-gray-300 dark:border-gray-600 pt-8">
 		<h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Previous Issues</h3>
 		<ul class="space-y-3 text-left">
 			<?php while ( have_rows( 'news_and_announcements', 1032 ) ) : the_row(); $pdf = get_sub_field( 'pdf_upload' ); ?>
 				<?php if ( $pdf ) : ?>
+					<?php if ( $previous_count >= $max_previous ) : ?>
+						<?php $has_more = true; break; ?>
+					<?php endif; ?>
 					<li>
 						<a href="<?php echo esc_url( $pdf['url'] ); ?>" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">
 							<?php the_sub_field( 'news_title' ); ?>
 						</a>
 					</li>
+					<?php $previous_count++; ?>
 				<?php endif; ?>
 			<?php endwhile; ?>
 		</ul>
+		<?php if ( $has_more ) : ?>
+			<a href="<?php echo esc_url( get_permalink( 1032 ) ); ?>" class="inline-block mt-4 text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+				See all issues &rarr;
+			</a>
+		<?php endif; ?>
 	</div>
 </section>
