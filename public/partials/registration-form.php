@@ -70,13 +70,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<div class="stsrc-form-row">
 			<div class="stsrc-form-group">
-				<label for="city"><?php echo esc_html__( 'City', 'smoketree-plugin' ); ?></label>
-				<input type="text" name="city" id="city" value="Tucker" autocomplete="address-level2">
+				<label for="city"><?php echo esc_html__( 'City', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
+				<input type="text" name="city" id="city" value="Tucker" autocomplete="address-level2" required>
 			</div>
 			
 			<div class="stsrc-form-group">
-				<label for="state"><?php echo esc_html__( 'State', 'smoketree-plugin' ); ?></label>
-				<select name="state" id="state" autocomplete="address-level1">
+				<label for="state"><?php echo esc_html__( 'State', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
+				<select name="state" id="state" autocomplete="address-level1" required>
 					<option value=""><?php echo esc_html__( 'Select...', 'smoketree-plugin' ); ?></option>
 					<?php
 					$us_states = array(
@@ -102,14 +102,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 			
 			<div class="stsrc-form-group">
-				<label for="zip"><?php echo esc_html__( 'ZIP Code', 'smoketree-plugin' ); ?></label>
-				<input type="text" name="zip" id="zip" value="30084" autocomplete="postal-code">
+				<label for="zip"><?php echo esc_html__( 'ZIP Code', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
+				<input type="text" name="zip" id="zip" value="30084" autocomplete="postal-code" required>
 			</div>
 		</div>
 
 		<div class="stsrc-form-group">
-			<label for="country"><?php echo esc_html__( 'Country', 'smoketree-plugin' ); ?></label>
-			<select name="country" id="country" autocomplete="country">
+			<label for="country"><?php echo esc_html__( 'Country', 'smoketree-plugin' ); ?> <span class="required">*</span></label>
+			<select name="country" id="country" autocomplete="country" required>
 				<option value="US" selected><?php echo esc_html__( 'United States', 'smoketree-plugin' ); ?></option>
 				<option value="CA"><?php echo esc_html__( 'Canada', 'smoketree-plugin' ); ?></option>
 				<option value="MX"><?php echo esc_html__( 'Mexico', 'smoketree-plugin' ); ?></option>
@@ -214,8 +214,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<h2><?php echo esc_html__( 'How did you hear about us?', 'smoketree-plugin' ); ?></h2>
 		
 		<div class="stsrc-form-group">
-			<label for="referral_source"><?php echo esc_html__( 'Referral Source', 'smoketree-plugin' ); ?></label>
-			<select name="referral_source" id="referral_source">
+			<label for="referral_source"><?php echo esc_html__( 'Referral Source', 'smoketree-plugin' ); ?><span class="required">*</span></label>
+			<select name="referral_source" id="referral_source" required>
 				<option value=""><?php echo esc_html__( 'Select...', 'smoketree-plugin' ); ?></option>
 				<option value="A current or previous member"><?php echo esc_html__( 'A current or previous member', 'smoketree-plugin' ); ?></option>
 				<option value="social media"><?php echo esc_html__( 'Social media', 'smoketree-plugin' ); ?></option>
@@ -351,7 +351,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	
 	<!-- CAPTCHA -->
 	<?php if ( $captcha_enabled && ! empty( $captcha_site_key ) ) : ?>
-		<div class="stsrc-form-section">
+		<div class="stsrc-form-section" style="display: none;">
 			<?php if ( 'recaptcha' === $captcha_provider ) : ?>
 				<script src="https://www.google.com/recaptcha/api.js?render=<?php echo esc_attr( $captcha_site_key ); ?>"></script>
 			<?php elseif ( 'hcaptcha' === $captcha_provider ) : ?>
@@ -423,30 +423,37 @@ jQuery(document).ready(function($) {
 		}
 	}
 
-	// Progress bar — tracks which visible sections have at least one filled required input
+	// Progress bar — hardcoded required fields for accurate tracking
+	var requiredFields = [
+		{ type: 'value', sel: '#first_name' },
+		{ type: 'value', sel: '#last_name' },
+		{ type: 'value', sel: '#email' },
+		{ type: 'value', sel: '#phone' },
+		{ type: 'value', sel: '#street_1' },
+		{ type: 'value', sel: '#city' },
+		{ type: 'value', sel: '#state' },
+		{ type: 'value', sel: '#zip' },
+		{ type: 'value', sel: '#country' },
+		{ type: 'value', sel: '#membership_type_id' },
+		{ type: 'value', sel: '#password' },
+		{ type: 'value', sel: '#password_confirm' },
+		{ type: 'value', sel: '#referral_source' },
+		{ type: 'value', sel: '#waiver_full_name' },
+		{ type: 'value', sel: '#waiver_signed_date' },
+		{ type: 'radio', name: 'payment_type' }
+	];
+
 	function updateProgressBar() {
-		var $sections = $('#stsrc-registration-form .stsrc-form-section:visible');
-		var total = $sections.length;
-		if (total === 0) return;
+		var total = requiredFields.length;
 		var filled = 0;
-		$sections.each(function() {
-			var $required = $(this).find('input[required], select[required], textarea[required]');
-			if ($required.length === 0) {
-				filled++;
-				return;
+		for (var i = 0; i < total; i++) {
+			var f = requiredFields[i];
+			if (f.type === 'radio') {
+				if ($('input[name="' + f.name + '"]:checked').length) filled++;
+			} else {
+				if ($(f.sel).val()) filled++;
 			}
-			var allFilled = true;
-			$required.each(function() {
-				if ($(this).is(':radio')) {
-					if (!$('input[name="' + $(this).attr('name') + '"]:checked').length) allFilled = false;
-				} else if ($(this).is(':checkbox')) {
-					if (!$(this).is(':checked')) allFilled = false;
-				} else if (!$(this).val()) {
-					allFilled = false;
-				}
-			});
-			if (allFilled) filled++;
-		});
+		}
 		var pct = Math.round((filled / total) * 100);
 		$('#stsrc-progress-fill').css('width', pct + '%');
 		$('#stsrc-progress-label').text(pct + '% complete');
@@ -774,6 +781,8 @@ jQuery(document).ready(function($) {
 	document.querySelector('#password_confirm').value = 'abc123123';
 	document.querySelector('#referral_source').value = 'other';
 	document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
+
+	updateProgressBar()
 });
 </script>
 

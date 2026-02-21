@@ -871,7 +871,6 @@
 	z-index: 99;
 	background: var(--stsrc-bg-primary);
 	padding: 0.6rem var(--stsrc-spacing-md);
-	border-bottom: 1px solid var(--stsrc-border);
 	display: flex;
 	align-items: center;
 	gap: var(--stsrc-spacing-md);
@@ -2017,4 +2016,9 @@ body.admin-bar .stsrc-progress-bar {
 
 .stsrc-hidden {
 	display: none !important;
+}
+
+*,:after,:before {
+    box-sizing: border-box;
+    border: 0 solid #e5e7eb;
 }
