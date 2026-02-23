@@ -182,6 +182,9 @@ class STSRC_Settings_Page {
 		// Payment Settings (v1.1.0+)
 		$settings['minimum_balance_payment'] = function_exists( 'get_field' ) ? get_field( 'stsrc_minimum_balance_payment', 'option' ) : get_option( 'stsrc_minimum_balance_payment', '10.00' );
 
+		// Google Places Settings
+		$settings['google_places_api_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_google_places_api_key', 'option' ) : get_option( 'stsrc_google_places_api_key', '' );
+
 		return $settings;
 	}
 }

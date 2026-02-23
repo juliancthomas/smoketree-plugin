@@ -36,6 +36,9 @@ $waiver_text = $use_acf ? get_field( 'stsrc_waiver_text', 'option' ) : get_optio
 $auto_renewal_text = $use_acf ? get_field( 'stsrc_auto_renewal_text', 'option' ) : get_option( 'stsrc_auto_renewal_text', '' );
 $extra_member_fee = 50.00;
 
+// Google Places API key for address autocomplete
+$google_places_api_key = $use_acf ? get_field( 'stsrc_google_places_api_key', 'option' ) : get_option( 'stsrc_google_places_api_key', '' );
+
 $request_params = wp_unslash( $_GET );
 $payment_flag   = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
 

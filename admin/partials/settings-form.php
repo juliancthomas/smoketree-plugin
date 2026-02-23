@@ -217,6 +217,20 @@ $acf_available = $data['acf_available'] ?? false;
 					</table>
 				</div>
 
+				<!-- Google Places Settings -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Google Places Autocomplete', 'smoketree-plugin' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="google_places_api_key"><?php echo esc_html__( 'Google Places API Key', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="password" name="google_places_api_key" id="google_places_api_key" value="<?php echo esc_attr( $settings['google_places_api_key'] ?? '' ); ?>" class="large-text">
+								<p class="description"><?php echo esc_html__( 'Google API key with Places API (New) enabled. Used for address autocomplete on the registration form. Leave blank to disable.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
 				<!-- Transaction Fees Settings -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Transaction Fees', 'smoketree-plugin' ); ?></h2>

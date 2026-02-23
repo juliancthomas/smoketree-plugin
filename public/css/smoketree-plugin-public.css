@@ -963,9 +963,33 @@ body.admin-bar .stsrc-progress-bar {
 	transition: var(--stsrc-transition);
 }
 
+/* Match Google PlaceAutocompleteElement with native form controls */
+#stsrc-place-autocomplete {
+	display: block;
+	width: 100%;
+}
+
+#stsrc-place-autocomplete::part(input) {
+	width: 100%;
+	padding: var(--stsrc-spacing-sm) var(--stsrc-spacing-md);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-md);
+	background: var(--stsrc-bg-primary);
+	background-image: none;
+	color: var(--stsrc-text-primary);
+	font-size: 1rem;
+	transition: var(--stsrc-transition);
+}
+
 .stsrc-form-group input:focus,
 .stsrc-form-group select:focus,
 .stsrc-form-group textarea:focus {
+	outline: none;
+	border-color: var(--stsrc-primary);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.1);
+}
+
+#stsrc-place-autocomplete::part(input):focus {
 	outline: none;
 	border-color: var(--stsrc-primary);
 	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.1);

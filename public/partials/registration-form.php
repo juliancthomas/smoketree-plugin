@@ -370,6 +370,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </form>
 
+<?php if ( ! empty( $google_places_api_key ) ) : ?>
+	<script src="https://maps.googleapis.com/maps/api/js?key=<?php echo esc_attr( $google_places_api_key ); ?>&libraries=places&loading=async&callback=Function.prototype" async defer></script>
+<?php endif; ?>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-mask-plugin@1.14.16/dist/jquery.mask.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -378,6 +382,109 @@ if ( ! defined( 'ABSPATH' ) ) {
 jQuery(document).ready(function($) {
 	// Phone number mask
 	$('#phone').mask('(000) 000-0000');
+
+	// Google Places Address Autocomplete
+	<?php if ( ! empty( $google_places_api_key ) ) : ?>
+	(function initPlacesAutocomplete() {
+		function boot() {
+			if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+				setTimeout(boot, 200);
+				return;
+			}
+
+			var $streetInput = $('#street_1');
+			if (!$streetInput.length || document.getElementById('stsrc-place-autocomplete')) {
+				return;
+			}
+
+			var placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+				includedRegionCodes: ['us', 'ca', 'mx', 'gb']
+			});
+			placeAutocomplete.id = 'stsrc-place-autocomplete';
+			placeAutocomplete.style.display = 'block';
+			placeAutocomplete.style.width = '100%';
+			placeAutocomplete.style.marginBottom = '0';
+			placeAutocomplete.setAttribute('aria-label', 'Street Address');
+			placeAutocomplete.setAttribute('placeholder', $streetInput.attr('placeholder') || 'Street Address');
+
+			$streetInput.before(placeAutocomplete);
+			$streetInput.attr('type', 'hidden');
+
+			placeAutocomplete.addEventListener('gmp-select', async function(event) {
+				var prediction = event.placePrediction || (event.detail && event.detail.placePrediction);
+				if (!prediction || typeof prediction.toPlace !== 'function') return;
+
+				var place = prediction.toPlace();
+				await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
+
+				var components = place.addressComponents || place.address_components || [];
+				var streetNumber = '';
+				var route = '';
+				var city = '';
+				var state = '';
+				var zip = '';
+				var country = '';
+				var subpremise = '';
+
+				for (var i = 0; i < components.length; i++) {
+					var comp = components[i];
+					var types = comp.types || [];
+					var longText = comp.longText || comp.long_name || '';
+					var shortText = comp.shortText || comp.short_name || longText;
+
+					if (types.indexOf('street_number') !== -1) {
+						streetNumber = longText;
+					} else if (types.indexOf('route') !== -1) {
+						route = shortText;
+					} else if (types.indexOf('subpremise') !== -1) {
+						subpremise = longText;
+					} else if (types.indexOf('locality') !== -1) {
+						city = longText;
+					} else if (types.indexOf('sublocality_level_1') !== -1 && !city) {
+						city = longText;
+					} else if (types.indexOf('administrative_area_level_1') !== -1) {
+						state = shortText;
+					} else if (types.indexOf('postal_code') !== -1) {
+						zip = longText;
+					} else if (types.indexOf('country') !== -1) {
+						country = shortText;
+					}
+				}
+
+				var streetLine = (streetNumber + ' ' + route).trim();
+				if (!streetLine && place.formattedAddress) {
+					streetLine = String(place.formattedAddress).split(',')[0].trim();
+				}
+				$streetInput.val(streetLine).trigger('change');
+
+				if (subpremise) {
+					$('#street_2').val(subpremise);
+				}
+
+				if (city) {
+					$('#city').val(city);
+				}
+
+				if (state && $('#state option[value="' + state + '"]').length) {
+					$('#state').val(state);
+				}
+
+				if (zip) {
+					$('#zip').val(zip);
+				}
+
+				if (country && $('#country option[value="' + country + '"]').length) {
+					$('#country').val(country);
+				}
+
+				$('#street_2, #city, #state, #zip, #country').trigger('change');
+				updateProgressBar();
+			});
+		}
+
+		boot();
+	})();
+	<?php endif; ?>
 
 	// Password visibility toggle
 	$('.stsrc-password-toggle').on('click', function() {
@@ -774,20 +881,25 @@ jQuery(document).ready(function($) {
 			});
 		}
 	});
-	// const firstName = faker.name.firstName();
-	// const lastName = faker.name.lastName();
-	// document.querySelector('#first_name').value = firstName;
-	// document.querySelector('#last_name').value = lastName;
-	// document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
-	// document.querySelector('#phone').value = faker.phone.phoneNumber();
-	// document.querySelector('#street_1').value = faker.address.streetAddress();
-	// document.querySelector('#street_2').value = faker.address.secondaryAddress();
-	// document.querySelector('#password').value = 'abc123123';
-	// document.querySelector('#password_confirm').value = 'abc123123';
-	// document.querySelector('#referral_source').value = 'other';
-	// document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
+	const firstName = faker.name.firstName();
+	const lastName = faker.name.lastName();
+	document.querySelector('#first_name').value = firstName;
+	document.querySelector('#last_name').value = lastName;
+	document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
+	document.querySelector('#phone').value = faker.phone.phoneNumber();
+	document.querySelector('#street_1').value = faker.address.streetAddress();
+	document.querySelector('#street_2').value = faker.address.secondaryAddress();
+	document.querySelector('#password').value = 'abc123123';
+	document.querySelector('#password_confirm').value = 'abc123123';
+	document.querySelector('#referral_source').value = 'other';
+	document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
 
 	updateProgressBar()
 });
 </script>
 
+<style>
+	.autocomplete-icon {
+		display: none;
+	}
+</style>
