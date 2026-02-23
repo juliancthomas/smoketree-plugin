@@ -774,18 +774,18 @@ jQuery(document).ready(function($) {
 			});
 		}
 	});
-	const firstName = faker.name.firstName();
-	const lastName = faker.name.lastName();
-	document.querySelector('#first_name').value = firstName;
-	document.querySelector('#last_name').value = lastName;
-	document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
-	document.querySelector('#phone').value = faker.phone.phoneNumber();
-	document.querySelector('#street_1').value = faker.address.streetAddress();
-	document.querySelector('#street_2').value = faker.address.secondaryAddress();
-	document.querySelector('#password').value = 'abc123123';
-	document.querySelector('#password_confirm').value = 'abc123123';
-	document.querySelector('#referral_source').value = 'other';
-	document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
+	// const firstName = faker.name.firstName();
+	// const lastName = faker.name.lastName();
+	// document.querySelector('#first_name').value = firstName;
+	// document.querySelector('#last_name').value = lastName;
+	// document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
+	// document.querySelector('#phone').value = faker.phone.phoneNumber();
+	// document.querySelector('#street_1').value = faker.address.streetAddress();
+	// document.querySelector('#street_2').value = faker.address.secondaryAddress();
+	// document.querySelector('#password').value = 'abc123123';
+	// document.querySelector('#password_confirm').value = 'abc123123';
+	// document.querySelector('#referral_source').value = 'other';
+	// document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
 
 	updateProgressBar()
 });
