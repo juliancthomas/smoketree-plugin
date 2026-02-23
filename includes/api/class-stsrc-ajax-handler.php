@@ -232,6 +232,27 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
+		// Also block if a WordPress user already exists for this email/username.
+		// This prevents creating Stripe customers for registrations that cannot create a WP account.
+		$existing_user_id = email_exists( $data['email'] );
+		if ( ! $existing_user_id ) {
+			$existing_user_id = username_exists( $data['email'] );
+		}
+
+		if ( $existing_user_id ) {
+			STSRC_Logger::info(
+				'Registration attempt blocked because a WordPress user already exists for the submitted email.',
+				array(
+					'method'  => __METHOD__,
+					'email'   => $data['email'],
+					'user_id' => $existing_user_id,
+					'ip'      => $this->get_client_ip(),
+				)
+			);
+			wp_send_json_error( array( 'message' => 'An account with this email address already exists. Please log in or reset your password.' ) );
+			return;
+		}
+
 		// Create Stripe customer for all payment types
 		$payment_service = new STSRC_Payment_Service();
 		$stripe_customer_id = $payment_service->create_customer(
@@ -2652,6 +2673,11 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_fee_pay_later', sanitize_text_field( $post_data['fee_pay_later'] ) );
 		}
 
+		// Save Google Places API key
+		if ( isset( $post_data['google_places_api_key'] ) ) {
+			update_option( 'stsrc_google_places_api_key', sanitize_text_field( $post_data['google_places_api_key'] ) );
+		}
+
 		// Save payment settings (v1.1.0+)
 		if ( isset( $post_data['minimum_balance_payment'] ) ) {
 			$minimum_payment = floatval( $post_data['minimum_balance_payment'] );
@@ -2676,7 +2702,9 @@ class STSRC_Ajax_Handler {
 					update_field( 'stsrc_minimum_balance_payment', number_format( $minimum_payment, 2, '.', '' ), 'option' );
 				}
 			}
-			// Add other ACF field updates as needed
+			if ( isset( $post_data['google_places_api_key'] ) ) {
+				update_field( 'stsrc_google_places_api_key', sanitize_text_field( $post_data['google_places_api_key'] ), 'option' );
+			}
 		}
 
 		wp_send_json_success(
