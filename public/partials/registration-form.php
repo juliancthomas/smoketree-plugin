@@ -371,9 +371,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 </form>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-mask-plugin@1.14.16/dist/jquery.mask.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 jQuery(document).ready(function($) {
+	// Phone number mask
+	$('#phone').mask('(000) 000-0000');
+
 	// Password visibility toggle
 	$('.stsrc-password-toggle').on('click', function() {
 		var $btn = $(this);
