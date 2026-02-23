@@ -428,7 +428,12 @@ class Smoketree_Plugin_Public {
 		if ( isset( $_GET['action'] ) && 'logout' === $_GET['action'] ) {
 			check_admin_referer( 'log-out' );
 			wp_logout();
-			wp_safe_redirect( home_url( '/login?loggedout=true' ) );
+			$login_page = get_page_by_path( 'login' );
+			if ( $login_page && 'publish' === $login_page->post_status ) {
+				wp_safe_redirect( home_url( '/login?loggedout=true' ) );
+			} else {
+				wp_safe_redirect( wp_login_url() . '?loggedout=true' );
+			}
 			exit;
 		}
 	}
@@ -444,6 +449,12 @@ class Smoketree_Plugin_Public {
 		
 		// Only redirect wp-login.php, not wp-admin
 		if ( 'wp-login.php' === $pagenow ) {
+
+			// Don't redirect if the custom login page doesn't exist yet
+			$login_page = get_page_by_path( 'login' );
+			if ( ! $login_page || 'publish' !== $login_page->post_status ) {
+				return;
+			}
 
 			$redirect_to = '';
 			
