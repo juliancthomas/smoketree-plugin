@@ -126,11 +126,11 @@ class STSRC_Membership_DB {
 
 		if ( $selectable_only ) {
 			$query = $wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE is_selectable = %d ORDER BY name ASC",
+				"SELECT * FROM {$table_name} WHERE is_selectable = %d ORDER BY price DESC",
 				1
 			);
 		} else {
-			$query .= ' ORDER BY name ASC';
+			$query .= ' ORDER BY price DESC';
 		}
 
 		$results = $wpdb->get_results( $query, ARRAY_A );
