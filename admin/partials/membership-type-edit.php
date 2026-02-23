@@ -29,7 +29,7 @@ $selected_benefits = $membership_type['benefits'] ?? array();
 		?>
 	</h1>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-membership-type-form" class="stsrc-membership-type-form">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" id="stsrc-membership-type-form" class="stsrc-membership-type-form stsrc-ajax-form">
 		<input type="hidden" name="action" value="<?php echo $is_edit ? 'stsrc_update_membership_type' : 'stsrc_create_membership_type'; ?>">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
 		<?php if ( $is_edit ) : ?>

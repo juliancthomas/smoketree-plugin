@@ -3083,7 +3083,7 @@ class STSRC_Ajax_Handler {
 		$all_types = STSRC_Membership_DB::get_all_membership_types();
 		$new_name = strtolower( sanitize_text_field( $_POST['name'] ) );
 		foreach ( $all_types as $type ) {
-			if ( $type['membership_type_id'] !== $membership_type_id && strtolower( $type['name'] ) === $new_name ) {
+			if ( (int) $type['membership_type_id'] !== $membership_type_id && strtolower( $type['name'] ) === $new_name ) {
 				wp_send_json_error( array( 'message' => 'A membership type with this name already exists.' ) );
 				return;
 			}
@@ -3112,8 +3112,9 @@ class STSRC_Ajax_Handler {
 
 		wp_send_json_success(
 			array(
-				'message' => 'Membership type updated successfully.',
+				'message'            => 'Membership type updated successfully.',
 				'membership_type_id' => $membership_type_id,
+				'redirect_url'       => admin_url( 'admin.php?page=stsrc-memberships&action=edit&membership_type_id=' . $membership_type_id ),
 			)
 		);
 	}
