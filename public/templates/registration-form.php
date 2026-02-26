@@ -13,11 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Check if registration is enabled
-$registration_enabled = get_option( 'stsrc_registration_enabled', '1' );
-if ( '0' === $registration_enabled || ! $registration_enabled ) {
-	wp_die( esc_html__( 'Registration is currently disabled.', 'smoketree-plugin' ) );
-}
+// Check if registration is enabled (ACF field falls back to wp_options)
+$use_acf = function_exists( 'get_field' );
+$registration_enabled = $use_acf
+	? get_field( 'stsrc_registration_enabled', 'option' )
+	: get_option( 'stsrc_registration_enabled', '1' );
+$registration_disabled = empty( $registration_enabled ) || '0' === $registration_enabled;
 
 // Get membership types
 require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-membership-db.php';

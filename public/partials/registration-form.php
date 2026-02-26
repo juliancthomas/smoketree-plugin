@@ -364,7 +364,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<!-- Submit -->
 	<div class="stsrc-form-section">
-		<button type="submit" class="stsrc-button stsrc-button-primary stsrc-button-large stsrc-button-full" id="stsrc-submit-registration">
+		<?php if ( ! empty( $registration_disabled ) ) : ?>
+			<div class="stsrc-notice error" style="margin-bottom: 16px;">
+				<p><?php echo esc_html__( 'Registration is currently closed. Please check back later.', 'smoketree-plugin' ); ?></p>
+			</div>
+		<?php endif; ?>
+		<button type="submit" class="stsrc-button stsrc-button-primary stsrc-button-large stsrc-button-full" id="stsrc-submit-registration"
+			<?php echo ! empty( $registration_disabled ) ? 'disabled aria-disabled="true"' : ''; ?>>
 			<?php echo esc_html__( 'Complete Registration', 'smoketree-plugin' ); ?>
 		</button>
 	</div>
@@ -811,6 +817,12 @@ jQuery(document).ready(function($) {
 	// Form submission
 	$('#stsrc-registration-form').on('submit', function(e) {
 		e.preventDefault();
+
+		<?php if ( ! empty( $registration_disabled ) ) : ?>
+		$('#stsrc-form-messages').html('<div class="stsrc-notice error"><p><?php echo esc_js( __( 'Registration is currently closed.', 'smoketree-plugin' ) ); ?></p></div>');
+		scrollToMessages();
+		return;
+		<?php endif; ?>
 		
 		const $form = $(this);
 		const $submitBtn = $('#stsrc-submit-registration');
