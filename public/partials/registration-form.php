@@ -25,6 +25,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	
 	<div id="stsrc-form-messages"></div>
 
+	<?php if ( ! empty( $registration_disabled ) ) : ?>
+		<div class="stsrc-notice error" style="margin-bottom: 24px;">
+			<p><?php echo esc_html__( 'Registration is currently closed. Please check back later.', 'smoketree-plugin' ); ?></p>
+		</div>
+	<?php endif; ?>
+
 	<!-- Personal Information -->
 	<div class="stsrc-form-section">
 		<h2><?php echo esc_html__( 'Personal Information', 'smoketree-plugin' ); ?></h2>
@@ -386,6 +392,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <script>
 jQuery(document).ready(function($) {
+	<?php if ( ! empty( $registration_disabled ) ) : ?>
+	$('#stsrc-registration-form').find('input, select, textarea, button').not('[type="hidden"]').prop('disabled', true);
+	$('#stsrc-registration-form').css('opacity', '0.6');
+	<?php endif; ?>
+
 	// Phone number mask
 	$('#phone').mask('(000) 000-0000');
 
@@ -415,6 +426,12 @@ jQuery(document).ready(function($) {
 
 			$streetInput.before(placeAutocomplete);
 			$streetInput.attr('type', 'hidden');
+
+			<?php if ( ! empty( $registration_disabled ) ) : ?>
+			placeAutocomplete.setAttribute('disabled', '');
+			placeAutocomplete.style.pointerEvents = 'none';
+			placeAutocomplete.style.opacity = '0.5';
+			<?php endif; ?>
 
 			placeAutocomplete.addEventListener('gmp-select', async function(event) {
 				var prediction = event.placePrediction || (event.detail && event.detail.placePrediction);
