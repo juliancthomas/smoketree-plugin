@@ -1,0 +1,23 @@
+{
+  "name": "smoketree-e2e",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "test:auth": "npx playwright test auth.spec.ts",
+    "test:registration": "npx playwright test registration.spec.ts",
+    "test:portal": "npx playwright test member-portal.spec.ts",
+    "test:family": "npx playwright test family-members.spec.ts",
+    "test:extra": "npx playwright test extra-members.spec.ts",
+    "test:guest": "npx playwright test guest-passes.spec.ts",
+    "test:balance": "npx playwright test balance-payment.spec.ts",
+    "seed": "npx tsx fixtures/seed-data.ts",
+    "seed:reset": "npx tsx fixtures/seed-data.ts --reset"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "dotenv": "latest",
+    "tsx": "latest"
+  }
+}
