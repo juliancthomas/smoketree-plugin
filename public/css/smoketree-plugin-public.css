@@ -101,6 +101,22 @@
 	}
 }
 
+.stsrc-wave-divider {
+	line-height: 0;
+}
+
+.stsrc-wave-divider__svg {
+	display: block;
+	width: 100%;
+	height: 40px;
+}
+
+@media (min-width: 640px) {
+	.stsrc-wave-divider__svg {
+		height: 60px;
+	}
+}
+
 /* ==========================================================================
    Membership Plans Section
    ========================================================================== */

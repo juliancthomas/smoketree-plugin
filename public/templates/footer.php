@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<footer class="stsrc-footer dark:bg-[#171717]">
+<footer class="stsrc-footer">
 	<div id="link-container" class="stsrc-footer-links">
 		<div class="stsrc-footer-column">
 			<h2 class="stsrc-footer-heading"><?php esc_html_e( 'Quick Links', 'smoketree-plugin' ); ?></h2>

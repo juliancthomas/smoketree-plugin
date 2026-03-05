@@ -69,8 +69,8 @@ function stsrc_wave_divider( $bg_color, $fill_color, $variant = 1 ) {
 	];
 	$path = $paths[ $variant ] ?? $paths[1];
 	?>
-	<div class="leading-[0]" style="background-color: <?php echo esc_attr( $bg_color ); ?>;" aria-hidden="true">
-		<svg viewBox="0 0 1440 80" preserveAspectRatio="none" class="block w-full h-[40px] sm:h-[60px]">
+	<div class="stsrc-wave-divider" style="background-color: <?php echo esc_attr( $bg_color ); ?>;" aria-hidden="true">
+		<svg viewBox="0 0 1440 80" preserveAspectRatio="none" class="stsrc-wave-divider__svg">
 			<path fill="<?php echo esc_attr( $fill_color ); ?>" d="<?php echo $path; ?>"/>
 		</svg>
 	</div>

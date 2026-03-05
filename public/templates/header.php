@@ -179,6 +179,10 @@ if ( session_status() === PHP_SESSION_NONE ) {
 	body {
 		padding-top: 74px;
 	}
+
+	.stsrc-site-body {
+		background-color: #ffffff;
+	}
 	
 	@media (min-width: 768px) {
 		body {
@@ -187,7 +191,7 @@ if ( session_status() === PHP_SESSION_NONE ) {
 	}
 </style>
 
-<body <?php body_class( 'bg-white dark:bg-[#212121]' ); ?>>
+<body <?php body_class( 'stsrc-site-body' ); ?>>
 <?php wp_body_open(); ?>
 
 <header class="stsrc-header">
