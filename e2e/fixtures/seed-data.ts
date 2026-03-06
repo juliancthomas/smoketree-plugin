@@ -199,7 +199,18 @@ function createTestMember(
   );
   if (existing) {
     const mid = parseInt(existing, 10);
-    console.log(`  Member "${info.email}" already exists (ID ${mid})`);
+    mysql(
+      `UPDATE wp_stsrc_members SET
+         membership_type_id=${membershipTypeId},
+         status='${status}',
+         balance_owed=${balanceOwed},
+         expiration_date='${NEXT_YEAR}',
+         first_name='${info.first}',
+         last_name='${info.last}',
+         updated_at='${NOW}'
+       WHERE member_id=${mid}`
+    );
+    console.log(`  Reset member "${info.email}" to baseline (ID ${mid}) [${status}, balance=${balanceOwed}]`);
     return mid;
   }
 
@@ -225,23 +236,28 @@ function createTestMember(
 }
 
 function ensureAccessCodes(): void {
-  const existing = mysql(
-    `SELECT COUNT(*) FROM wp_stsrc_access_codes WHERE code='TESTCODE2026'`
-  );
-  if (parseInt(existing, 10) > 0) {
-    console.log('  Access codes already exist');
-    return;
-  }
+  const codes: Array<{ code: string; desc: string; isPremium: number }> = [
+    { code: 'TESTCODE2026', desc: 'General test code', isPremium: 0 },
+    { code: 'POOLCODE2026', desc: 'Pool-only premium code', isPremium: 1 },
+  ];
 
-  mysql(
-    `INSERT INTO wp_stsrc_access_codes (code, description, is_active, is_premium, created_at, updated_at)
-     VALUES ('TESTCODE2026', 'General test code', 1, 0, '${NOW}', '${NOW}')`
-  );
-  mysql(
-    `INSERT INTO wp_stsrc_access_codes (code, description, is_active, is_premium, created_at, updated_at)
-     VALUES ('POOLCODE2026', 'Pool-only premium code', 1, 1, '${NOW}', '${NOW}')`
-  );
-  console.log('  Created access codes: TESTCODE2026 (general), POOLCODE2026 (premium)');
+  for (const { code, desc, isPremium } of codes) {
+    const existing = mysql(
+      `SELECT COUNT(*) FROM wp_stsrc_access_codes WHERE code='${code}'`
+    );
+    if (parseInt(existing, 10) > 0) {
+      mysql(
+        `UPDATE wp_stsrc_access_codes SET is_active=1, updated_at='${NOW}' WHERE code='${code}'`
+      );
+      console.log(`  Access code "${code}" reset to active`);
+    } else {
+      mysql(
+        `INSERT INTO wp_stsrc_access_codes (code, description, is_active, is_premium, created_at, updated_at)
+         VALUES ('${code}', '${desc}', 1, ${isPremium}, '${NOW}', '${NOW}')`
+      );
+      console.log(`  Created access code "${code}"`);
+    }
+  }
 }
 
 function enableRegistration(): void {
@@ -257,6 +273,20 @@ function enableRegistration(): void {
     mysql(`UPDATE wp_options SET option_value='1' WHERE option_name='stsrc_registration_enabled'`);
   }
   console.log('  Registration enabled');
+}
+
+/**
+ * Removes any extra members linked to a given member record so tests that
+ * add extra members always start from a clean slate.
+ */
+function purgeExtraMembers(memberId: number): void {
+  const count = mysql(
+    `SELECT COUNT(*) FROM wp_stsrc_extra_members WHERE member_id=${memberId}`
+  );
+  if (parseInt(count, 10) > 0) {
+    mysql(`DELETE FROM wp_stsrc_extra_members WHERE member_id=${memberId}`);
+    console.log(`  Purged extra members for member ID ${memberId}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -304,7 +334,8 @@ export async function seedTestData(): Promise<void> {
     'Test Household'
   );
   setWpPassword(hhUserId, TEST_MEMBERS.household.password);
-  createTestMember(hhUserId, typeIds['Household'], TEST_MEMBERS.household);
+  const hhMemberId = createTestMember(hhUserId, typeIds['Household'], TEST_MEMBERS.household);
+  purgeExtraMembers(hhMemberId);
 
   // Duo member
   const duoUserId = createTestWpUser(

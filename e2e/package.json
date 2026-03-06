@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "latest",
+    "@types/node": "^25.3.5",
     "dotenv": "latest",
     "tsx": "latest"
   }
