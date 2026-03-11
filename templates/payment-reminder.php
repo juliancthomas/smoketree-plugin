@@ -27,7 +27,7 @@
 <?php
 $club_name     = 'Smoketree Swim and Recreation Club';
 $portal_url    = home_url( '/member-portal/' );
-$support_url   = home_url( '/contact/' );
+$contact_email = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 $amount_label  = $amount_due ?? '';
 $due_label     = $due_date ?? '';
 $payment_url   = $payment_link ?? '';
@@ -188,7 +188,10 @@ $extra_count   = (int) ( $extra_member_count ?? 0 );
 					</tr>
 					<tr>
 						<td class="email-footer">
-							<?php echo esc_html( $club_name ); ?> · <?php echo esc_html( $support_url ); ?><br>
+							<?php echo esc_html( $club_name ); ?>
+							<?php if ( ! empty( $contact_email ) ) : ?>
+								· <a href="mailto:<?php echo esc_attr( $contact_email ); ?>" style="color:#555d66;"><?php echo esc_html( $contact_email ); ?></a>
+							<?php endif; ?><br>
 							<?php echo esc_html__( 'We appreciate your continued membership.', 'smoketree-plugin' ); ?>
 						</td>
 					</tr>

@@ -165,13 +165,20 @@ $acf_available = $data['acf_available'] ?? false;
 								</label>
 							</td>
 						</tr>
-						<tr>
-							<th><label for="secretary_email"><?php echo esc_html__( 'Secretary Email', 'smoketree-plugin' ); ?></label></th>
-							<td>
-								<input type="email" name="secretary_email" id="secretary_email" value="<?php echo esc_attr( $settings['secretary_email'] ?? '' ); ?>" class="regular-text">
-								<p class="description"><?php echo esc_html__( 'Email address for secretary notifications (new registrations, etc.)', 'smoketree-plugin' ); ?></p>
-							</td>
-						</tr>
+					<tr>
+						<th><label for="secretary_email"><?php echo esc_html__( 'Secretary Email', 'smoketree-plugin' ); ?></label></th>
+						<td>
+							<input type="email" name="secretary_email" id="secretary_email" value="<?php echo esc_attr( $settings['secretary_email'] ?? '' ); ?>" class="regular-text">
+							<p class="description"><?php echo esc_html__( 'Email address for secretary notifications (new registrations, etc.)', 'smoketree-plugin' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="contact_email"><?php echo esc_html__( 'Contact Email', 'smoketree-plugin' ); ?></label></th>
+						<td>
+							<input type="email" name="contact_email" id="contact_email" value="<?php echo esc_attr( $settings['contact_email'] ?? '' ); ?>" class="regular-text">
+							<p class="description"><?php echo esc_html__( 'Public contact email shown in the footer of all member emails (e.g. info@smoketree.us).', 'smoketree-plugin' ); ?></p>
+						</td>
+					</tr>
 						<tr>
 							<th><label for="season_renewal_date"><?php echo esc_html__( 'Season Renewal Date', 'smoketree-plugin' ); ?></label></th>
 							<td>

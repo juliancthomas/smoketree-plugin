@@ -17,7 +17,7 @@
 ?>
 <?php
 $club_name   = 'Smoketree Swim and Recreation Club';
-$support_url = home_url( '/contact/' );
+$contact_email = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 $reset_url   = $reset_link ?? '';
 $expiration_label = $expiration_time ?? esc_html__( '1 hour', 'smoketree-plugin' );
 ?>
@@ -92,7 +92,10 @@ $expiration_label = $expiration_time ?? esc_html__( '1 hour', 'smoketree-plugin'
 					</tr>
 					<tr>
 						<td class="email-footer">
-							<?php echo esc_html( $club_name ); ?> · <?php echo esc_html( $support_url ); ?><br>
+							<?php echo esc_html( $club_name ); ?>
+							<?php if ( ! empty( $contact_email ) ) : ?>
+								· <a href="mailto:<?php echo esc_attr( $contact_email ); ?>" style="color:#555d66;"><?php echo esc_html( $contact_email ); ?></a>
+							<?php endif; ?><br>
 							<?php echo esc_html__( 'Need help? Let us know and we will be happy to assist.', 'smoketree-plugin' ); ?>
 						</td>
 					</tr>

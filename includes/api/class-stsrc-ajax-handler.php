@@ -2665,6 +2665,13 @@ class STSRC_Ajax_Handler {
 				update_option( 'stsrc_secretary_email', $email );
 			}
 		}
+		if ( isset( $post_data['contact_email'] ) ) {
+			$raw_contact_email = is_array( $post_data['contact_email'] ) ? '' : $post_data['contact_email'];
+			$contact_email     = sanitize_email( $raw_contact_email );
+			if ( '' === $raw_contact_email || ! empty( $contact_email ) ) {
+				update_option( 'stsrc_contact_email', $contact_email );
+			}
+		}
 		if ( isset( $post_data['season_renewal_date'] ) ) {
 			update_option( 'stsrc_season_renewal_date', sanitize_text_field( $post_data['season_renewal_date'] ) );
 		}
@@ -2730,6 +2737,13 @@ class STSRC_Ajax_Handler {
 			}
 			if ( isset( $post_data['google_places_api_key'] ) ) {
 				update_field( 'stsrc_google_places_api_key', sanitize_text_field( $post_data['google_places_api_key'] ), 'option' );
+			}
+			if ( isset( $post_data['contact_email'] ) ) {
+				$raw_contact_email = is_array( $post_data['contact_email'] ) ? '' : $post_data['contact_email'];
+				$contact_email     = sanitize_email( $raw_contact_email );
+				if ( '' === $raw_contact_email || ! empty( $contact_email ) ) {
+					update_field( 'stsrc_contact_email', $contact_email, 'option' );
+				}
 			}
 		}
 

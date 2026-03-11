@@ -15,9 +15,9 @@
 // - $message  (HTML body composed in the WYSIWYG editor)
 ?>
 <?php
-$club_name   = 'Smoketree Swim and Recreation Club';
-$support_url = home_url( '/contact/' );
-$body        = $message ?? '';
+$club_name     = 'Smoketree Swim and Recreation Club';
+$contact_email = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
+$body          = $message ?? '';
 ?>
 <!DOCTYPE html>
 <html>
@@ -59,7 +59,10 @@ $body        = $message ?? '';
 					</tr>
 					<tr>
 						<td class="email-footer">
-							<?php echo esc_html( $club_name ); ?> · <?php echo esc_html( $support_url ); ?>
+							<?php echo esc_html( $club_name ); ?>
+							<?php if ( ! empty( $contact_email ) ) : ?>
+								· <a href="mailto:<?php echo esc_attr( $contact_email ); ?>" style="color:#555d66;"><?php echo esc_html( $contact_email ); ?></a>
+							<?php endif; ?>
 						</td>
 					</tr>
 				</table>
