@@ -54,7 +54,7 @@ export const TEST_MEMBERS = {
     email: process.env.TEST_MEMBER_EMAIL || 'testmember@example.com',
     password: process.env.TEST_MEMBER_PASS || 'TestPass123!',
     first: 'Test',
-    last: 'Individual',
+    last: 'Single',
   },
   household: {
     email: process.env.TEST_HOUSEHOLD_EMAIL || 'testhousehold@example.com',
@@ -86,28 +86,29 @@ export const TEST_MEMBERS = {
 // Seed functions
 // ---------------------------------------------------------------------------
 
-function ensureMembershipTypes(): Record<string, number> {
-  const types: Record<string, { price: number; desc: string; benefits: string; expirationDays: number }> = {
+type MembershipType = 'Household' | 'Duo' | 'Single' | 'Civic';
+function ensureMembershipTypes(): Record<MembershipType, number> {
+  const types: Record<MembershipType, { price: number; desc: string; benefits: string; expirationDays: number }> = {
     'Household': {
-      price: 300,
+      price: 575,
       desc: 'Full family membership with pool access',
       benefits: JSON.stringify(['pool_use_for_season', 'facility_rental_discount', 'guest_passes']),
       expirationDays: 365,
     },
     'Duo': {
-      price: 225,
+      price: 475,
       desc: 'Membership for two adults with pool access',
       benefits: JSON.stringify(['pool_use_for_season', 'guest_passes']),
       expirationDays: 365,
     },
-    'Individual': {
-      price: 175,
+    'Single': {
+      price: 295,
       desc: 'Single adult membership with pool access',
       benefits: JSON.stringify(['pool_use_for_season', 'guest_passes']),
       expirationDays: 365,
     },
     'Civic': {
-      price: 50,
+      price: 125,
       desc: 'Community membership without pool access',
       benefits: JSON.stringify(['facility_rental_discount']),
       expirationDays: 365,
@@ -318,14 +319,14 @@ export async function seedTestData(): Promise<void> {
   enableRegistration();
 
   console.log('\n[Test Members]');
-  // Individual member
+  // Single member
   const indUserId = createTestWpUser(
     TEST_MEMBERS.individual.email,
     TEST_MEMBERS.individual.password,
     'Test Individual'
   );
   setWpPassword(indUserId, TEST_MEMBERS.individual.password);
-  createTestMember(indUserId, typeIds['Individual'], TEST_MEMBERS.individual);
+  createTestMember(indUserId, typeIds['Single'], TEST_MEMBERS.individual);
 
   // Household member
   const hhUserId = createTestWpUser(
@@ -364,7 +365,7 @@ export async function seedTestData(): Promise<void> {
   setWpPassword(balUserId, TEST_MEMBERS.withBalance.password);
   createTestMember(
     balUserId,
-    typeIds['Individual'],
+    typeIds['Single'],
     TEST_MEMBERS.withBalance,
     'active',
     75.00

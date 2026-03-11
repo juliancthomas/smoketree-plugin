@@ -33,6 +33,7 @@
 			$(document).on('submit', '.stsrc-ajax-form', this.handleFormSubmit);
 
 			// Delete buttons
+			$(document).on('click', '.stsrc-delete-membership-type', this.handleDeleteMembershipType);
 			$(document).on('click', '.stsrc-delete', this.handleDelete);
 			$(document).on('click', '.stsrc-delete-access-code', this.handleDeleteAccessCode);
 
@@ -623,6 +624,48 @@
 						});
 					} else {
 						STSRCAdmin.showNotice(response.data.message || 'Failed to delete access code.', 'error');
+						$button.prop('disabled', false).removeClass('disabled');
+					}
+				},
+				error: function() {
+					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
+					$button.prop('disabled', false).removeClass('disabled');
+				}
+			});
+		},
+
+		/**
+		 * Handle delete membership type
+		 */
+		handleDeleteMembershipType: function(e) {
+			e.preventDefault();
+
+			const $button = $(this);
+			const typeId = $button.data('id');
+			const typeName = $button.data('name') || 'this membership type';
+
+			if (!confirm('Are you sure you want to delete "' + typeName + '"? This action cannot be undone.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).addClass('disabled');
+
+			$.ajax({
+				url: STSRCAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'stsrc_delete_membership_type',
+					nonce: STSRCAdmin.nonce,
+					membership_type_id: typeId
+				},
+				success: function(response) {
+					if (response.success) {
+						STSRCAdmin.showNotice(response.data.message || 'Membership type deleted successfully.', 'success');
+						$button.closest('tr').fadeOut(300, function() {
+							$(this).remove();
+						});
+					} else {
+						STSRCAdmin.showNotice(response.data.message || 'Failed to delete membership type.', 'error');
 						$button.prop('disabled', false).removeClass('disabled');
 					}
 				},

@@ -24,6 +24,9 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+    launchOptions: {
+      slowMo: 500,
+    },
   },
   projects: [
     {

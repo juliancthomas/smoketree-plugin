@@ -30,7 +30,7 @@ npm run seed
 
 The seed script connects directly to your LocalWP MariaDB and creates:
 
-- **4 membership types:** Household ($300), Duo ($225), Individual ($175), Civic ($50)
+- **4 membership types:** Household ($575), Duo ($475), Single ($295), Civic ($125)
 - **5 test members:** one per membership type, plus one with a $75 outstanding balance
 - **2 access codes:** `TESTCODE2026` (general) and `POOLCODE2026` (premium/pool-only)
 - Ensures registration is enabled
@@ -91,7 +91,7 @@ e2e/
 | `auth.spec.ts` | 16 | Login (valid/invalid/empty), password toggle, logout, forgot password, reset password (invalid token), wp-login redirect, portal access guards |
 | `registration.spec.ts` | 37 | Required fields, membership card selection, family/extra member limits, order summary math (fees, caps), payment method toggles, auto-renewal, password mismatch, duplicate email, Stripe redirect, Zelle completion |
 | `member-portal.spec.ts` | 24 | Profile display, edit profile, change password, access codes (pool vs non-pool), balance card, guest pass section, section visibility per membership type |
-| `family-members.spec.ts` | 11 | Add/edit/delete family members, Household limit (4), Duo limit (1), Individual excluded |
+| `family-members.spec.ts` | 11 | Add/edit/delete family members, Household limit (4), Duo limit (1), Single excluded |
 | `extra-members.spec.ts` | 11 | Add modal, payment method, $50 summary, Stripe flow, visibility per membership type |
 | `guest-passes.spec.ts` | 12 | Balance display, purchase modal, quantity math, Stripe flow, guest pass portal access |
 | `balance-payment.spec.ts` | 11 | Balance card, Pay Balance modal, card/ACH fee calculations, Stripe flow |

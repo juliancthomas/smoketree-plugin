@@ -82,7 +82,7 @@ test.describe('Extra Members (Portal)', () => {
 
   test.describe('Non-Household Members', () => {
 
-    test('Individual member does not see extra members section', async ({ page }) => {
+    test('Single member does not see extra members section', async ({ page }) => {
       await loginAsMember(page, TEST_MEMBERS.individual.email, TEST_MEMBERS.individual.password);
       await expect(page.locator('h2:has-text("Extra Members")')).toHaveCount(0);
     });

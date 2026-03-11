@@ -4,6 +4,7 @@
   "scripts": {
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
+    "test:noseed": "npx playwright test --no-deps",
     "test:ui": "npx playwright test --ui",
     "test:auth": "npx playwright test auth.spec.ts",
     "test:registration": "npx playwright test registration.spec.ts",
