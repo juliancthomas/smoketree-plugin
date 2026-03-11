@@ -46,23 +46,47 @@ $templates = $data['templates'] ?? array();
 						</td>
 					</tr>
 					<tr id="stsrc-message-row">
-						<th><label for="message"><?php echo esc_html__( 'Message', 'smoketree-plugin' ); ?> <span class="required" id="message-required">*</span></label></th>
-						<td>
-							<?php
-							$editor_settings = array(
-								'textarea_name' => 'message',
-								'textarea_rows' => 15,
-								'media_buttons' => true,
-								'teeny'         => false,
-								'quicktags'     => true,
-							);
-							wp_editor( '', 'message', $editor_settings );
-							?>
-							<p class="description">
-								<?php echo esc_html__( 'Available placeholders: {first_name}, {last_name}, {email}, {member_id}. Required if no template is selected.', 'smoketree-plugin' ); ?>
-							</p>
-						</td>
-					</tr>
+					<th><label for="quill-message-editor"><?php echo esc_html__( 'Message', 'smoketree-plugin' ); ?> <span class="required" id="message-required">*</span></label></th>
+					<td>
+						<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+						<style>
+							#quill-message-editor { background: #fff; font-size: 14px; }
+							#quill-message-editor .ql-editor { min-height: 300px; }
+							.ql-toolbar.ql-snow { border-color: #8c8f94; border-radius: 4px 4px 0 0; }
+							.ql-container.ql-snow { border-color: #8c8f94; border-radius: 0 0 4px 4px; }
+						</style>
+						<div id="quill-message-editor"></div>
+						<input type="hidden" name="message" id="message">
+						<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+						<script>
+						(function () {
+							var quill = new Quill( '#quill-message-editor', {
+								theme: 'snow',
+								placeholder: '<?php echo esc_js( __( 'Compose your message here. Available placeholders: {first_name}, {last_name}, {email}, {member_id}', 'smoketree-plugin' ) ); ?>',
+								modules: {
+									toolbar: [
+										[ { header: [ 1, 2, 3, false ] } ],
+										[ 'bold', 'italic', 'underline' ],
+										[ { list: 'ordered' }, { list: 'bullet' } ],
+										[ { align: [] } ],
+									]
+								}
+							} );
+
+							var $hidden = document.getElementById( 'message' );
+
+							quill.on( 'text-change', function () {
+								$hidden.value = quill.root.innerHTML;
+							} );
+
+							window.stsrcQuill = quill;
+						})();
+						</script>
+						<p class="description">
+							<?php echo esc_html__( 'Available placeholders: {first_name}, {last_name}, {email}, {member_id}. Required if no template is selected.', 'smoketree-plugin' ); ?>
+						</p>
+					</td>
+				</tr>
 					<tr id="stsrc-template-preview-row" style="display: none;">
 						<th><?php echo esc_html__( 'Template Preview', 'smoketree-plugin' ); ?></th>
 						<td>

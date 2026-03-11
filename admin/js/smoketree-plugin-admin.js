@@ -667,14 +667,19 @@
 				return false;
 			}
 
-			var template = $('#template').val();
-			// Sync TinyMCE content to textarea before reading
-			if (typeof tinyMCE !== 'undefined' && tinyMCE.get('message')) {
-				tinyMCE.get('message').save();
-			}
-			var message = $.trim($('#message').val());
+		var template = $('#template').val();
+		// Sync Quill content to hidden input before reading (belt-and-suspenders
+		// in case a browser skips the text-change event on programmatic edits).
+		if (typeof window.stsrcQuill !== 'undefined') {
+			$('#message').val(window.stsrcQuill.root.innerHTML);
+		}
+		var message = $.trim($('#message').val());
+		// Quill's empty-editor sentinel value
+		if (message === '<p><br></p>') {
+			message = '';
+		}
 
-			if (!template && !message) {
+		if (!template && !message) {
 				STSRCAdmin.showNotice('Either a message or a template is required.', 'error');
 				return false;
 			}
