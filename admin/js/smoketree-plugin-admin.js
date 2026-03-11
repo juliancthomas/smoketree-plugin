@@ -379,8 +379,16 @@
 		initEmailComposer: function() {
 			var self = this;
 
-			// Template change handler — toggle editor vs preview
-			$('#template').on('change', function() {
+		// Reset recipient list when filters change so the next submit auto-reloads.
+		$('#membership_type_id, #status, #payment_type, #date_from, #date_to').on('change', function() {
+			self.recipientListLoaded = false;
+			$('#stsrc-recipient-list-wrap').hide();
+			$('#stsrc-recipient-list').empty();
+			$('#recipient-count').text('Click "Preview Recipients" to see count');
+		});
+
+		// Template change handler — toggle editor vs preview
+		$('#template').on('change', function() {
 				var templateVal = $(this).val();
 
 				if (templateVal) {
@@ -396,38 +404,11 @@
 				}
 			});
 
-			// Preview recipients
-			$('#preview-recipients-btn').on('click', function(e) {
-				e.preventDefault();
-
-				const filters = {
-					membership_type_id: $('#membership_type_id').val(),
-					status: $('#status').val(),
-					payment_type: $('#payment_type').val(),
-					date_from: $('#date_from').val(),
-					date_to: $('#date_to').val()
-				};
-
-				$.ajax({
-					url: STSRCAdmin.ajaxUrl,
-					type: 'POST',
-					data: {
-						action: 'stsrc_preview_recipients',
-						nonce: STSRCAdmin.nonce,
-						filters: filters
-					},
-					success: function(response) {
-						if (response.success) {
-							$('#recipient-count').text(response.data.count + ' ' + (response.data.count === 1 ? 'recipient' : 'recipients') + ' will receive this email');
-						} else {
-							$('#recipient-count').text('Error: ' + response.data.message);
-						}
-					},
-					error: function() {
-						$('#recipient-count').text('Error loading recipient count');
-					}
-				});
-			});
+		// Preview recipients
+		$('#preview-recipients-btn').on('click', function(e) {
+			e.preventDefault();
+			self.loadRecipientPreview();
+		});
 
 			// Send test email
 			$('#send-test-email-btn').on('click', function(e) {
@@ -465,66 +446,220 @@
 				});
 			});
 
-			// Send batch email
-			$('#stsrc-email-composer-form').on('submit', function(e) {
-				e.preventDefault();
+		// Send batch email
+		$('#stsrc-email-composer-form').on('submit', function(e) {
+			e.preventDefault();
 
-				if (!self.validateEmailComposer()) {
-					return;
-				}
+			if (!self.validateEmailComposer()) {
+				return;
+			}
 
-				if (!confirm('Are you sure you want to send this email to all matching recipients?')) {
-					return;
-				}
-
-				const $form = $(this);
-				const formData = new FormData($form[0]);
-				formData.append('action', 'stsrc_send_batch_email');
-				formData.append('nonce', STSRCAdmin.nonce);
-
-				$('#email-progress').show();
-				$('#submit').prop('disabled', true);
-
-				$.ajax({
-					url: STSRCAdmin.ajaxUrl,
-					type: 'POST',
-					data: formData,
-					processData: false,
-					contentType: false,
-					xhr: function() {
-						const xhr = new window.XMLHttpRequest();
-						xhr.upload.addEventListener('progress', function(e) {
-							if (e.lengthComputable) {
-								const percentComplete = (e.loaded / e.total) * 100;
-								$('#progress-bar').css('width', percentComplete + '%');
-							}
-						}, false);
-						return xhr;
-					},
-					success: function(response) {
-						$('#progress-bar').css('width', '100%');
-						if (response.success) {
-							$('#progress-text').text(response.data.message);
-							STSRCAdmin.showNotice(response.data.message, 'success');
-						} else {
-							$('#progress-text').text('Error: ' + response.data.message);
-							STSRCAdmin.showNotice('Error: ' + response.data.message, 'error');
-						}
-						$('#submit').prop('disabled', false);
-					},
-					error: function() {
-						$('#progress-text').text('Error sending batch email');
-						STSRCAdmin.showNotice('Error sending batch email', 'error');
-						$('#submit').prop('disabled', false);
-					}
+			// If the recipient list hasn't been loaded yet, auto-load it first.
+			if (!self.recipientListLoaded) {
+				self.loadRecipientPreview(function() {
+					$('#stsrc-email-composer-form').trigger('submit');
 				});
+				return;
+			}
+
+			const selectedCount = parseInt($('#stsrc-selected-count').text(), 10) || 0;
+			if (selectedCount === 0) {
+				STSRCAdmin.showNotice('No recipients selected. Please select at least one recipient.', 'warning');
+				return;
+			}
+
+			if (!confirm('Are you sure you want to send this email to ' + selectedCount + ' ' + (selectedCount === 1 ? 'recipient' : 'recipients') + '?')) {
+				return;
+			}
+
+			const $form = $(this);
+			const formData = new FormData($form[0]);
+			formData.append('action', 'stsrc_send_batch_email');
+			formData.append('nonce', STSRCAdmin.nonce);
+
+			// Append excluded member IDs
+			self.getExcludedMemberIds().forEach(function(id) {
+				formData.append('excluded_member_ids[]', id);
 			});
+
+			$('#email-progress').show();
+			$('#submit').prop('disabled', true);
+
+			$.ajax({
+				url: STSRCAdmin.ajaxUrl,
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				xhr: function() {
+					const xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener('progress', function(e) {
+						if (e.lengthComputable) {
+							const percentComplete = (e.loaded / e.total) * 100;
+							$('#progress-bar').css('width', percentComplete + '%');
+						}
+					}, false);
+					return xhr;
+				},
+				success: function(response) {
+					$('#progress-bar').css('width', '100%');
+					if (response.success) {
+						$('#progress-text').text(response.data.message);
+						STSRCAdmin.showNotice(response.data.message, 'success');
+					} else {
+						$('#progress-text').text('Error: ' + response.data.message);
+						STSRCAdmin.showNotice('Error: ' + response.data.message, 'error');
+					}
+					$('#submit').prop('disabled', false);
+				},
+				error: function() {
+					$('#progress-text').text('Error sending batch email');
+					STSRCAdmin.showNotice('Error sending batch email', 'error');
+					$('#submit').prop('disabled', false);
+				}
+			});
+		});
 		},
 
-		/**
-		 * Validate email composer before send.
-		 */
-		validateEmailComposer: function() {
+	// Tracks whether the recipient list has been loaded at least once.
+	recipientListLoaded: false,
+
+	/**
+	 * Load recipient preview via AJAX and render the checkbox list.
+	 *
+	 * @param {Function} [callback] Optional callback invoked after list renders.
+	 */
+	loadRecipientPreview: function(callback) {
+		var self = this;
+		var $btn = $('#preview-recipients-btn');
+
+		$btn.prop('disabled', true).text('Loading…');
+		$('#recipient-count').text('Loading…');
+
+		var filters = {
+			membership_type_id: $('#membership_type_id').val(),
+			status: $('#status').val(),
+			payment_type: $('#payment_type').val(),
+			date_from: $('#date_from').val(),
+			date_to: $('#date_to').val()
+		};
+
+		$.ajax({
+			url: STSRCAdmin.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_preview_recipients',
+				nonce: STSRCAdmin.nonce,
+				filters: filters
+			},
+			success: function(response) {
+				if (response.success) {
+					var count = response.data.count;
+					$('#recipient-count').text(count + ' ' + (count === 1 ? 'recipient' : 'recipients') + ' will receive this email');
+					self.renderRecipientList(response.data.recipients || []);
+					self.recipientListLoaded = true;
+					if (typeof callback === 'function') {
+						callback();
+					}
+				} else {
+					$('#recipient-count').text('Error: ' + (response.data.message || 'Unknown error'));
+				}
+			},
+			error: function() {
+				$('#recipient-count').text('Error loading recipient list');
+			},
+			complete: function() {
+				$btn.prop('disabled', false).text('Preview Recipients');
+			}
+		});
+	},
+
+	/**
+	 * Render the recipient checkbox list.
+	 *
+	 * @param {Array} recipients Array of {member_id, first_name, last_name, email}.
+	 */
+	renderRecipientList: function(recipients) {
+		var self = this;
+		var $wrap = $('#stsrc-recipient-list-wrap');
+		var $list = $('#stsrc-recipient-list');
+		var $selectAll = $('#stsrc-select-all-recipients');
+
+		$list.empty();
+
+		if (recipients.length === 0) {
+			$wrap.hide();
+			return;
+		}
+
+		recipients.forEach(function(r) {
+			var label = $('<label>').css({
+				display: 'flex',
+				alignItems: 'center',
+				gap: '8px',
+				padding: '4px 0',
+				cursor: 'pointer',
+				borderBottom: '1px solid #f0f0f1'
+			});
+
+			var cb = $('<input>', {
+				type: 'checkbox',
+				checked: true,
+				'data-member-id': r.member_id
+			}).addClass('stsrc-recipient-checkbox');
+
+			var text = $('<span>').text(r.first_name + ' ' + r.last_name + ' \u2014 ' + r.email);
+
+			label.append(cb).append(text);
+			$list.append(label);
+		});
+
+		// Update count whenever a checkbox changes
+		$list.off('change', '.stsrc-recipient-checkbox').on('change', '.stsrc-recipient-checkbox', function() {
+			self.updateSelectedCount();
+			// Sync the Select All checkbox state
+			var total = $list.find('.stsrc-recipient-checkbox').length;
+			var checked = $list.find('.stsrc-recipient-checkbox:checked').length;
+			$selectAll.prop('checked', total === checked);
+			$selectAll.prop('indeterminate', checked > 0 && checked < total);
+		});
+
+		// Select All toggle
+		$selectAll.off('change').on('change', function() {
+			$list.find('.stsrc-recipient-checkbox').prop('checked', $(this).is(':checked'));
+			self.updateSelectedCount();
+		});
+
+		$selectAll.prop('checked', true).prop('indeterminate', false);
+		$wrap.show();
+		self.updateSelectedCount();
+	},
+
+	/**
+	 * Update the "X selected" count displayed in the list header.
+	 */
+	updateSelectedCount: function() {
+		var checked = $('#stsrc-recipient-list .stsrc-recipient-checkbox:checked').length;
+		$('#stsrc-selected-count').text(checked);
+	},
+
+	/**
+	 * Return an array of member IDs that are unchecked (excluded).
+	 *
+	 * @return {Array}
+	 */
+	getExcludedMemberIds: function() {
+		var excluded = [];
+		$('#stsrc-recipient-list .stsrc-recipient-checkbox:not(:checked)').each(function() {
+			excluded.push($(this).data('member-id'));
+		});
+		return excluded;
+	},
+
+	/**
+	 * Validate email composer before send.
+	 */
+	validateEmailComposer: function() {
 			var subject = $.trim($('#subject').val());
 			if (!subject) {
 				STSRCAdmin.showNotice('Subject is required.', 'error');

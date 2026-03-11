@@ -138,14 +138,26 @@ $templates = $data['templates'] ?? array();
 					</tr>
 				</table>
 
-				<!-- Preview Recipient Count -->
-				<div class="stsrc-recipient-preview" style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
-					<strong><?php echo esc_html__( 'Recipient Preview:', 'smoketree-plugin' ); ?></strong>
-					<span id="recipient-count" style="margin-left: 10px;"><?php echo esc_html__( 'Click "Preview Recipients" to see count', 'smoketree-plugin' ); ?></span>
-					<button type="button" id="preview-recipients-btn" class="button" style="margin-left: 15px;">
-						<?php echo esc_html__( 'Preview Recipients', 'smoketree-plugin' ); ?>
-					</button>
+			<!-- Preview Recipient Count -->
+			<div class="stsrc-recipient-preview" style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
+				<strong><?php echo esc_html__( 'Recipient Preview:', 'smoketree-plugin' ); ?></strong>
+				<span id="recipient-count" style="margin-left: 10px;"><?php echo esc_html__( 'Click "Preview Recipients" to see count', 'smoketree-plugin' ); ?></span>
+				<button type="button" id="preview-recipients-btn" class="button" style="margin-left: 15px;">
+					<?php echo esc_html__( 'Preview Recipients', 'smoketree-plugin' ); ?>
+				</button>
+			</div>
+
+			<!-- Recipient List -->
+			<div id="stsrc-recipient-list-wrap" style="display: none; margin-top: 15px; border: 1px solid #c3c4c7; border-radius: 4px; background: #fff;">
+				<div style="padding: 10px 15px; border-bottom: 1px solid #c3c4c7; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+					<strong><?php echo esc_html__( 'Recipients', 'smoketree-plugin' ); ?> (<span id="stsrc-selected-count">0</span> <?php echo esc_html__( 'selected', 'smoketree-plugin' ); ?>)</strong>
+					<label style="font-weight: normal; margin: 0; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+						<input type="checkbox" id="stsrc-select-all-recipients" checked>
+						<?php echo esc_html__( 'Select All', 'smoketree-plugin' ); ?>
+					</label>
 				</div>
+				<div id="stsrc-recipient-list" style="max-height: 300px; overflow-y: auto; padding: 10px 15px;"></div>
+			</div>
 			</div>
 		</div>
 

@@ -2114,6 +2114,21 @@ class STSRC_Ajax_Handler {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 		$members = STSRC_Member_DB::get_members( $filters );
 
+		// Filter out any members the admin deselected in the recipient list.
+		$excluded_ids = array();
+		if ( ! empty( $_POST['excluded_member_ids'] ) && is_array( $_POST['excluded_member_ids'] ) ) {
+			$excluded_ids = array_map( 'intval', $_POST['excluded_member_ids'] );
+		}
+		if ( ! empty( $excluded_ids ) ) {
+			$members = array_filter(
+				$members,
+				function( $member ) use ( $excluded_ids ) {
+					return ! in_array( (int) $member['member_id'], $excluded_ids, true );
+				}
+			);
+			$members = array_values( $members );
+		}
+
 		// Handle test email
 		if ( $is_test ) {
 			$president_email= get_option( 'stsrc_president_email' );
@@ -2304,15 +2319,26 @@ class STSRC_Ajax_Handler {
 			$filters['date_to'] = sanitize_text_field( $_POST['filters']['date_to'] );
 		}
 
-		// Get members count
+		// Get members
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 		$members = STSRC_Member_DB::get_members( $filters );
-		$count = count( $members );
+		$count   = count( $members );
+
+		$recipient_list = array();
+		foreach ( $members as $member ) {
+			$recipient_list[] = array(
+				'member_id'  => (int) $member['member_id'],
+				'first_name' => $member['first_name'],
+				'last_name'  => $member['last_name'],
+				'email'      => $member['email'],
+			);
+		}
 
 		wp_send_json_success(
 			array(
-				'count' => $count,
-				'message' => sprintf( '%d %s will receive this email', $count, $count === 1 ? 'recipient' : 'recipients' ),
+				'count'     => $count,
+				'message'   => sprintf( '%d %s will receive this email', $count, $count === 1 ? 'recipient' : 'recipients' ),
+				'recipients' => $recipient_list,
 			)
 		);
 	}
