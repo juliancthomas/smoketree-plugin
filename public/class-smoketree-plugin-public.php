@@ -503,6 +503,19 @@ class Smoketree_Plugin_Public {
 	}
 
 	/**
+	 * Redirect /my-account to /member-portal.
+	 *
+	 * @since    1.3.0
+	 * @return   void
+	 */
+	public function redirect_my_account(): void {
+		if ( isset( $_SERVER['REQUEST_URI'] ) && preg_match( '#^/my-account/?(\?.*)?$#i', $_SERVER['REQUEST_URI'] ) ) {
+			wp_safe_redirect( home_url( '/member-portal' ), 301 );
+			exit;
+		}
+	}
+
+	/**
 	 * Hide the WordPress admin bar for members.
 	 *
 	 * @since    1.0.0
