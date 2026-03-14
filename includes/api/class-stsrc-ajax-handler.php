@@ -4197,9 +4197,14 @@ class STSRC_Ajax_Handler {
 			)
 		);
 
+		$response_message = 'Member deleted.';
+		if ( null !== $user_deleted && false === $user_deleted ) {
+			$response_message = 'Member deleted, but associated WordPress user could not be removed automatically.';
+		}
+
 		wp_send_json_success(
 			array(
-				'message' => 'Member deleted.',
+				'message' => $response_message,
 				'counts'  => array(
 					'family_members_deleted' => $family_updated,
 					'extra_members_deleted'  => $extra_updated,

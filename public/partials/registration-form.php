@@ -770,9 +770,10 @@ jQuery(document).ready(function($) {
 		const $validationMessage = $('#stsrc-family-validation-message');
 
 		if (requiredMinimum > 0 && filledCount < requiredMinimum) {
+			const planLabel = planName === 'household' ? 'Household' : (planName === 'duo' ? 'Duo' : 'selected');
 			const message = requiredMinimum === 1
-				? 'Please complete at least 1 family member for this membership plan.'
-				: 'Please complete at least ' + requiredMinimum + ' family members for this membership plan.';
+				? planLabel + ' membership requires at least 1 completed family member.'
+				: planLabel + ' membership requires at least ' + requiredMinimum + ' completed family members.';
 			$validationMessage.text(message).show();
 			$('html, body').animate({
 				scrollTop: $('#stsrc-family-members-section').offset().top - 60

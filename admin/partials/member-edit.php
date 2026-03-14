@@ -433,41 +433,6 @@ jQuery(document).ready(function($) {
 	const memberId = <?php echo intval( $member_id ); ?>;
 	const nonce = '<?php echo wp_create_nonce( 'stsrc_admin_nonce' ); ?>';
 
-	// Delete member
-	$('#delete-member-btn').on('click', function(e) {
-		e.preventDefault();
-		
-		if (!confirm('Are you sure you want to delete this member? They can reactivate their account by registering again with the same email address.')) {
-			return;
-		}
-		
-		const $button = $(this);
-		$button.prop('disabled', true).text('Deleting...');
-		
-		$.ajax({
-			url: ajaxurl,
-			type: 'POST',
-			data: {
-				action: 'stsrc_delete_member',
-				nonce: nonce,
-				member_id: memberId
-			},
-			success: function(response) {
-				if (response.success) {
-					alert(response.data.message || 'Member deleted successfully.');
-					window.location.href = '<?php echo admin_url( 'admin.php?page=stsrc-members' ); ?>';
-				} else {
-					alert(response.data.message || 'Failed to delete member.');
-					$button.prop('disabled', false).text('Delete Member');
-				}
-			},
-			error: function() {
-				alert('An error occurred. Please try again.');
-				$button.prop('disabled', false).text('Delete Member');
-			}
-		});
-	});
-
 	// Reactivate member
 	$('#reactivate-member-btn').on('click', function(e) {
 		e.preventDefault();
