@@ -3699,24 +3699,27 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
-	 * Delete member (soft delete).
+	 * Soft-delete member from admin.
 	 *
-	 * @since    1.0.0
+	 * Sets primary member and related family/extra records to deleted status and
+	 * removes the associated WordPress user when present.
+	 *
+	 * @since    1.2.0
 	 * @return   void
 	 */
-	public function delete_member(): void {
-		// Check admin capability
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
-			return;
-		}
-
+	public function soft_delete_member(): void {
 		$post_data = wp_unslash( $_POST );
 
-		// Verify nonce
+		// Verify nonce.
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
 		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		// Check admin capability.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 			return;
 		}
 
@@ -3727,29 +3730,107 @@ class STSRC_Ajax_Handler {
 		}
 
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
 
-		// Soft delete (set status to cancelled)
-		$result = STSRC_Member_DB::delete_member( $member_id, false );
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
 
-		if ( ! $result ) {
+		if ( 'deleted' === ( $member['status'] ?? '' ) ) {
+			wp_send_json_error( array( 'message' => 'Member is already deleted.' ) );
+			return;
+		}
+
+		$active_family_members = STSRC_Family_Member_DB::get_by_member_id( $member_id );
+		$active_extra_members  = STSRC_Extra_Member_DB::get_by_member_id( $member_id );
+		$family_count          = count( $active_family_members );
+		$extra_count           = count( $active_extra_members );
+
+		$member_updated = STSRC_Member_DB::update_member(
+			$member_id,
+			array( 'status' => 'deleted' )
+		);
+
+		if ( ! $member_updated ) {
+			STSRC_Logger::error(
+				'Failed to soft-delete member status.',
+				array(
+					'method'    => __METHOD__,
+					'member_id' => $member_id,
+					'admin_id'  => get_current_user_id(),
+				)
+			);
 			wp_send_json_error( array( 'message' => 'Failed to delete member.' ) );
 			return;
 		}
 
+		$family_updated = STSRC_Family_Member_DB::soft_delete_by_member_id( $member_id );
+		$extra_updated  = STSRC_Extra_Member_DB::soft_delete_by_member_id( $member_id );
+
+		$user_deleted = null;
+		$user_id      = isset( $member['user_id'] ) ? (int) $member['user_id'] : 0;
+
+		if ( $user_id > 0 ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( $user ) {
+				require_once ABSPATH . 'wp-admin/includes/user.php';
+				$user_deleted = (bool) wp_delete_user( $user_id );
+
+				if ( ! $user_deleted ) {
+					STSRC_Logger::warning(
+						'Member was soft-deleted but WordPress user deletion failed.',
+						array(
+							'method'    => __METHOD__,
+							'member_id' => $member_id,
+							'user_id'   => $user_id,
+							'admin_id'  => get_current_user_id(),
+						)
+					);
+				}
+			} else {
+				// User id is stored but account no longer exists.
+				$user_deleted = true;
+			}
+		}
+
 		STSRC_Logger::info(
-			'Member soft deleted by admin.',
+			'Member soft-deleted by admin with related records cascade.',
 			array(
-				'method'    => __METHOD__,
-				'member_id' => $member_id,
-				'admin_id'  => get_current_user_id(),
+				'method'              => __METHOD__,
+				'member_id'           => $member_id,
+				'admin_id'            => get_current_user_id(),
+				'family_target_count' => $family_count,
+				'extra_target_count'  => $extra_count,
+				'family_updated'      => $family_updated,
+				'extra_updated'       => $extra_updated,
+				'user_id'             => $user_id,
+				'user_deleted'        => $user_deleted,
 			)
 		);
 
 		wp_send_json_success(
 			array(
-				'message' => 'Member deleted successfully. They can reactivate by registering again with the same email.',
+				'message' => 'Member deleted.',
+				'counts'  => array(
+					'family_members_deleted' => $family_updated,
+					'extra_members_deleted'  => $extra_updated,
+				),
+				'user_deleted' => $user_deleted,
 			)
 		);
+	}
+
+	/**
+	 * Legacy alias for member deletion endpoint.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function delete_member(): void {
+		$this->soft_delete_member();
 	}
 
 	/**
