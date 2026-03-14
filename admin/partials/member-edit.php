@@ -124,6 +124,7 @@ $member_id = $member['member_id'] ?? 0;
 							<select name="status" id="status" required>
 								<option value="pending" <?php selected( $member['status'] ?? 'pending', 'pending' ); ?>><?php echo esc_html__( 'Pending', 'smoketree-plugin' ); ?></option>
 								<option value="active" <?php selected( $member['status'] ?? '', 'active' ); ?>><?php echo esc_html__( 'Active', 'smoketree-plugin' ); ?></option>
+								<option value="inactive" <?php selected( $member['status'] ?? '', 'inactive' ); ?>><?php echo esc_html__( 'Inactive', 'smoketree-plugin' ); ?></option>
 								<option value="cancelled" <?php selected( $member['status'] ?? '', 'cancelled' ); ?>><?php echo esc_html__( 'Cancelled', 'smoketree-plugin' ); ?></option>
 							</select>
 						</td>
