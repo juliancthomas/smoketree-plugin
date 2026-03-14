@@ -877,6 +877,107 @@
 					$('#confirm_password').removeAttr('required');
 				}
 			});
+
+			// Soft-delete modal interactions.
+			const $deleteButton = $('#stsrc-delete-member-btn');
+			const $modal = $('#stsrc-delete-member-modal');
+			const $summaryList = $('#stsrc-delete-summary-list');
+			const $confirmDeleteButton = $('#stsrc-confirm-delete-btn');
+			const $cancelDeleteButton = $('#stsrc-cancel-delete-btn');
+
+			if (!$deleteButton.length || !$modal.length) {
+				return;
+			}
+
+			const closeDeleteModal = function() {
+				$modal.hide().attr('aria-hidden', 'true');
+			};
+
+			const openDeleteModal = function() {
+				const memberName = $deleteButton.data('member-name') || 'this member';
+				const familyCount = parseInt($deleteButton.data('family-count'), 10) || 0;
+				const extraCount = parseInt($deleteButton.data('extra-count'), 10) || 0;
+				const hasWpUser = String($deleteButton.data('has-wp-user')) === '1';
+				const wpUserId = parseInt($deleteButton.data('wp-user-id'), 10) || 0;
+
+				const summaryItems = [
+					`Member account: ${memberName}`,
+					`${familyCount} active family member(s)`,
+					`${extraCount} active extra member(s)`
+				];
+
+				if (hasWpUser) {
+					summaryItems.push(`WordPress user account (ID: ${wpUserId})`);
+				} else {
+					summaryItems.push('No linked WordPress user account');
+				}
+
+				$summaryList.empty();
+				summaryItems.forEach((item) => {
+					$summaryList.append($('<li>').text(item));
+				});
+
+				$modal.show().attr('aria-hidden', 'false');
+			};
+
+			$deleteButton.on('click', function(e) {
+				e.preventDefault();
+				openDeleteModal();
+			});
+
+			$cancelDeleteButton.on('click', function(e) {
+				e.preventDefault();
+				closeDeleteModal();
+			});
+
+			$modal.on('click', '.stsrc-delete-modal-backdrop', function() {
+				closeDeleteModal();
+			});
+
+			$(document).on('keydown', function(e) {
+				if (e.key === 'Escape' && $modal.is(':visible')) {
+					closeDeleteModal();
+				}
+			});
+
+			$confirmDeleteButton.on('click', function(e) {
+				e.preventDefault();
+
+				const memberId = parseInt($deleteButton.data('member-id'), 10) || 0;
+				const nonce = $deleteButton.data('nonce') || STSRCAdmin.nonce;
+				const action = $deleteButton.data('action') || 'stsrc_soft_delete_member';
+				const redirectUrl = $deleteButton.data('redirect-url') || 'admin.php?page=stsrc-members&deleted=1';
+
+				if (!memberId || !nonce) {
+					STSRCAdmin.showNotice('Missing member delete metadata. Please refresh the page.', 'error');
+					return;
+				}
+
+				$confirmDeleteButton.prop('disabled', true).addClass('disabled').text('Deleting...');
+
+				$.ajax({
+					url: STSRCAdmin.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: action,
+						nonce: nonce,
+						member_id: memberId
+					},
+					success: function(response) {
+						if (response.success) {
+							window.location.href = redirectUrl;
+							return;
+						}
+
+						STSRCAdmin.showNotice((response.data && response.data.message) || 'Failed to delete member.', 'error');
+						$confirmDeleteButton.prop('disabled', false).removeClass('disabled').text('Yes, Delete Member');
+					},
+					error: function() {
+						STSRCAdmin.showNotice('An error occurred while deleting the member.', 'error');
+						$confirmDeleteButton.prop('disabled', false).removeClass('disabled').text('Yes, Delete Member');
+					}
+				});
+			});
 		},
 
 		/**
