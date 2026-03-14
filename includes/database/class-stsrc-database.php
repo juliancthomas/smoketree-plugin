@@ -106,10 +106,12 @@ class STSRC_Database {
 			first_name VARCHAR(100) NOT NULL,
 			last_name VARCHAR(100) NOT NULL,
 			email VARCHAR(255) DEFAULT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'active',
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (family_member_id),
 			KEY member_id (member_id),
+			KEY status (status),
 			UNIQUE KEY member_name (member_id, first_name, last_name)
 		) $charset_collate;";
 		dbDelta( $sql_family_members );
@@ -122,12 +124,14 @@ class STSRC_Database {
 			first_name VARCHAR(100) NOT NULL,
 			last_name VARCHAR(100) NOT NULL,
 			email VARCHAR(255) DEFAULT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'active',
 			payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
 			stripe_payment_intent_id VARCHAR(255) DEFAULT NULL,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (extra_member_id),
 			KEY member_id (member_id),
+			KEY status (status),
 			UNIQUE KEY member_name (member_id, first_name, last_name)
 		) $charset_collate;";
 		dbDelta( $sql_extra_members );
@@ -157,6 +161,9 @@ class STSRC_Database {
 
 		// Backfill type column for existing rows that pre-date the column.
 		self::backfill_guest_pass_types();
+
+		// Ensure related-member status columns exist for soft-delete lifecycle.
+		self::add_status_columns_to_related_tables();
 
 		// Table: wp_stsrc_email_logs
 		$table_email_logs = $wpdb->prefix . 'stsrc_email_logs';
@@ -254,6 +261,59 @@ class STSRC_Database {
 		$wpdb->query(
 			"UPDATE {$table} SET type = 'admin_credit' WHERE admin_adjusted = 1 AND type = 'purchase'"
 		);
+	}
+
+	/**
+	 * Add status columns to related member tables when missing.
+	 *
+	 * Supports existing installs that pre-date soft-delete status tracking.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	public static function add_status_columns_to_related_tables(): void {
+		global $wpdb;
+
+		$family_table = $wpdb->prefix . 'stsrc_family_members';
+		$extra_table  = $wpdb->prefix . 'stsrc_extra_members';
+
+		if ( ! self::column_exists( $family_table, 'status' ) ) {
+			$wpdb->query( "ALTER TABLE {$family_table} ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'" );
+			$wpdb->query( "ALTER TABLE {$family_table} ADD KEY status (status)" );
+		}
+
+		if ( ! self::column_exists( $extra_table, 'status' ) ) {
+			$wpdb->query( "ALTER TABLE {$extra_table} ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'" );
+			$wpdb->query( "ALTER TABLE {$extra_table} ADD KEY status (status)" );
+		}
+	}
+
+	/**
+	 * Check whether a table column exists.
+	 *
+	 * @since    1.2.0
+	 * @param    string $table_name  Fully-qualified table name.
+	 * @param    string $column_name Column name to check.
+	 * @return   bool
+	 */
+	private static function column_exists( string $table_name, string $column_name ): bool {
+		global $wpdb;
+
+		$column_exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME
+				FROM information_schema.COLUMNS
+				WHERE TABLE_SCHEMA = %s
+				AND TABLE_NAME = %s
+				AND COLUMN_NAME = %s
+				LIMIT 1",
+				DB_NAME,
+				$table_name,
+				$column_name
+			)
+		);
+
+		return ! empty( $column_exists );
 	}
 
 	/**

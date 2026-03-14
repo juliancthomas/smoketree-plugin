@@ -225,9 +225,13 @@ class STSRC_Migration_Page {
 
 		// Load migrator class
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/migration/class-stsrc-legacy-member-migrator.php';
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-database.php';
 
 		// Set time limit for large migrations
 		set_time_limit( 300 ); // 5 minutes
+
+		// Run related-table status column migration for existing installs.
+		STSRC_Database::add_status_columns_to_related_tables();
 
 		// Run migration
 		$results = STSRC_Legacy_Member_Migrator::run_migration();

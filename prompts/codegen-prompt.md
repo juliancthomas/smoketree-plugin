@@ -3,16 +3,16 @@ You are an AI code generator responsible for implementing a wordpess plugin base
 Your task is to systematically implement each step of the plan, one at a time.
 
 First, carefully review the project request:
-prompts\project-requests\mixed-payment-tracking.md
+prompts\project-requests\3-12-2026-bug-fixes-project-request.md
 
 Next, carefully review the project rules:
 docs\best practices.md
 
 Technical Specification:
-prompts\tec-specs\mixed-payment-tracking-tech-spec.md
+prompts\tec-specs\3-12-2026-bug-fixes-spec.md
 
 Implementation Plan:
-prompts\implementation-plans\mixed-payment-tracking-implementation-plan.md
+prompts\implementation-plans\3-12-2026-bug-fixes-implementation-plan.md
 
 Your task is to:
 1. Identify the next incomplete step from the implementation plan (marked with `- [ ]`)
