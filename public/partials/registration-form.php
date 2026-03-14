@@ -165,6 +165,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div class="stsrc-form-section" id="stsrc-family-members-section" style="display: none;">
 		<h2><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></h2>
 		<p class="stsrc-description"><?php echo esc_html__( 'Family member slots are based on your selected membership plan.', 'smoketree-plugin' ); ?></p>
+		<p id="stsrc-family-validation-message" class="stsrc-notice error" style="display:none;"></p>
 		
 		<div id="stsrc-family-members-container"></div>
 		<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-add-family-member" style="display:none;"><?php echo esc_html__( '+ Add Family Member', 'smoketree-plugin' ); ?></button>
@@ -739,7 +740,48 @@ jQuery(document).ready(function($) {
 		}
 
 		$('#stsrc-family-members-container').html(html);
+		$('#stsrc-family-validation-message').hide().text('');
 		updateFamilyMemberCount();
+	}
+
+	function getFilledFamilyMemberCount() {
+		let count = 0;
+		$('#stsrc-family-members-container .stsrc-family-member-item').each(function() {
+			const $item = $(this);
+			if ($item.hasClass('stsrc-family-member-item--removed')) {
+				return;
+			}
+
+			const firstName = $.trim($item.find('input[name*="[first_name]"]').val() || '');
+			const lastName = $.trim($item.find('input[name*="[last_name]"]').val() || '');
+			if (firstName && lastName) {
+				count++;
+			}
+		});
+		return count;
+	}
+
+	function validateFamilyMinimums() {
+		const $option = $('#membership_type_id').find('option:selected');
+		const planName = String($option.data('name') || '').toLowerCase();
+		const minimumByPlan = { household: 2, duo: 1 };
+		const requiredMinimum = minimumByPlan[planName] || 0;
+		const filledCount = getFilledFamilyMemberCount();
+		const $validationMessage = $('#stsrc-family-validation-message');
+
+		if (requiredMinimum > 0 && filledCount < requiredMinimum) {
+			const message = requiredMinimum === 1
+				? 'Please complete at least 1 family member for this membership plan.'
+				: 'Please complete at least ' + requiredMinimum + ' family members for this membership plan.';
+			$validationMessage.text(message).show();
+			$('html, body').animate({
+				scrollTop: $('#stsrc-family-members-section').offset().top - 60
+			}, 300);
+			return false;
+		}
+
+		$validationMessage.hide().text('');
+		return true;
 	}
 
 	$('#membership_type_id').on('change', function() {
@@ -826,6 +868,11 @@ jQuery(document).ready(function($) {
 
 		updateFamilyMemberCount();
 		updateOrderSummary();
+		validateFamilyMinimums();
+	});
+
+	$(document).on('input change', '#stsrc-family-members-container input', function() {
+		validateFamilyMinimums();
 	});
 
 	// Add extra member
@@ -889,6 +936,10 @@ jQuery(document).ready(function($) {
 		if ($('#password').val() !== $('#password_confirm').val()) {
 			$messages.html('<div class="stsrc-notice error"><p>Passwords do not match.</p></div>');
 			scrollToMessages();
+			return;
+		}
+
+		if (!validateFamilyMinimums()) {
 			return;
 		}
 		

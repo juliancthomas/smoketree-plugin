@@ -573,6 +573,20 @@ class STSRC_Ajax_Handler {
 			}
 		}
 
+		// Enforce minimum family-member requirements by membership plan.
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		$membership_type = STSRC_Membership_DB::get_membership_type( $data['membership_type_id'] );
+		$membership_name = strtolower( sanitize_text_field( $membership_type['name'] ?? '' ) );
+		$family_count    = count( $data['family_members'] ?? array() );
+
+		if ( 'household' === $membership_name && $family_count < 2 ) {
+			return new WP_Error( 'minimum_family_required', 'Household memberships require at least 2 family members with first and last name.' );
+		}
+
+		if ( 'duo' === $membership_name && $family_count < 1 ) {
+			return new WP_Error( 'minimum_family_required', 'Duo memberships require at least 1 family member with first and last name.' );
+		}
+
 		// Handle extra members if provided
 		if ( ! empty( $post_data['extra_members'] ) && is_array( $post_data['extra_members'] ) ) {
 			$data['extra_members'] = array();
