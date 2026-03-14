@@ -199,6 +199,26 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
+		// Enforce payment-plan availability server-side even if client UI is stale.
+		$payment_plan_enabled = get_option( 'stsrc_payment_plan_enabled', '0' );
+		if ( 'pay_later' === ( $data['payment_type'] ?? '' ) && ( empty( $payment_plan_enabled ) || '0' === (string) $payment_plan_enabled ) ) {
+			STSRC_Logger::warning(
+				'Registration blocked: pay_later submitted while payment plan is disabled.',
+				array(
+					'method' => __METHOD__,
+					'email'  => $data['email'] ?? '',
+					'ip'     => $this->get_client_ip(),
+				)
+			);
+			wp_send_json_error(
+				array(
+					'message' => 'Pay Later is currently unavailable. Please select another payment method.',
+					'code'    => 'pay_later_disabled',
+				)
+			);
+			return;
+		}
+
 		// Check for duplicate email or cancelled account
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
