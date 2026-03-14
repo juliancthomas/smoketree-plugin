@@ -294,13 +294,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
 					</span>
 				</label>
-				<label class="stsrc-pay-balance-method">
-					<input type="radio" name="payment_type" value="pay_later" required>
-					<span class="stsrc-pay-balance-method__label">
-						<?php echo esc_html__( 'Pay Later (Special Cases Only)', 'smoketree-plugin' ); ?>
-						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
-					</span>
-				</label>
+				<?php if ( ! empty( $payment_plan_enabled ) ) : ?>
+					<label class="stsrc-pay-balance-method">
+						<input type="radio" name="payment_type" value="pay_later" required>
+						<span class="stsrc-pay-balance-method__label">
+							<?php echo esc_html__( 'Pay Later (Special Cases Only)', 'smoketree-plugin' ); ?>
+							<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
+						</span>
+					</label>
+				<?php endif; ?>
 			</div>
 		</div>
 	</div>

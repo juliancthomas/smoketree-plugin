@@ -42,6 +42,13 @@ $google_places_api_key = $use_acf ? get_field( 'stsrc_google_places_api_key', 'o
 
 $request_params = wp_unslash( $_GET );
 $payment_flag   = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
+$payment_plan_enabled = get_query_var( 'stsrc_payment_plan_enabled', null );
+if ( null === $payment_plan_enabled ) {
+	$payment_plan_enabled = $use_acf
+		? get_field( 'stsrc_payment_plan_enabled', 'option' )
+		: get_option( 'stsrc_payment_plan_enabled', '0' );
+}
+$payment_plan_enabled = ! empty( $payment_plan_enabled ) && '0' !== (string) $payment_plan_enabled;
 
 // Load plugin header
 require_once plugin_dir_path( __FILE__ ) . 'header.php';

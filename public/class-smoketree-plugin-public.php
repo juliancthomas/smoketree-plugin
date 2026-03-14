@@ -232,6 +232,7 @@ class Smoketree_Plugin_Public {
 			$localize = array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'stsrc_registration_nonce' ),
+				'paymentPlanEnabled' => $this->is_payment_plan_enabled(),
 				'strings' => array(
 						'saving'    => __( 'Saving...', 'smoketree-plugin' ),
 						'submitting' => __( 'Submitting...', 'smoketree-plugin' ),
@@ -341,6 +342,7 @@ class Smoketree_Plugin_Public {
 
 		// Registration page
 		if ( 'registration-form.php' === $page_template || 'register' === $page_slug ) {
+			set_query_var( 'stsrc_payment_plan_enabled', $this->is_payment_plan_enabled() );
 			$template = plugin_dir_path( __FILE__ ) . 'templates/registration-form.php';
 		}
 		// Login page
@@ -562,6 +564,19 @@ class Smoketree_Plugin_Public {
 		$message .= $reset_url . "\r\n";
 		
 		return $message;
+	}
+
+	/**
+	 * Determine whether the payment-plan ("pay later") option is enabled.
+	 *
+	 * @since    1.2.0
+	 * @return   bool
+	 */
+	private function is_payment_plan_enabled(): bool {
+		$use_acf = function_exists( 'get_field' );
+		$value   = $use_acf ? get_field( 'stsrc_payment_plan_enabled', 'option' ) : get_option( 'stsrc_payment_plan_enabled', '0' );
+
+		return ! empty( $value ) && '0' !== (string) $value;
 	}
 
 }
