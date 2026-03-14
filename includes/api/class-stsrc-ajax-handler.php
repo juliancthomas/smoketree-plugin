@@ -3763,6 +3763,112 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Handle restore-account link redemption.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	public function handle_restore_account_request(): void {
+		$request_action = sanitize_text_field( wp_unslash( $_GET['action'] ?? '' ) );
+		if ( 'stsrc_restore_account' !== $request_action ) {
+			return;
+		}
+
+		$token = sanitize_text_field( wp_unslash( $_GET['token'] ?? '' ) );
+		if ( empty( $token ) ) {
+			wp_die( 'Invalid restore link.' );
+		}
+
+		$token_data = get_transient( 'stsrc_restore_account_' . $token );
+		if ( false === $token_data ) {
+			wp_die( 'This restore link has expired or is invalid. Please try registering again.' );
+		}
+
+		$member_id = (int) ( $token_data['member_id'] ?? 0 );
+		$email     = sanitize_email( $token_data['email'] ?? '' );
+		if ( $member_id <= 0 || empty( $email ) ) {
+			wp_die( 'Invalid restore request.' );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member || 'deleted' !== ( $member['status'] ?? '' ) ) {
+			wp_die( 'This account is not eligible for restoration.' );
+		}
+
+		if ( strtolower( $member['email'] ?? '' ) !== strtolower( $email ) ) {
+			wp_die( 'Restore request does not match the account email.' );
+		}
+
+		if ( email_exists( $email ) || username_exists( $email ) ) {
+			wp_die( 'An account with this email already exists. Please use password reset instead.' );
+		}
+
+		$user_id = wp_create_user( $email, wp_generate_password( 24, true, true ), $email );
+		if ( is_wp_error( $user_id ) ) {
+			STSRC_Logger::error(
+				'Failed to recreate WordPress user during restore flow.',
+				array(
+					'method'    => __METHOD__,
+					'member_id' => $member_id,
+					'email'     => $email,
+					'error'     => $user_id->get_error_code(),
+				)
+			);
+			wp_die( 'Failed to restore account. Please contact support.' );
+		}
+
+		$member_updated = STSRC_Member_DB::update_member(
+			$member_id,
+			array(
+				'user_id' => (int) $user_id,
+				'status'  => 'inactive',
+			)
+		);
+
+		if ( ! $member_updated ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+			wp_delete_user( (int) $user_id );
+			wp_die( 'Failed to restore account. Please contact support.' );
+		}
+
+		delete_transient( 'stsrc_restore_account_' . $token );
+
+		$user = get_user_by( 'id', (int) $user_id );
+		if ( ! $user ) {
+			wp_die( 'Account restored, but we could not start password reset. Please use Forgot Password.' );
+		}
+
+		$reset_key = get_password_reset_key( $user );
+		if ( is_wp_error( $reset_key ) ) {
+			wp_safe_redirect( wp_lostpassword_url() );
+			exit;
+		}
+
+		$reset_url = add_query_arg(
+			array(
+				'action' => 'stsrc_reset_password',
+				'key'    => $reset_key,
+				'login'  => rawurlencode( $user->user_login ),
+			),
+			home_url( '/member-portal/' )
+		);
+
+		STSRC_Logger::info(
+			'Deleted member account restored successfully.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $member_id,
+				'user_id'   => (int) $user_id,
+				'email'     => $email,
+			)
+		);
+
+		wp_safe_redirect( $reset_url );
+		exit;
+	}
+
+	/**
 	 * Handle member reactivation from email link.
 	 *
 	 * @since    1.0.0

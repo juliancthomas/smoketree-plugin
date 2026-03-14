@@ -344,6 +344,7 @@ class Smoketree_Plugin {
 
 		// Public reactivation endpoint
 		$this->loader->add_action( 'init', $ajax_handler, 'handle_reactivation_request' );
+		$this->loader->add_action( 'init', $ajax_handler, 'handle_restore_account_request' );
 	}
 
 	/**
