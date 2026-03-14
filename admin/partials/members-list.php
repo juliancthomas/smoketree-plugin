@@ -31,6 +31,7 @@ $balance_sort_url = add_query_arg(
 		'date_to'            => $filters['date_to'] ?? '',
 		'balance_status'     => $filters['balance_status'] ?? '',
 		'auto_renewal'       => $filters['auto_renewal'] ?? '',
+		'show_deleted'       => $filters['show_deleted'] ?? '',
 		'orderby'            => 'balance',
 		'order'              => $next_balance_order,
 	),
@@ -76,7 +77,16 @@ $balance_sort_url = add_query_arg(
 						<option value="inactive" <?php selected( $filters['status'] ?? '', 'inactive' ); ?>><?php echo esc_html__( 'Inactive', 'smoketree-plugin' ); ?></option>
 						<option value="pending" <?php selected( $filters['status'] ?? '', 'pending' ); ?>><?php echo esc_html__( 'Pending', 'smoketree-plugin' ); ?></option>
 						<option value="cancelled" <?php selected( $filters['status'] ?? '', 'cancelled' ); ?>><?php echo esc_html__( 'Cancelled', 'smoketree-plugin' ); ?></option>
+						<option value="deleted" <?php selected( $filters['status'] ?? '', 'deleted' ); ?>><?php echo esc_html__( 'Deleted', 'smoketree-plugin' ); ?></option>
 					</select>
+				</div>
+
+				<div class="stsrc-filter-group">
+					<label for="show_deleted"><?php echo esc_html__( 'Deleted Records', 'smoketree-plugin' ); ?>:</label>
+					<label class="stsrc-inline-checkbox" style="margin: 0;">
+						<input type="checkbox" name="show_deleted" id="show_deleted" value="1" <?php checked( $filters['show_deleted'] ?? '0', '1' ); ?>>
+						<span><?php echo esc_html__( 'Show Deleted', 'smoketree-plugin' ); ?></span>
+					</label>
 				</div>
 
 				<div class="stsrc-filter-group">
@@ -178,6 +188,7 @@ $balance_sort_url = add_query_arg(
 						<option value="pending"><?php echo esc_html__( 'Pending', 'smoketree-plugin' ); ?></option>
 						<option value="cancelled"><?php echo esc_html__( 'Cancelled', 'smoketree-plugin' ); ?></option>
 						<option value="inactive"><?php echo esc_html__( 'Inactive', 'smoketree-plugin' ); ?></option>
+						<option value="deleted"><?php echo esc_html__( 'Deleted', 'smoketree-plugin' ); ?></option>
 					</select>
 				</label>
 

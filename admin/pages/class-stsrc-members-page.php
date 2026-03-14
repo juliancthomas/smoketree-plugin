@@ -93,6 +93,7 @@ class STSRC_Members_Page {
 		if ( isset( $request['auto_renewal'] ) && '' !== $request['auto_renewal'] ) {
 			$filters['auto_renewal'] = sanitize_text_field( $request['auto_renewal'] );
 		}
+		$filters['show_deleted'] = ! empty( $request['show_deleted'] ) ? '1' : '0';
 
 		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';
 		$order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
@@ -104,6 +105,18 @@ class STSRC_Members_Page {
 
 		// Get members
 		$members = STSRC_Member_DB::get_members( $filters );
+
+		// Hide deleted members by default unless explicitly requested.
+		if ( '1' !== ( $filters['show_deleted'] ?? '0' ) && empty( $filters['status'] ) ) {
+			$members = array_values(
+				array_filter(
+					$members,
+					static function( array $member ): bool {
+						return ( $member['status'] ?? '' ) !== 'deleted';
+					}
+				)
+			);
+		}
 
 		// Apply balance status filtering (post-query for compatibility with existing DB API)
 		if ( ! empty( $filters['balance_status'] ) ) {
