@@ -146,6 +146,13 @@ class STSRC_Ajax_Handler {
 	 */
 	public function register_member(): void {
 		$post_data = wp_unslash( $_POST );
+		$rollback_context = array(
+			'member_id'           => 0,
+			'user_id'             => 0,
+			'family_member_ids'   => array(),
+			'stripe_customer_id'  => '',
+			'email'               => '',
+		);
 
 		// Verify nonce
 		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
@@ -198,6 +205,7 @@ class STSRC_Ajax_Handler {
 			wp_send_json_error( array( 'message' => $data->get_error_message() ) );
 			return;
 		}
+		$rollback_context['email'] = $data['email'] ?? '';
 
 		// Enforce payment-plan availability server-side even if client UI is stale.
 		$payment_plan_enabled = get_option( 'stsrc_payment_plan_enabled', '0' );
@@ -287,6 +295,7 @@ class STSRC_Ajax_Handler {
 
 		if ( $stripe_customer_id ) {
 			$data['stripe_customer_id'] = $stripe_customer_id;
+			$rollback_context['stripe_customer_id'] = $stripe_customer_id;
 			STSRC_Logger::info(
 				'Stripe customer created during registration.',
 				array(
@@ -321,6 +330,7 @@ class STSRC_Ajax_Handler {
 			wp_send_json_error( array( 'message' => 'Failed to create account. Please try again.' ) );
 			return;
 		}
+		$rollback_context['member_id'] = (int) $member_id;
 
 		STSRC_Logger::info(
 			'Member account created during registration.',
@@ -333,10 +343,29 @@ class STSRC_Ajax_Handler {
 
 		// Create family members if provided (for all payment types)
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+		$member_record = STSRC_Member_DB::get_member( $member_id );
+		if ( $member_record && ! empty( $member_record['user_id'] ) ) {
+			$rollback_context['user_id'] = (int) $member_record['user_id'];
+		}
+
 		if ( ! empty( $data['family_members'] ) && is_array( $data['family_members'] ) ) {
 			foreach ( $data['family_members'] as $family_member ) {
 				if ( ! empty( $family_member['first_name'] ) && ! empty( $family_member['last_name'] ) ) {
-					STSRC_Family_Member_DB::add_family_member( $member_id, $family_member );
+					$family_member_id = STSRC_Family_Member_DB::add_family_member( $member_id, $family_member );
+					if ( false === $family_member_id ) {
+						STSRC_Logger::error(
+							'Failed to add family member during registration; triggering rollback.',
+							array(
+								'method'    => __METHOD__,
+								'member_id' => $member_id,
+								'email'     => $data['email'] ?? '',
+							)
+						);
+						$this->rollback_registration( $rollback_context );
+						wp_send_json_error( array( 'message' => 'Failed to create account. Please try again.' ) );
+						return;
+					}
+					$rollback_context['family_member_ids'][] = (int) $family_member_id;
 				}
 			}
 		}
@@ -357,6 +386,7 @@ class STSRC_Ajax_Handler {
 						'error'     => $result->get_error_code(),
 					)
 				);
+				$this->rollback_registration( $rollback_context );
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 				return;
 			}
@@ -380,6 +410,7 @@ class STSRC_Ajax_Handler {
 						'error'     => $result->get_error_code(),
 					)
 				);
+				$this->rollback_registration( $rollback_context );
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 				return;
 			}
@@ -403,6 +434,60 @@ class STSRC_Ajax_Handler {
 				array(
 					'message'      => 'Registration successful! Redirecting to your member portal...',
 					'redirect_url' => $redirect_url,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Roll back a partially completed registration workflow.
+	 *
+	 * @since    1.2.0
+	 * @param    array $context Rollback context.
+	 * @return   void
+	 */
+	private function rollback_registration( array $context ): void {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+
+		$member_id          = (int) ( $context['member_id'] ?? 0 );
+		$user_id            = (int) ( $context['user_id'] ?? 0 );
+		$stripe_customer_id = sanitize_text_field( $context['stripe_customer_id'] ?? '' );
+
+		if ( $member_id > 0 ) {
+			$member_deleted = STSRC_Member_DB::delete_member( $member_id, true );
+			STSRC_Logger::info(
+				'Rollback step: deleted member record.',
+				array(
+					'method'         => __METHOD__,
+					'member_id'      => $member_id,
+					'member_deleted' => (bool) $member_deleted,
+				)
+			);
+		}
+
+		if ( $user_id > 0 ) {
+			$user_deleted = wp_delete_user( $user_id );
+			STSRC_Logger::info(
+				'Rollback step: deleted WordPress user.',
+				array(
+					'method'       => __METHOD__,
+					'user_id'      => $user_id,
+					'user_deleted' => (bool) $user_deleted,
+				)
+			);
+		}
+
+		if ( ! empty( $stripe_customer_id ) ) {
+			$payment_service = new STSRC_Payment_Service();
+			$customer_deleted = $payment_service->delete_customer( $stripe_customer_id );
+			STSRC_Logger::info(
+				'Rollback step: deleted Stripe customer.',
+				array(
+					'method'            => __METHOD__,
+					'stripe_customer_id'=> $stripe_customer_id,
+					'customer_deleted'  => (bool) $customer_deleted,
 				)
 			);
 		}

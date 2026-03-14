@@ -268,6 +268,38 @@ class STSRC_Payment_Service {
 	}
 
 	/**
+	 * Delete Stripe customer.
+	 *
+	 * @since    1.2.0
+	 * @param    string $customer_id Stripe customer ID.
+	 * @return   bool
+	 */
+	public function delete_customer( string $customer_id ): bool {
+		$this->init_stripe();
+
+		if ( empty( $customer_id ) || ! class_exists( '\Stripe\Customer' ) ) {
+			return false;
+		}
+
+		try {
+			$customer = \Stripe\Customer::retrieve( $customer_id );
+			if ( $customer ) {
+				$customer->delete();
+			}
+			return true;
+		} catch ( \Exception $e ) {
+			STSRC_Logger::exception(
+				$e,
+				array(
+					'method'      => __METHOD__,
+					'customer_id' => $customer_id,
+				)
+			);
+			return false;
+		}
+	}
+
+	/**
 	 * Get Customer Portal URL.
 	 *
 	 * @since    1.0.0
