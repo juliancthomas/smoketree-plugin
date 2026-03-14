@@ -188,9 +188,21 @@ class STSRC_Members_Page {
 		// Get family and extra members if editing
 		$family_members = array();
 		$extra_members = array();
+		$delete_meta = array();
 		if ( $member ) {
 			$family_members = STSRC_Family_Member_DB::get_family_members( $member_id );
 			$extra_members = STSRC_Extra_Member_DB::get_extra_members( $member_id );
+			$delete_meta = array(
+				'member_id'       => $member_id,
+				'member_name'     => trim( ( $member['first_name'] ?? '' ) . ' ' . ( $member['last_name'] ?? '' ) ),
+				'family_count'    => count( $family_members ),
+				'extra_count'     => count( $extra_members ),
+				'has_wp_user'     => ! empty( $member['user_id'] ),
+				'wp_user_id'      => (int) ( $member['user_id'] ?? 0 ),
+				'ajax_nonce'      => wp_create_nonce( 'stsrc_admin_nonce' ),
+				'delete_action'   => 'stsrc_soft_delete_member',
+				'redirect_url'    => admin_url( 'admin.php?page=stsrc-members&deleted=1' ),
+			);
 		}
 
 		$data = array(
@@ -198,6 +210,7 @@ class STSRC_Members_Page {
 			'membership_types' => $membership_types,
 			'family_members'  => $family_members,
 			'extra_members'   => $extra_members,
+			'delete_meta'     => $delete_meta,
 		);
 
 		// Include edit template

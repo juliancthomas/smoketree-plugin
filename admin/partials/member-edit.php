@@ -15,6 +15,7 @@ $member = $data['member'] ?? null;
 $membership_types = $data['membership_types'] ?? array();
 $family_members = $data['family_members'] ?? array();
 $extra_members = $data['extra_members'] ?? array();
+$delete_meta = $data['delete_meta'] ?? array();
 $is_edit = ! empty( $member );
 $member_id = $member['member_id'] ?? 0;
 ?>
@@ -359,19 +360,62 @@ $member_id = $member['member_id'] ?? 0;
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members' ) ); ?>" class="button">
 				<?php echo esc_html__( 'Cancel', 'smoketree-plugin' ); ?>
 			</a>
-			<?php if ( $is_edit ) : ?>
-				<?php if ( 'cancelled' === ( $member['status'] ?? '' ) ) : ?>
-					<button type="button" class="button" id="reactivate-member-btn" style="margin-left: 20px; color: #007cba;">
-						<?php echo esc_html__( 'Reactivate Member', 'smoketree-plugin' ); ?>
-					</button>
-				<?php else : ?>
-					<button type="button" class="button button-link-delete" id="delete-member-btn" style="margin-left: 20px; color: #b32d2e;">
-						<?php echo esc_html__( 'Delete Member', 'smoketree-plugin' ); ?>
-					</button>
-				<?php endif; ?>
+			<?php if ( $is_edit && 'cancelled' === ( $member['status'] ?? '' ) ) : ?>
+				<button type="button" class="button" id="reactivate-member-btn" style="margin-left: 20px; color: #007cba;">
+					<?php echo esc_html__( 'Reactivate Member', 'smoketree-plugin' ); ?>
+				</button>
 			<?php endif; ?>
 		</p>
 	</form>
+
+	<?php if ( $is_edit && 'cancelled' !== ( $member['status'] ?? '' ) ) : ?>
+		<div class="stsrc-danger-zone">
+			<h2><?php echo esc_html__( 'Danger Zone', 'smoketree-plugin' ); ?></h2>
+			<p class="description">
+				<?php echo esc_html__( 'Deleting a member will mark their account and related records as deleted and remove their WordPress user account.', 'smoketree-plugin' ); ?>
+			</p>
+			<button
+				type="button"
+				id="stsrc-delete-member-btn"
+				class="button stsrc-button-danger"
+				data-member-id="<?php echo esc_attr( $delete_meta['member_id'] ?? $member_id ); ?>"
+				data-member-name="<?php echo esc_attr( $delete_meta['member_name'] ?? '' ); ?>"
+				data-family-count="<?php echo esc_attr( $delete_meta['family_count'] ?? 0 ); ?>"
+				data-extra-count="<?php echo esc_attr( $delete_meta['extra_count'] ?? 0 ); ?>"
+				data-has-wp-user="<?php echo esc_attr( ! empty( $delete_meta['has_wp_user'] ) ? '1' : '0' ); ?>"
+				data-wp-user-id="<?php echo esc_attr( $delete_meta['wp_user_id'] ?? 0 ); ?>"
+				data-nonce="<?php echo esc_attr( $delete_meta['ajax_nonce'] ?? wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>"
+				data-action="<?php echo esc_attr( $delete_meta['delete_action'] ?? 'stsrc_soft_delete_member' ); ?>"
+				data-redirect-url="<?php echo esc_url( $delete_meta['redirect_url'] ?? admin_url( 'admin.php?page=stsrc-members&deleted=1' ) ); ?>">
+				<?php echo esc_html__( 'Delete Member', 'smoketree-plugin' ); ?>
+			</button>
+		</div>
+
+		<div id="stsrc-delete-member-modal" class="stsrc-delete-member-modal" style="display:none;" aria-hidden="true">
+			<div class="stsrc-delete-modal-backdrop"></div>
+			<div class="stsrc-delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="stsrc-delete-modal-title">
+				<h2 id="stsrc-delete-modal-title"><?php echo esc_html__( 'Confirm Member Deletion', 'smoketree-plugin' ); ?></h2>
+				<p><?php echo esc_html__( 'This action will affect the following records:', 'smoketree-plugin' ); ?></p>
+				<ul id="stsrc-delete-summary-list">
+					<li><?php echo esc_html__( 'Member account', 'smoketree-plugin' ); ?></li>
+					<li><?php echo esc_html( sprintf( __( '%d active family member(s)', 'smoketree-plugin' ), (int) ( $delete_meta['family_count'] ?? 0 ) ) ); ?></li>
+					<li><?php echo esc_html( sprintf( __( '%d active extra member(s)', 'smoketree-plugin' ), (int) ( $delete_meta['extra_count'] ?? 0 ) ) ); ?></li>
+					<?php if ( ! empty( $delete_meta['has_wp_user'] ) ) : ?>
+						<li><?php echo esc_html__( 'Associated WordPress user account', 'smoketree-plugin' ); ?></li>
+					<?php endif; ?>
+				</ul>
+				<p><strong><?php echo esc_html__( 'This action cannot be undone.', 'smoketree-plugin' ); ?></strong></p>
+				<div class="stsrc-delete-modal-actions">
+					<button type="button" id="stsrc-confirm-delete-btn" class="button stsrc-button-danger">
+						<?php echo esc_html__( 'Yes, Delete Member', 'smoketree-plugin' ); ?>
+					</button>
+					<button type="button" id="stsrc-cancel-delete-btn" class="button">
+						<?php echo esc_html__( 'Cancel', 'smoketree-plugin' ); ?>
+					</button>
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
 </div>
 
 <?php
