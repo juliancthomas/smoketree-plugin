@@ -97,19 +97,99 @@ class STSRC_Family_Member_DB {
 	 * @return   array                Array of family member arrays
 	 */
 	public static function get_family_members( int $member_id ): array {
+		return self::get_by_member_id( $member_id );
+	}
+
+	/**
+	 * Retrieve family members for a member.
+	 *
+	 * Defaults to active-only records.
+	 *
+	 * @since    1.2.0
+	 * @param    int   $member_id         Member ID.
+	 * @param    bool  $include_deleted   Whether to include deleted records.
+	 * @return   array                    Array of family member arrays.
+	 */
+	public static function get_by_member_id( int $member_id, bool $include_deleted = false ): array {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$status_sql = ( ! $include_deleted && self::has_status_column() ) ? " AND status = 'active'" : '';
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE member_id = %d ORDER BY created_at ASC",
+				"SELECT * FROM {$table_name} WHERE member_id = %d{$status_sql} ORDER BY created_at ASC",
 				$member_id
 			),
 			ARRAY_A
 		);
 
 		return $results ? $results : array();
+	}
+
+	/**
+	 * Retrieve all family members including deleted records.
+	 *
+	 * @since    1.2.0
+	 * @param    int    $member_id    Member ID.
+	 * @return   array                Array of family member arrays.
+	 */
+	public static function get_all_by_member_id_including_deleted( int $member_id ): array {
+		return self::get_by_member_id( $member_id, true );
+	}
+
+	/**
+	 * Retrieve deleted family members for a member.
+	 *
+	 * @since    1.2.0
+	 * @param    int    $member_id    Member ID.
+	 * @return   array                Array of deleted family member arrays.
+	 */
+	public static function get_deleted_by_member_id( int $member_id ): array {
+		global $wpdb;
+
+		if ( ! self::has_status_column() ) {
+			return array();
+		}
+
+		$table_name = $wpdb->prefix . 'stsrc_family_members';
+
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE member_id = %d AND status = 'deleted' ORDER BY created_at ASC",
+				$member_id
+			),
+			ARRAY_A
+		);
+
+		return $results ? $results : array();
+	}
+
+	/**
+	 * Retrieve a single family member by ID.
+	 *
+	 * Defaults to active-only records.
+	 *
+	 * @since    1.2.0
+	 * @param    int   $family_member_id  Family member ID.
+	 * @param    bool  $include_deleted   Whether to include deleted records.
+	 * @return   array|null               Family member row as array, null if not found.
+	 */
+	public static function get_by_id( int $family_member_id, bool $include_deleted = false ): ?array {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$status_sql = ( ! $include_deleted && self::has_status_column() ) ? " AND status = 'active'" : '';
+
+		$result = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE family_member_id = %d{$status_sql} LIMIT 1",
+				$family_member_id
+			),
+			ARRAY_A
+		);
+
+		return $result ?: null;
 	}
 
 	/**
@@ -213,6 +293,70 @@ class STSRC_Family_Member_DB {
 	}
 
 	/**
+	 * Soft-delete all family members for a member.
+	 *
+	 * @since    1.2.0
+	 * @param    int    $member_id    Member ID.
+	 * @return   int                  Number of rows updated.
+	 */
+	public static function soft_delete_by_member_id( int $member_id ): int {
+		global $wpdb;
+
+		if ( ! self::has_status_column() ) {
+			return 0;
+		}
+
+		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$result     = $wpdb->update(
+			$table_name,
+			array(
+				'status'     => 'deleted',
+				'updated_at' => current_time( 'mysql' ),
+			),
+			array(
+				'member_id' => $member_id,
+				'status'    => 'active',
+			),
+			array( '%s', '%s' ),
+			array( '%d', '%s' )
+		);
+
+		return false === $result ? 0 : (int) $result;
+	}
+
+	/**
+	 * Restore a deleted family member to active status.
+	 *
+	 * @since    1.2.0
+	 * @param    int    $family_member_id    Family member ID.
+	 * @return   bool                        True on success, false on failure.
+	 */
+	public static function restore( int $family_member_id ): bool {
+		global $wpdb;
+
+		if ( ! self::has_status_column() ) {
+			return false;
+		}
+
+		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$result     = $wpdb->update(
+			$table_name,
+			array(
+				'status'     => 'active',
+				'updated_at' => current_time( 'mysql' ),
+			),
+			array(
+				'family_member_id' => $family_member_id,
+				'status'           => 'deleted',
+			),
+			array( '%s', '%s' ),
+			array( '%d', '%s' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
 	 * Count family members for a member.
 	 *
 	 * @since    1.0.0
@@ -223,15 +367,49 @@ class STSRC_Family_Member_DB {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$status_sql = self::has_status_column() ? " AND status = 'active'" : '';
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE member_id = %d",
+				"SELECT COUNT(*) FROM {$table_name} WHERE member_id = %d{$status_sql}",
 				$member_id
 			)
 		);
 
 		return (int) $count;
+	}
+
+	/**
+	 * Check whether the family members table has a status column.
+	 *
+	 * @since    1.2.0
+	 * @return   bool
+	 */
+	private static function has_status_column(): bool {
+		global $wpdb;
+
+		static $has_status = null;
+
+		if ( null !== $has_status ) {
+			return $has_status;
+		}
+
+		$table_name = $wpdb->prefix . 'stsrc_family_members';
+		$column     = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME
+				FROM information_schema.COLUMNS
+				WHERE TABLE_SCHEMA = %s
+				AND TABLE_NAME = %s
+				AND COLUMN_NAME = 'status'
+				LIMIT 1",
+				DB_NAME,
+				$table_name
+			)
+		);
+
+		$has_status = ! empty( $column );
+		return $has_status;
 	}
 }
 
