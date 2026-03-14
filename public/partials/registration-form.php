@@ -164,10 +164,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- Family Members (Dynamic) -->
 	<div class="stsrc-form-section" id="stsrc-family-members-section" style="display: none;">
 		<h2><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></h2>
-		<p class="stsrc-description"><?php echo esc_html__( 'Add family members included with your membership.', 'smoketree-plugin' ); ?></p>
+		<p class="stsrc-description"><?php echo esc_html__( 'Family member slots are based on your selected membership plan.', 'smoketree-plugin' ); ?></p>
 		
 		<div id="stsrc-family-members-container"></div>
-		<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-add-family-member"><?php echo esc_html__( '+ Add Family Member', 'smoketree-plugin' ); ?></button>
+		<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-add-family-member" style="display:none;"><?php echo esc_html__( '+ Add Family Member', 'smoketree-plugin' ); ?></button>
 	</div>
 
 	<!-- Extra Members (Dynamic, Household only) -->
@@ -683,14 +683,75 @@ jQuery(document).ready(function($) {
 		$('.stsrc-membership-card[data-value="' + preselectedId + '"]').trigger('click');
 	}
 
+	function updateFamilyMemberCount() {
+		familyMemberCount = $('#stsrc-family-members-container .stsrc-family-member-item').filter(function() {
+			return !$(this).hasClass('stsrc-family-member-item--removed');
+		}).length;
+	}
+
+	function buildFamilyMemberSlot(slotNumber, isRequired, canToggle) {
+		const removeButton = canToggle
+			? '<button type="button" class="stsrc-button stsrc-button-danger stsrc-toggle-family-slot" data-slot="' + slotNumber + '">Remove</button>'
+			: '';
+
+		const requiredAttr = isRequired ? 'required' : '';
+		const requiredMark = isRequired ? ' <span class="required">*</span>' : '';
+
+		return `
+			<div class="stsrc-family-member-item${canToggle ? ' stsrc-family-member-item--optional' : ' stsrc-family-member-item--locked'}" data-slot="${slotNumber}" data-optional="${canToggle ? '1' : '0'}">
+				<h3>Family Member ${slotNumber}${isRequired ? ' (Required)' : ''}</h3>
+				<div class="stsrc-form-row">
+					<div class="stsrc-form-group">
+						<label>First Name${requiredMark}</label>
+						<input type="text" name="family_members[${slotNumber}][first_name]" ${requiredAttr}>
+					</div>
+					<div class="stsrc-form-group">
+						<label>Last Name${requiredMark}</label>
+						<input type="text" name="family_members[${slotNumber}][last_name]" ${requiredAttr}>
+					</div>
+				</div>
+				<div class="stsrc-form-group">
+					<label>Email (optional)</label>
+					<input type="email" name="family_members[${slotNumber}][email]">
+				</div>
+				${removeButton}
+			</div>
+		`;
+	}
+
+	function renderFamilyMembersForPlan(planName) {
+		const normalizedPlan = (planName || '').toLowerCase();
+		let html = '';
+
+		if (normalizedPlan === 'household') {
+			for (let i = 1; i <= 4; i++) {
+				html += buildFamilyMemberSlot(i, i <= 2, i > 2);
+			}
+			$('#stsrc-add-family-member').hide();
+		} else if (normalizedPlan === 'duo') {
+			html = buildFamilyMemberSlot(1, true, false);
+			$('#stsrc-add-family-member').hide();
+		} else {
+			$('#stsrc-family-members-container').empty();
+			$('#stsrc-add-family-member').hide();
+			familyMemberCount = 0;
+			return;
+		}
+
+		$('#stsrc-family-members-container').html(html);
+		updateFamilyMemberCount();
+	}
+
 	$('#membership_type_id').on('change', function() {
 		const $option = $(this).find('option:selected');
 		const allowsFamily = String($option.data('allows-family')) === '1';
 		const allowsExtra = String($option.data('allows-extra')) === '1';
 		familyLimit = parseInt($option.data('family-limit')) || 0;
+		const planName = String($option.data('name') || '');
 
 		if (allowsFamily) {
 			$('#stsrc-family-members-section').show();
+			renderFamilyMembersForPlan(planName);
 		} else {
 			$('#stsrc-family-members-section').hide();
 			$('#stsrc-family-members-container').empty();
@@ -744,49 +805,26 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	var familyUid = 0;
 	var extraUid = 0;
 
-	// Add family member
-	$('#stsrc-add-family-member').on('click', function() {
-		var currentCount = $('#stsrc-family-members-container').children().length;
-		if (currentCount >= familyLimit) {
-			alert('Maximum of ' + familyLimit + ' family members allowed for this membership type.');
-			return;
+	// Toggle optional family member slots (Household slots 3 and 4).
+	$(document).on('click', '.stsrc-toggle-family-slot', function() {
+		const $button = $(this);
+		const $item = $button.closest('.stsrc-family-member-item');
+		const isRemoved = $item.hasClass('stsrc-family-member-item--removed');
+		const $inputs = $item.find('input');
+
+		if (isRemoved) {
+			$item.removeClass('stsrc-family-member-item--removed');
+			$inputs.prop('disabled', false);
+			$button.text('Remove');
+		} else {
+			$item.addClass('stsrc-family-member-item--removed');
+			$inputs.val('').prop('disabled', true);
+			$button.text('Restore');
 		}
 
-		familyUid++;
-		var num = currentCount + 1;
-		const html = `
-			<div class="stsrc-family-member-item">
-				<h3>Family Member ${num}</h3>
-				<div class="stsrc-form-row">
-					<div class="stsrc-form-group">
-						<label>First Name</label>
-						<input type="text" name="family_members[${num}][first_name]" required>
-					</div>
-					<div class="stsrc-form-group">
-						<label>Last Name</label>
-						<input type="text" name="family_members[${num}][last_name]" required>
-					</div>
-				</div>
-				<div class="stsrc-form-group">
-					<label>Email (optional)</label>
-					<input type="email" name="family_members[${num}][email]">
-				</div>
-				<button type="button" class="stsrc-button stsrc-button-danger stsrc-remove-family-member">Remove</button>
-			</div>
-		`;
-		$('#stsrc-family-members-container').append(html);
-		familyMemberCount = currentCount + 1;
-		updateOrderSummary();
-	});
-
-	// Remove family member
-	$(document).on('click', '.stsrc-remove-family-member', function() {
-		$(this).closest('.stsrc-family-member-item').remove();
-		reindexMembers('#stsrc-family-members-container', 'Family Member', false);
-		familyMemberCount = $('#stsrc-family-members-container').children().length;
+		updateFamilyMemberCount();
 		updateOrderSummary();
 	});
 
