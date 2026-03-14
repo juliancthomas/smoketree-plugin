@@ -235,6 +235,18 @@ class STSRC_Ajax_Handler {
 		$existing_member = STSRC_Member_DB::get_member_by_email( $data['email'] );
 		
 		if ( $existing_member ) {
+			// If member is deleted, trigger restore flow instead of re-registration.
+			if ( 'deleted' === $existing_member['status'] ) {
+				$this->send_restore_account_email( $existing_member );
+				wp_send_json_success(
+					array(
+						'message' => 'We found a previous account with this email. A restoration link has been sent.',
+						'code'    => 'restore_email_sent',
+					)
+				);
+				return;
+			}
+
 			// If member is cancelled, send reactivation email instead
 			if ( 'cancelled' === $existing_member['status'] ) {
 				$this->send_reactivation_email( $existing_member, $data );
@@ -3683,6 +3695,57 @@ class STSRC_Ajax_Handler {
 				'member_id'            => $existing_member['member_id'],
 				'email'                => $existing_member['email'],
 				'needs_password_reset' => $needs_password_reset,
+			)
+		);
+	}
+
+	/**
+	 * Send restore-account email for deleted members.
+	 *
+	 * @since    1.2.0
+	 * @param    array $member Deleted member record.
+	 * @return   void
+	 */
+	private function send_restore_account_email( array $member ): void {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+
+		$token = bin2hex( random_bytes( 32 ) );
+		set_transient(
+			'stsrc_restore_account_' . $token,
+			array(
+				'member_id' => (int) ( $member['member_id'] ?? 0 ),
+				'email'     => sanitize_email( $member['email'] ?? '' ),
+				'created'   => time(),
+			),
+			24 * HOUR_IN_SECONDS
+		);
+
+		$restore_url = add_query_arg(
+			array(
+				'action' => 'stsrc_restore_account',
+				'token'  => $token,
+			),
+			home_url( '/' )
+		);
+
+		$email_service = new STSRC_Email_Service();
+		$email_service->send_email(
+			'restore-account.php',
+			array(
+				'first_name'  => sanitize_text_field( $member['first_name'] ?? '' ),
+				'restore_url' => esc_url_raw( $restore_url ),
+				'expires_in'  => '24 hours',
+			),
+			sanitize_email( $member['email'] ?? '' ),
+			__( 'Restore Your Smoketree Account', 'smoketree-plugin' )
+		);
+
+		STSRC_Logger::info(
+			'Restore account email sent for deleted member.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => (int) ( $member['member_id'] ?? 0 ),
+				'email'     => sanitize_email( $member['email'] ?? '' ),
 			)
 		);
 	}
