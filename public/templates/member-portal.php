@@ -62,6 +62,9 @@ $family_members = STSRC_Family_Member_DB::get_family_members( (int) $member['mem
 // Get extra members
 require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-extra-member-db.php';
 $extra_members = STSRC_Extra_Member_DB::get_extra_members( (int) $member['member_id'] );
+$deleted_family_members = STSRC_Family_Member_DB::get_deleted_by_member_id( (int) $member['member_id'] );
+$deleted_extra_members  = STSRC_Extra_Member_DB::get_deleted_by_member_id( (int) $member['member_id'] );
+$has_deleted_members    = ! empty( $deleted_family_members ) || ! empty( $deleted_extra_members );
 
 // Get guest pass balance
 require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-guest-pass-db.php';
@@ -155,6 +158,62 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<!-- Extra Members Section -->
 		<?php if ( ! empty( $membership_type ) && 'household' === strtolower( $membership_type['name'] ) ) : ?>
 			<?php include plugin_dir_path( __FILE__ ) . '../partials/extra-members.php'; ?>
+		<?php endif; ?>
+
+		<!-- Restore Deleted Members Section -->
+		<?php if ( $has_deleted_members ) : ?>
+			<div class="stsrc-portal-section">
+				<h2><?php echo esc_html__( 'Restore Previous Members', 'smoketree-plugin' ); ?></h2>
+				<p class="stsrc-description"><?php echo esc_html__( 'Restore previously deleted family or extra members to make them active again.', 'smoketree-plugin' ); ?></p>
+
+				<?php if ( ! empty( $deleted_family_members ) ) : ?>
+					<h3><?php echo esc_html__( 'Deleted Family Members', 'smoketree-plugin' ); ?></h3>
+					<div class="stsrc-family-members-list">
+						<?php foreach ( $deleted_family_members as $family_member ) : ?>
+							<div class="stsrc-family-member-item">
+								<div class="stsrc-member-details">
+									<strong><?php echo esc_html( $family_member['first_name'] . ' ' . $family_member['last_name'] ); ?></strong>
+									<?php if ( ! empty( $family_member['email'] ) ) : ?>
+										<span class="stsrc-member-email"><?php echo esc_html( $family_member['email'] ); ?></span>
+									<?php endif; ?>
+								</div>
+								<div class="stsrc-member-actions">
+									<button
+										type="button"
+										class="stsrc-button stsrc-button-secondary stsrc-restore-family-member"
+										data-id="<?php echo esc_attr( $family_member['family_member_id'] ); ?>">
+										<?php echo esc_html__( 'Restore', 'smoketree-plugin' ); ?>
+									</button>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $deleted_extra_members ) ) : ?>
+					<h3><?php echo esc_html__( 'Deleted Extra Members', 'smoketree-plugin' ); ?></h3>
+					<div class="stsrc-extra-members-list">
+						<?php foreach ( $deleted_extra_members as $extra_member ) : ?>
+							<div class="stsrc-extra-member-item">
+								<div class="stsrc-member-details">
+									<strong><?php echo esc_html( $extra_member['first_name'] . ' ' . $extra_member['last_name'] ); ?></strong>
+									<?php if ( ! empty( $extra_member['email'] ) ) : ?>
+										<span class="stsrc-member-email"><?php echo esc_html( $extra_member['email'] ); ?></span>
+									<?php endif; ?>
+								</div>
+								<div class="stsrc-member-actions">
+									<button
+										type="button"
+										class="stsrc-button stsrc-button-secondary stsrc-restore-extra-member"
+										data-id="<?php echo esc_attr( $extra_member['extra_member_id'] ); ?>">
+										<?php echo esc_html__( 'Restore', 'smoketree-plugin' ); ?>
+									</button>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+			</div>
 		<?php endif; ?>
 
 		<!-- Access Codes Section -->

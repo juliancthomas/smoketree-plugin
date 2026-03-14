@@ -303,9 +303,11 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_add_family_member', $ajax_handler, 'add_family_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_family_member', $ajax_handler, 'update_family_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_family_member', $ajax_handler, 'delete_family_member' );
+		$this->loader->add_action( 'wp_ajax_stsrc_restore_family_member', $ajax_handler, 'restore_family_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_add_extra_member', $ajax_handler, 'add_extra_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_extra_member', $ajax_handler, 'update_extra_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_extra_member', $ajax_handler, 'delete_extra_member' );
+		$this->loader->add_action( 'wp_ajax_stsrc_restore_extra_member', $ajax_handler, 'restore_extra_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_purchase_guest_passes', $ajax_handler, 'purchase_guest_passes' );
 		$this->loader->add_action( 'wp_ajax_stsrc_use_guest_pass', $ajax_handler, 'use_guest_pass' );
 		$this->loader->add_action( 'wp_ajax_stsrc_get_customer_portal_url', $ajax_handler, 'get_customer_portal_url' );

@@ -100,6 +100,7 @@
 			this.initPasswordChange();
 			this.initFamilyMembers();
 			this.initExtraMembers();
+			this.initRestoreMembers();
 			this.initGuestPasses();
 			this.initStripePortal();
 			this.initAutoRenewal();
@@ -403,6 +404,75 @@
 					if (response.success) {
 						this.showNotice(response.data.message, 'success', $('#stsrc-portal-messages'));
 						setTimeout(() => location.reload(), 1000);
+					}
+				});
+			});
+		},
+
+		/**
+		 * Initialize restore actions for deleted portal members.
+		 */
+		initRestoreMembers: function() {
+			$(document).on('click', '.stsrc-restore-family-member', function() {
+				const familyMemberId = parseInt($(this).data('id'), 10) || 0;
+				if (!familyMemberId) {
+					return;
+				}
+
+				if (!window.confirm('Restore this family member?')) {
+					return;
+				}
+
+				$.ajax({
+					url: STSRCPublic.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'stsrc_restore_family_member',
+						nonce: STSRCPublic.portalNonce || STSRCPublic.nonce,
+						family_member_id: familyMemberId
+					},
+					success: function(response) {
+						if (response.success) {
+							STSRCPublic.showNotice(response.data.message || 'Family member restored.', 'success', $('#stsrc-portal-messages'));
+							setTimeout(() => location.reload(), 800);
+						} else {
+							STSRCPublic.showNotice((response.data && response.data.message) || 'Failed to restore family member.', 'error', $('#stsrc-portal-messages'));
+						}
+					},
+					error: function() {
+						STSRCPublic.showNotice('An error occurred. Please try again.', 'error', $('#stsrc-portal-messages'));
+					}
+				});
+			});
+
+			$(document).on('click', '.stsrc-restore-extra-member', function() {
+				const extraMemberId = parseInt($(this).data('id'), 10) || 0;
+				if (!extraMemberId) {
+					return;
+				}
+
+				if (!window.confirm('Restore this extra member?')) {
+					return;
+				}
+
+				$.ajax({
+					url: STSRCPublic.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'stsrc_restore_extra_member',
+						nonce: STSRCPublic.portalNonce || STSRCPublic.nonce,
+						extra_member_id: extraMemberId
+					},
+					success: function(response) {
+						if (response.success) {
+							STSRCPublic.showNotice(response.data.message || 'Extra member restored.', 'success', $('#stsrc-portal-messages'));
+							setTimeout(() => location.reload(), 800);
+						} else {
+							STSRCPublic.showNotice((response.data && response.data.message) || 'Failed to restore extra member.', 'error', $('#stsrc-portal-messages'));
+						}
+					},
+					error: function() {
+						STSRCPublic.showNotice('An error occurred. Please try again.', 'error', $('#stsrc-portal-messages'));
 					}
 				});
 			});

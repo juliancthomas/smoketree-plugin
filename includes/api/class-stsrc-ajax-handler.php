@@ -1508,6 +1508,55 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Restore soft-deleted family member for current member.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	public function restore_family_member(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => 'You must be logged in.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+		$nonce     = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_portal_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$family_member_id = intval( $post_data['family_member_id'] ?? 0 );
+		if ( $family_member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid family member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+
+		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		$family_member = STSRC_Family_Member_DB::get_by_id( $family_member_id, true );
+		if ( ! $family_member || (int) $family_member['member_id'] !== (int) $member['member_id'] || 'deleted' !== ( $family_member['status'] ?? '' ) ) {
+			wp_send_json_error( array( 'message' => 'Family member cannot be restored.' ) );
+			return;
+		}
+
+		$result = STSRC_Family_Member_DB::restore( $family_member_id );
+		if ( ! $result ) {
+			wp_send_json_error( array( 'message' => 'Failed to restore family member.' ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'message' => 'Family member restored successfully.' ) );
+	}
+
+	/**
 	 * Add extra member(s).
 	 *
 	 * Accepts one or more extra members from the member portal (up to the
@@ -1847,6 +1896,55 @@ class STSRC_Ajax_Handler {
 		} else {
 			wp_send_json_error( array( 'message' => 'Failed to delete extra member.' ) );
 		}
+	}
+
+	/**
+	 * Restore soft-deleted extra member for current member.
+	 *
+	 * @since    1.2.0
+	 * @return   void
+	 */
+	public function restore_extra_member(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => 'You must be logged in.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+		$nonce     = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_portal_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$extra_member_id = intval( $post_data['extra_member_id'] ?? 0 );
+		if ( $extra_member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid extra member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+
+		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		$extra_member = STSRC_Extra_Member_DB::get_by_id( $extra_member_id, true );
+		if ( ! $extra_member || (int) $extra_member['member_id'] !== (int) $member['member_id'] || 'deleted' !== ( $extra_member['status'] ?? '' ) ) {
+			wp_send_json_error( array( 'message' => 'Extra member cannot be restored.' ) );
+			return;
+		}
+
+		$result = STSRC_Extra_Member_DB::restore( $extra_member_id );
+		if ( ! $result ) {
+			wp_send_json_error( array( 'message' => 'Failed to restore extra member.' ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'message' => 'Extra member restored successfully.' ) );
 	}
 
 	/**
