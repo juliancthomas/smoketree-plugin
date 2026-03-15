@@ -312,7 +312,6 @@ class STSRC_Renewal_API {
 	 */
 	private function get_rejection_message( string $reason ): string {
 		$messages = array(
-			'demo_account'         => __( 'Demo accounts cannot process renewals. Please use a real member account to renew.', 'smoketree-plugin' ),
 			'renewal_disabled'     => __( 'The renewal window is currently closed. Please check back later or contact the club for assistance.', 'smoketree-plugin' ),
 			'member_not_found'     => __( 'We could not locate your member record. Please contact the club for assistance.', 'smoketree-plugin' ),
 			'member_not_eligible'  => __( 'Your account is not currently eligible for renewal. This may be due to a cancelled membership. Please contact the club for details.', 'smoketree-plugin' ),
