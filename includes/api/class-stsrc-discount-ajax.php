@@ -54,13 +54,15 @@ class STSRC_Discount_Ajax {
 			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'smoketree-plugin' ) ), 403 );
 		}
 
-		$code = isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '';
+		$code               = isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '';
+		$membership_type_id = isset( $_POST['membership_type_id'] ) ? absint( wp_unslash( $_POST['membership_type_id'] ) ) : 0;
+
 		if ( '' === $code ) {
 			wp_send_json_error( array( 'message' => __( 'Referral code is required.', 'smoketree-plugin' ) ), 400 );
 		}
 
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
-		$result = STSRC_Discount_Service::validate_affiliate_code( $code );
+		$result = STSRC_Discount_Service::validate_affiliate_code( $code, $membership_type_id );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );

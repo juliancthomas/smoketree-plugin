@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $settings = $data['settings'] ?? array();
 $acf_available = $data['acf_available'] ?? false;
+$membership_types = $data['membership_types'] ?? array();
 ?>
 
 <div class="wrap">
@@ -203,10 +204,36 @@ $acf_available = $data['acf_available'] ?? false;
 							</td>
 						</tr>
 						<tr>
-							<th><label for="affiliate_new_member_discount"><?php echo esc_html__( 'New Member Referral Discount ($)', 'smoketree-plugin' ); ?></label></th>
+							<th><?php echo esc_html__( 'Referral Discount per Membership Type ($)', 'smoketree-plugin' ); ?></th>
 							<td>
-								<input type="number" name="affiliate_new_member_discount" id="affiliate_new_member_discount" value="<?php echo esc_attr( $settings['affiliate_new_member_discount'] ?? 500 ); ?>" class="regular-text" step="0.01" min="0">
-								<p class="description"><?php echo esc_html__( 'Dollar discount applied to a new member who uses a valid referral code.', 'smoketree-plugin' ); ?></p>
+								<?php
+								$affiliate_type_discounts = $settings['affiliate_type_discounts'] ?? array();
+								?>
+								<table class="widefat stsrc-affiliate-type-discounts-table" style="max-width:500px;">
+									<thead>
+										<tr>
+											<th><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></th>
+											<th><?php echo esc_html__( 'Price', 'smoketree-plugin' ); ?></th>
+											<th><?php echo esc_html__( 'Referral Discount ($)', 'smoketree-plugin' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $membership_types as $mt ) : ?>
+											<?php $mt_id = (int) $mt['membership_type_id']; ?>
+											<tr>
+												<td><?php echo esc_html( (string) $mt['name'] ); ?></td>
+												<td>$<?php echo esc_html( number_format( (float) $mt['price'], 2 ) ); ?></td>
+												<td>
+													<input type="number"
+														name="affiliate_type_discounts[<?php echo esc_attr( $mt_id ); ?>]"
+														value="<?php echo esc_attr( isset( $affiliate_type_discounts[ (string) $mt_id ] ) ? $affiliate_type_discounts[ (string) $mt_id ] : '' ); ?>"
+														class="small-text" step="0.01" min="0" placeholder="0">
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+								<p class="description"><?php echo esc_html__( 'Dollar discount applied to a new member who uses a valid referral code, per membership type. Leave blank for no discount.', 'smoketree-plugin' ); ?></p>
 							</td>
 						</tr>
 						<tr>

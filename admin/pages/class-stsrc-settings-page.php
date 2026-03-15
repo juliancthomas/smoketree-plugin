@@ -47,6 +47,7 @@ class STSRC_Settings_Page {
 		// Load recent auto-renewal payment logs
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-payment-log-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . '../includes/database/class-stsrc-membership-db.php';
 
 		$renewal_logs = STSRC_Payment_Log_DB::get_payment_logs( array( 'payment_type' => 'auto_renewal' ) );
 		$renewal_logs = array_slice( $renewal_logs, 0, 50 );
@@ -66,6 +67,7 @@ class STSRC_Settings_Page {
 			'balance_tools_result'  => $balance_tools_result,
 			'renewal_logs'          => $renewal_logs,
 			'renewal_member_names'  => $renewal_member_names,
+			'membership_types'      => STSRC_Membership_DB::get_all_membership_types(),
 		);
 
 		// Include settings template
@@ -167,9 +169,13 @@ class STSRC_Settings_Page {
 		$settings['contact_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 		$settings['season_renewal_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_season_renewal_date', 'option' ) : get_option( 'stsrc_season_renewal_date', '' );
 		$settings['tax_rate'] = function_exists( 'get_field' ) ? get_field( 'stsrc_tax_rate', 'option' ) : get_option( 'stsrc_tax_rate', '0' );
-		$settings['affiliate_new_member_discount'] = function_exists( 'get_field' )
-			? ( get_field( 'stsrc_affiliate_new_member_discount', 'option' ) ?: 500 )
-			: get_option( 'stsrc_affiliate_new_member_discount', 500 );
+		$raw_affiliate_discounts = function_exists( 'get_field' )
+			? get_field( 'stsrc_affiliate_type_discounts', 'option' )
+			: get_option( 'stsrc_affiliate_type_discounts', '' );
+		if ( is_string( $raw_affiliate_discounts ) && '' !== $raw_affiliate_discounts ) {
+			$raw_affiliate_discounts = json_decode( $raw_affiliate_discounts, true );
+		}
+		$settings['affiliate_type_discounts'] = is_array( $raw_affiliate_discounts ) ? $raw_affiliate_discounts : array();
 		$settings['affiliate_referrer_credit'] = function_exists( 'get_field' )
 			? ( get_field( 'stsrc_affiliate_referrer_credit', 'option' ) ?: 50 )
 			: get_option( 'stsrc_affiliate_referrer_credit', 50 );

@@ -100,10 +100,11 @@ class STSRC_Discount_Service {
 	 * Validate an affiliate code.
 	 *
 	 * @since    1.4.0
-	 * @param    string $code Affiliate code.
+	 * @param    string $code               Affiliate code.
+	 * @param    int    $membership_type_id Selected membership type ID.
 	 * @return   array|WP_Error
 	 */
-	public static function validate_affiliate_code( string $code ): array|WP_Error {
+	public static function validate_affiliate_code( string $code, int $membership_type_id = 0 ): array|WP_Error {
 		global $wpdb;
 
 		$members_table = $wpdb->prefix . 'stsrc_members';
@@ -131,8 +132,11 @@ class STSRC_Discount_Service {
 			return new WP_Error( 'inactive_referral_code', __( 'This referral code is no longer active.', 'smoketree-plugin' ) );
 		}
 
-		$discount_amount = self::get_affiliate_new_member_discount();
-		$label           = 'Referral Discount - -$' . number_format( $discount_amount, 2 );
+		$discount_amount = self::get_affiliate_new_member_discount( $membership_type_id );
+		if ( $discount_amount <= 0 ) {
+			return new WP_Error( 'no_referral_discount', __( 'No referral discount is configured for the selected membership type.', 'smoketree-plugin' ) );
+		}
+		$label = 'Referral Discount - -$' . number_format( $discount_amount, 2 );
 
 		return array(
 			'referrer_member_id' => (int) $member->member_id,
@@ -397,8 +401,9 @@ class STSRC_Discount_Service {
 			return;
 		}
 
-		$credit_amount = self::get_affiliate_referrer_credit();
-		$discount      = isset( $payload['discount_amount'] ) ? (float) $payload['discount_amount'] : self::get_affiliate_new_member_discount();
+		$credit_amount     = self::get_affiliate_referrer_credit();
+		$membership_type_id = isset( $payload['membership_type_id'] ) ? (int) $payload['membership_type_id'] : 0;
+		$discount          = isset( $payload['discount_amount'] ) ? (float) $payload['discount_amount'] : self::get_affiliate_new_member_discount( $membership_type_id );
 
 		$result = STSRC_Affiliate_Referrals_DB::create_referral(
 			array(
@@ -448,21 +453,31 @@ class STSRC_Discount_Service {
 	}
 
 	/**
-	 * Get configured affiliate discount amount with fallback.
+	 * Get configured affiliate discount amount for a membership type.
 	 *
-	 * @since    1.4.0
+	 * @since    1.5.0
+	 * @param    int $membership_type_id Membership type ID.
 	 * @return   float
 	 */
-	private static function get_affiliate_new_member_discount(): float {
-		$value = get_option( 'stsrc_affiliate_new_member_discount', 500 );
-		if ( function_exists( 'get_field' ) ) {
-			$field_value = call_user_func( 'get_field', 'stsrc_affiliate_new_member_discount', 'option' );
-			if ( null !== $field_value && '' !== $field_value ) {
-				$value = $field_value;
-			}
+	private static function get_affiliate_new_member_discount( int $membership_type_id ): float {
+		$raw = function_exists( 'get_field' )
+			? call_user_func( 'get_field', 'stsrc_affiliate_type_discounts', 'option' )
+			: null;
+
+		if ( null === $raw || '' === $raw ) {
+			$raw = get_option( 'stsrc_affiliate_type_discounts', '' );
 		}
 
-		return max( 0.00, (float) $value );
+		if ( is_string( $raw ) && '' !== $raw ) {
+			$raw = json_decode( $raw, true );
+		}
+
+		if ( ! is_array( $raw ) ) {
+			return 0.00;
+		}
+
+		$type_key = (string) $membership_type_id;
+		return isset( $raw[ $type_key ] ) ? max( 0.00, (float) $raw[ $type_key ] ) : 0.00;
 	}
 
 	/**

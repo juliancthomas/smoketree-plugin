@@ -715,7 +715,7 @@ class STSRC_Ajax_Handler {
 		}
 
 		if ( 'affiliate' === $discount_type ) {
-			$validated = STSRC_Discount_Service::validate_affiliate_code( $discount_code );
+			$validated = STSRC_Discount_Service::validate_affiliate_code( $discount_code, $membership_type_id );
 			if ( is_wp_error( $validated ) ) {
 				return $validated;
 			}
@@ -3156,9 +3156,16 @@ class STSRC_Ajax_Handler {
 		if ( isset( $post_data['tax_rate'] ) ) {
 			update_option( 'stsrc_tax_rate', sanitize_text_field( $post_data['tax_rate'] ) );
 		}
-		if ( isset( $post_data['affiliate_new_member_discount'] ) ) {
-			$affiliate_discount = max( 0, floatval( $post_data['affiliate_new_member_discount'] ) );
-			update_option( 'stsrc_affiliate_new_member_discount', number_format( $affiliate_discount, 2, '.', '' ) );
+		if ( isset( $post_data['affiliate_type_discounts'] ) && is_array( $post_data['affiliate_type_discounts'] ) ) {
+			$cleaned = array();
+			foreach ( $post_data['affiliate_type_discounts'] as $type_id => $value ) {
+				$type_id = absint( $type_id );
+				$value   = round( max( 0, (float) $value ), 2 );
+				if ( $type_id > 0 && $value > 0 ) {
+					$cleaned[ (string) $type_id ] = $value;
+				}
+			}
+			update_option( 'stsrc_affiliate_type_discounts', wp_json_encode( $cleaned ) );
 		}
 		if ( isset( $post_data['affiliate_referrer_credit'] ) ) {
 			$affiliate_credit = max( 0, floatval( $post_data['affiliate_referrer_credit'] ) );
@@ -3240,9 +3247,16 @@ class STSRC_Ajax_Handler {
 					update_field( 'stsrc_contact_email', $contact_email, 'option' );
 				}
 			}
-			if ( isset( $post_data['affiliate_new_member_discount'] ) ) {
-				$affiliate_discount = max( 0, floatval( $post_data['affiliate_new_member_discount'] ) );
-				update_field( 'stsrc_affiliate_new_member_discount', number_format( $affiliate_discount, 2, '.', '' ), 'option' );
+			if ( isset( $post_data['affiliate_type_discounts'] ) && is_array( $post_data['affiliate_type_discounts'] ) ) {
+				$cleaned = array();
+				foreach ( $post_data['affiliate_type_discounts'] as $type_id => $value ) {
+					$type_id = absint( $type_id );
+					$value   = round( max( 0, (float) $value ), 2 );
+					if ( $type_id > 0 && $value > 0 ) {
+						$cleaned[ (string) $type_id ] = $value;
+					}
+				}
+				update_field( 'stsrc_affiliate_type_discounts', wp_json_encode( $cleaned ), 'option' );
 			}
 			if ( isset( $post_data['affiliate_referrer_credit'] ) ) {
 				$affiliate_credit = max( 0, floatval( $post_data['affiliate_referrer_credit'] ) );

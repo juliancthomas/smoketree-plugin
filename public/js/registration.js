@@ -171,13 +171,14 @@
 
 		function validateAffiliate(silent) {
 			var code = $.trim($affiliateInput.val());
+			var membershipTypeId = Number($('#membership_type_id').val() || 0);
 			if (!code) {
 				if (!silent) {
 					setFeedback($affiliateFeedback, 'Please enter a referral code.', 'error', false);
 				}
 				return;
 			}
-			postValidation('stsrc_validate_affiliate_code', { code: code }, function(data) {
+			postValidation('stsrc_validate_affiliate_code', { code: code, membership_type_id: membershipTypeId }, function(data) {
 				data.code = code;
 				applyDiscount('affiliate', data);
 			}, function(message) {
@@ -203,6 +204,8 @@
 		$('#membership_type_id').on('change', function() {
 			if (appliedState && appliedState.type === 'promo') {
 				validatePromo(true);
+			} else if (appliedState && appliedState.type === 'affiliate') {
+				validateAffiliate(true);
 			}
 		});
 
