@@ -18,6 +18,7 @@
 $club_name           = 'Smoketree Swim and Recreation Club';
 $portal_url          = home_url( '/member-portal/' );
 $contact_email       = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
+$whatsapp_url        = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
 $voting_details      = $voting_information ?? '';
 ?>
 <!DOCTYPE html>
@@ -87,6 +88,13 @@ $voting_details      = $voting_information ?? '';
 							<p style="text-align:center;">
 								<a href="<?php echo esc_url( $portal_url ); ?>" class="btn"><?php echo esc_html__( 'Review Civic Resources', 'smoketree-plugin' ); ?></a>
 							</p>
+
+							<?php if ( ! empty( $whatsapp_url ) ) : ?>
+								<p><?php echo esc_html__( 'Stay in the loop—join our neighborhood WhatsApp group for real-time updates, meeting reminders, and community discussions.', 'smoketree-plugin' ); ?></p>
+								<p style="text-align:center;">
+									<a href="<?php echo esc_url( $whatsapp_url ); ?>" class="btn" style="background-color:#25D366;"><?php echo esc_html__( 'Join the WhatsApp Group', 'smoketree-plugin' ); ?></a>
+								</p>
+							<?php endif; ?>
 
 							<p><?php echo esc_html__( 'We appreciate your commitment to the Smoketree community and look forward to collaborating with you on future initiatives.', 'smoketree-plugin' ); ?></p>
 						</td>

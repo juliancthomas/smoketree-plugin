@@ -196,6 +196,20 @@ $acf_available = $data['acf_available'] ?? false;
 					</table>
 				</div>
 
+				<!-- Community Links -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Community Links', 'smoketree-plugin' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="whatsapp_url"><?php echo esc_html__( 'WhatsApp Group Link', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="url" name="whatsapp_url" id="whatsapp_url" value="<?php echo esc_attr( $settings['whatsapp_url'] ?? '' ); ?>" class="large-text" placeholder="https://chat.whatsapp.com/...">
+								<p class="description"><?php echo esc_html__( 'Neighborhood WhatsApp group invite link. Included in welcome emails sent to new members. Leave blank to hide.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
 				<!-- Waiver Settings -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Waiver Agreement', 'smoketree-plugin' ); ?></h2>

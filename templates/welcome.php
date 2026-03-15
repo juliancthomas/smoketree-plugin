@@ -20,6 +20,7 @@ $club_name         = 'Smoketree Swim and Recreation Club';
 $portal_url        = home_url( '/member-portal/' );
 $guest_pass_url    = home_url( '/guest-pass-portal/' );
 $contact_email     = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
+$whatsapp_url      = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
 $membership_label  = $membership_type ?? '';
 ?>
 <!DOCTYPE html>
@@ -96,6 +97,14 @@ $membership_label  = $membership_type ?? '';
 								<li><?php echo esc_html__( 'Club socials, swim events, and family nights all season long', 'smoketree-plugin' ); ?></li>
 								<li><?php echo esc_html__( 'Easy guest pass sharing with friends and family', 'smoketree-plugin' ); ?></li>
 							</ul>
+
+							<?php if ( ! empty( $whatsapp_url ) ) : ?>
+								<h2><?php echo esc_html__( 'Stay connected', 'smoketree-plugin' ); ?></h2>
+								<p><?php echo esc_html__( 'Join our neighborhood WhatsApp group to stay in the loop on pool hours, last-minute socials, and everything happening around the club.', 'smoketree-plugin' ); ?></p>
+								<p style="text-align:center;">
+									<a href="<?php echo esc_url( $whatsapp_url ); ?>" class="btn" style="background-color:#25D366;"><?php echo esc_html__( 'Join the WhatsApp Group', 'smoketree-plugin' ); ?></a>
+								</p>
+							<?php endif; ?>
 
 							<p><?php echo esc_html__( 'If you need anything, just reply to this email or reach out through the portal. Our team is here to help you make the most of your membership.', 'smoketree-plugin' ); ?></p>
 						</td>

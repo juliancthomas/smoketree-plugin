@@ -2971,6 +2971,11 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_google_places_api_key', sanitize_text_field( $post_data['google_places_api_key'] ) );
 		}
 
+		// Save community links
+		if ( isset( $post_data['whatsapp_url'] ) ) {
+			update_option( 'stsrc_whatsapp_url', esc_url_raw( $post_data['whatsapp_url'] ) );
+		}
+
 		// Save payment settings (v1.1.0+)
 		if ( isset( $post_data['minimum_balance_payment'] ) ) {
 			$minimum_payment = floatval( $post_data['minimum_balance_payment'] );
@@ -2997,6 +3002,9 @@ class STSRC_Ajax_Handler {
 			}
 			if ( isset( $post_data['google_places_api_key'] ) ) {
 				update_field( 'stsrc_google_places_api_key', sanitize_text_field( $post_data['google_places_api_key'] ), 'option' );
+			}
+			if ( isset( $post_data['whatsapp_url'] ) ) {
+				update_field( 'stsrc_whatsapp_url', esc_url_raw( $post_data['whatsapp_url'] ), 'option' );
 			}
 			if ( isset( $post_data['contact_email'] ) ) {
 				$raw_contact_email = is_array( $post_data['contact_email'] ) ? '' : $post_data['contact_email'];

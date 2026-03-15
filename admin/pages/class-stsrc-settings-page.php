@@ -186,6 +186,9 @@ class STSRC_Settings_Page {
 		// Google Places Settings
 		$settings['google_places_api_key'] = function_exists( 'get_field' ) ? get_field( 'stsrc_google_places_api_key', 'option' ) : get_option( 'stsrc_google_places_api_key', '' );
 
+		// Community Links
+		$settings['whatsapp_url'] = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
+
 		return $settings;
 	}
 }
