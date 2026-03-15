@@ -301,28 +301,42 @@ class STSRC_Guest_Pass_DB {
 	public static function get_total_balance( ?int $member_id = null ): int {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'stsrc_guest_passes';
+		$table         = $wpdb->prefix . 'stsrc_guest_passes';
+		$members_table = $wpdb->prefix . 'stsrc_members';
 
 		$credits_in = self::sql_in_placeholders( self::$credit_types );
 		$debits_in  = self::sql_in_placeholders( self::$debit_types );
 
-		$member_where = '';
-		$params       = array();
-
 		if ( null !== $member_id ) {
-			$member_where = ' AND member_id = %d';
-			$params       = array_merge( self::$credit_types, array( $member_id ), self::$debit_types, array( $member_id ) );
-		} else {
-			$params = array_merge( self::$credit_types, self::$debit_types );
+			$balance = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT
+						COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$credits_in}) AND member_id = %d), 0)
+						-
+						COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$debits_in}) AND member_id = %d), 0)",
+					...array_merge( self::$credit_types, array( $member_id ), self::$debit_types, array( $member_id ) )
+				)
+			);
+
+			return max( 0, (int) $balance );
 		}
 
 		$balance = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT
-					COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$credits_in}){$member_where}), 0)
-					-
-					COALESCE((SELECT SUM(quantity) FROM {$table} WHERE type IN ({$debits_in}){$member_where}), 0)",
-				...$params
+				"SELECT COALESCE(
+					SUM(
+						CASE
+							WHEN gp.type IN ({$credits_in}) THEN gp.quantity
+							WHEN gp.type IN ({$debits_in}) THEN -gp.quantity
+							ELSE 0
+						END
+					),
+					0
+				)
+				FROM {$table} gp
+				INNER JOIN {$members_table} m ON m.member_id = gp.member_id
+				WHERE m.is_demo = 0",
+				...array_merge( self::$credit_types, self::$debit_types )
 			)
 		);
 

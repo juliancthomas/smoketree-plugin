@@ -2470,6 +2470,7 @@ class STSRC_Ajax_Handler {
 		if ( ! empty( $_POST['search'] ?? $_GET['search'] ?? '' ) ) {
 			$filters['search'] = sanitize_text_field( $_POST['search'] ?? $_GET['search'] ?? '' );
 		}
+		$filters['is_demo'] = 0;
 
 		// Get members
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
