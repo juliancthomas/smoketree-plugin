@@ -3635,8 +3635,9 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		$new_email = sanitize_email( $post_data['email'] );
-		if ( $new_email !== $current_member['email'] ) {
+		$new_email     = sanitize_email( $post_data['email'] );
+		$email_changed = $new_email !== $current_member['email'];
+		if ( $email_changed ) {
 			$existing = STSRC_Member_DB::get_member_by_email( $new_email );
 			if ( $existing && $existing['member_id'] !== $member_id ) {
 				wp_send_json_error( array( 'message' => 'A member with this email already exists.' ) );
@@ -3664,6 +3665,30 @@ class STSRC_Ajax_Handler {
 			'referral_source'       => sanitize_text_field( $post_data['referral_source'] ?? '' ),
 			'auto_renewal_enabled'  => isset( $post_data['auto_renewal_enabled'] ) ? 1 : 0,
 		);
+
+		// Sync email change to wp_users before updating the member record
+		if ( $email_changed && ! empty( $current_member['user_id'] ) ) {
+			$wp_user_update = wp_update_user(
+				array(
+					'ID'         => $current_member['user_id'],
+					'user_email' => $new_email,
+				)
+			);
+
+			if ( is_wp_error( $wp_user_update ) ) {
+				STSRC_Logger::error(
+					'Failed to update WordPress user email during admin member update.',
+					array(
+						'method'    => __METHOD__,
+						'member_id' => $member_id,
+						'user_id'   => $current_member['user_id'],
+						'error'     => $wp_user_update->get_error_message(),
+					)
+				);
+				wp_send_json_error( array( 'message' => 'Failed to update WordPress user email.' ) );
+				return;
+			}
+		}
 
 		// Update member
 		$result = STSRC_Member_DB::update_member( $member_id, $update_data );
