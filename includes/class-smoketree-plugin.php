@@ -411,6 +411,7 @@ class Smoketree_Plugin {
 		// Admin endpoints (admin capability required)
 		$this->loader->add_action( 'wp_ajax_stsrc_create_member', $ajax_handler, 'create_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_member', $ajax_handler, 'update_member' );
+		$this->loader->add_action( 'wp_ajax_stsrc_set_demo_flag', $ajax_handler, 'set_demo_flag' );
 		$this->loader->add_action( 'wp_ajax_stsrc_soft_delete_member', $ajax_handler, 'soft_delete_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_member', $ajax_handler, 'delete_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_reactivate_member', $ajax_handler, 'reactivate_member_admin' );

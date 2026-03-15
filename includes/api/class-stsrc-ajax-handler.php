@@ -2381,6 +2381,53 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Permanently flag a member account as demo.
+	 *
+	 * @since    1.5.0
+	 * @return   void
+	 */
+	public function set_demo_flag(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$raw_nonce = sanitize_text_field( $_POST['nonce'] ?? $_POST['_ajax_nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $raw_nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$member_id = absint( $_POST['member_id'] ?? 0 );
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( empty( $member ) ) {
+			wp_send_json_error( array( 'message' => __( 'Member not found.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		$updated = STSRC_Member_DB::set_demo_flag( $member_id );
+		if ( ! $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Unable to flag member as demo.', 'smoketree-plugin' ) ) );
+			return;
+		}
+
+		delete_transient( 'stsrc_outstanding_balance_stats' );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Member has been permanently flagged as a demo account.', 'smoketree-plugin' ),
+			)
+		);
+	}
+
+	/**
 	 * Export members to CSV.
 	 *
 	 * @since    1.0.0
