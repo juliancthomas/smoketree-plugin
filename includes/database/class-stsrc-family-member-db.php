@@ -460,6 +460,28 @@ class STSRC_Family_Member_DB {
 	}
 
 	/**
+	 * Apply family-member retention set for a renewal transition.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param int[] $retain_ids Family member IDs to keep active.
+	 * @return bool
+	 */
+	public static function apply_renewal_selection( int $member_id, array $retain_ids ): bool {
+		$retain_ids = array_values( array_unique( array_map( 'absint', $retain_ids ) ) );
+		$retain_ids = array_filter( $retain_ids );
+
+		if ( ! self::member_owns_ids( $member_id, $retain_ids ) ) {
+			return false;
+		}
+
+		$active_ids  = self::get_active_ids_by_member( $member_id );
+		$to_soft_delete = array_values( array_diff( $active_ids, $retain_ids ) );
+		self::soft_delete_member_ids( $member_id, $to_soft_delete );
+
+		return true;
+	}
+
+	/**
 	 * Check whether the family members table has a status column.
 	 *
 	 * @since    1.2.0

@@ -323,6 +323,21 @@ class STSRC_Renewal_Service {
 			);
 		}
 
+		global $wpdb;
+		$wpdb->query( 'START TRANSACTION' );
+
+		$member_updated = $this->apply_member_completion_updates( $renewal );
+		if ( ! $member_updated ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'applied' => false, 'reason' => 'member_update_failed', 'renewal_id' => $renewal_id );
+		}
+
+		$household_updated = $this->apply_household_completion_updates( $renewal );
+		if ( ! $household_updated ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'applied' => false, 'reason' => 'household_update_failed', 'renewal_id' => $renewal_id );
+		}
+
 		$applied = STSRC_Renewal_DB::transition_status(
 			$renewal_id,
 			$allowed_from,
@@ -334,8 +349,11 @@ class STSRC_Renewal_Service {
 		);
 
 		if ( ! $applied ) {
+			$wpdb->query( 'ROLLBACK' );
 			return array( 'applied' => false, 'reason' => 'no_update_applied', 'renewal_id' => $renewal_id );
 		}
+
+		$wpdb->query( 'COMMIT' );
 
 		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
 	}
@@ -550,6 +568,87 @@ class STSRC_Renewal_Service {
 				'new_extra_member_count'   => $new_extra_count,
 			),
 		);
+	}
+
+	/**
+	 * Apply final member-field updates for a completed renewal.
+	 *
+	 * @param array $renewal Renewal row.
+	 * @return bool
+	 */
+	private function apply_member_completion_updates( array $renewal ): bool {
+		$member_id = (int) ( $renewal['member_id'] ?? 0 );
+		$new_type_id = (int) ( $renewal['new_membership_type_id'] ?? 0 );
+
+		if ( $member_id <= 0 || $new_type_id <= 0 ) {
+			return false;
+		}
+
+		$target_type = STSRC_Membership_DB::get_membership_type( $new_type_id );
+		if ( empty( $target_type ) ) {
+			return false;
+		}
+
+		$snapshot = $this->decode_snapshot( (string) ( $renewal['transition_snapshot_json'] ?? '' ) );
+		$quote    = $snapshot['quote'] ?? array();
+		$method   = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		$season_renewal_date = STSRC_Renewal_Helpers::get_season_renewal_date();
+		$start_ts = strtotime( $season_renewal_date );
+
+		if ( false === $start_ts ) {
+			$start_ts = current_time( 'timestamp' );
+		}
+
+		$expiration_period_days = max( 0, absint( $target_type['expiration_period'] ?? 0 ) );
+		$expiration_ts          = strtotime( '+' . $expiration_period_days . ' days', $start_ts );
+		$expiration_date        = gmdate( 'Y-m-d', $expiration_ts ?: $start_ts );
+
+		return STSRC_Member_DB::apply_renewal_completion(
+			$member_id,
+			array(
+				'membership_type_id'       => $new_type_id,
+				'expiration_date'          => $expiration_date,
+				'original_membership_price' => (float) ( $quote['membership_base'] ?? ( $target_type['price'] ?? 0.00 ) ),
+				'balance_owed'             => 0.00,
+				'status'                   => 'active',
+				'final_payment_method'     => $method,
+			)
+		);
+	}
+
+	/**
+	 * Apply family/extra member reconciliation from transition snapshot.
+	 *
+	 * @param array $renewal Renewal row.
+	 * @return bool
+	 */
+	private function apply_household_completion_updates( array $renewal ): bool {
+		$member_id = (int) ( $renewal['member_id'] ?? 0 );
+		if ( $member_id <= 0 ) {
+			return false;
+		}
+
+		$snapshot = $this->decode_snapshot( (string) ( $renewal['transition_snapshot_json'] ?? '' ) );
+		$actions  = $snapshot['transition']['actions'] ?? array();
+		$retain_family = $this->normalize_ids( $actions['retain_family_ids'] ?? array() );
+		$retain_extra  = $this->normalize_ids( $actions['retain_extra_ids'] ?? array() );
+
+		$family_ok = STSRC_Family_Member_DB::apply_renewal_selection( $member_id, $retain_family );
+		$extra_ok  = STSRC_Extra_Member_DB::apply_renewal_selection( $member_id, $retain_extra );
+
+		return $family_ok && $extra_ok;
+	}
+
+	/**
+	 * Decode renewal transition snapshot JSON.
+	 *
+	 * @param string $snapshot_json Snapshot JSON.
+	 * @return array
+	 */
+	private function decode_snapshot( string $snapshot_json ): array {
+		$decoded = json_decode( $snapshot_json, true );
+
+		return is_array( $decoded ) ? $decoded : array();
 	}
 
 	/**

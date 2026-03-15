@@ -385,6 +385,37 @@ class STSRC_Member_DB {
 	}
 
 	/**
+	 * Apply member field updates after successful renewal completion.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param array $fields Allowed renewal fields.
+	 * @return bool
+	 */
+	public static function apply_renewal_completion( int $member_id, array $fields ): bool {
+		$allowed = array(
+			'membership_type_id',
+			'expiration_date',
+			'original_membership_price',
+			'balance_owed',
+			'status',
+			'final_payment_method',
+		);
+
+		$update_data = array();
+		foreach ( $allowed as $field ) {
+			if ( array_key_exists( $field, $fields ) ) {
+				$update_data[ $field ] = $fields[ $field ];
+			}
+		}
+
+		if ( empty( $update_data ) ) {
+			return false;
+		}
+
+		return self::update_member( $member_id, $update_data );
+	}
+
+	/**
 	 * Get members with balance matching criteria.
 	 *
 	 * @since    1.1.0
