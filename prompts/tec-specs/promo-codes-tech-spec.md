@@ -30,15 +30,15 @@
 - OpenGraph meta tags (nice-to-have).
 
 4. Database schema design
-- `wp_stsrc_promo_codes`: code definitions (name, type, value, expiry, limits, membership restriction, active flag).
+- `wp_stsrc_promo_codes`: code definitions (name, discount type, per-type discount values JSON, expiry, limits, active flag).
 - `wp_stsrc_promo_code_usages`: per-member-registration usage records (code_id, member_id, registration_id, discount_amount, used_at).
 - Affiliate code stored in `wp_stsrc_members` as a new `affiliate_code` column.
 - `wp_stsrc_affiliate_referrals`: referral tracking (referral_code, referrer_member_id, new_member_id, credit_amount, payout_status, referred_at).
 - No separate "referral code" table needed since codes are denormalized onto member row.
 
 5. Server actions and integrations
-- `validatePromoCode(code, membershipTypeId)` — checks existence, active, not expired, usage limit, one-time use, type restriction.
-- `validateAffiliateCode(code)` — checks existence, belonging to an active member.
+- `validatePromoCode(code, membershipTypeId)` — checks existence, active, not expired, usage limit, one-time use, per-type discount lookup.
+- `validateAffiliateCode(code, membershipTypeId)` — checks existence, belonging to an active member, per-type referral discount lookup.
 - `applyDiscountToRegistration(memberId, discountPayload, baseAmount)` — computes final discounted amount, records usage.
 - `generateAffiliateCode(lastName)` — generates REF-LASTNAME-#### with collision check.
 - `backfillAffiliateCodes()` — migration utility.
@@ -143,15 +143,14 @@ admin/partials/settings-form.php           (edit) — add ACF fields for affilia
 
 **Detailed implementation steps**:
 1. Add sub-menu page "Promo Codes" under the `stsrc-dashboard` menu in `class-stsrc-promo-codes-page.php`.
-2. Display a paginated table of existing codes: Code Name, Type, Value, Uses (used/limit), Expires, Membership Restriction, Status (Active/Inactive), Actions (Edit, Deactivate/Activate, Delete).
+2. Display a paginated table of existing codes: Code Name, Type, Discounts (per-type breakdown), Uses (used/limit), Expires, Status (Active/Inactive), Actions (Edit, Deactivate/Activate, Delete).
 3. "Add New Code" button opens an inline modal form (`promo-codes-form.php`) with fields:
    - **Code Name** — text, required, unique, max 50 chars, alphanumeric + hyphens.
-   - **Discount Type** — radio: `flat` | `percentage`.
-   - **Discount Value** — number, required. Flat: integer dollars. Percentage: 1–100.
+   - **Discount Type** — radio: `flat` | `percentage`. Applies uniformly to all membership types.
+   - **Discount per Membership Type** — table showing each membership type's name, price (read-only reference), and a discount value input. Types left blank (or 0) are not eligible for this code. At least one type must have a positive value.
    - **Expiration Date** — date picker, optional. If blank, code does not expire.
    - **One-Time Use** — checkbox. If checked, code is globally consumed after a single use (ignores Usage Limit).
    - **Usage Limit** — number, optional (leave blank for unlimited). Disabled when One-Time Use is checked.
-   - **Membership Type Restriction** — multi-select from existing membership types, or "All Types".
    - **Active** — checkbox, default true.
 4. Save triggers `wp_ajax_stsrc_create_promo_code` / `wp_ajax_stsrc_update_promo_code`.
 5. Delete triggers `wp_ajax_stsrc_delete_promo_code` with confirmation dialog.
@@ -270,14 +269,15 @@ admin/partials/settings-form.php           (edit) — add ACF fields for affilia
 3. `expires_at IS NULL OR expires_at >= NOW()` → else "This promo code has expired."
 4. `is_one_time_use = 1`: check `wp_stsrc_promo_code_usages.code_id` usage count = 0 → else "This promo code has already been used."
 5. `usage_limit IS NULL OR (SELECT COUNT(*) FROM wp_stsrc_promo_code_usages WHERE code_id = ?) < usage_limit` → else "This promo code's usage limit has been reached."
-6. `allowed_membership_type_ids IS NULL OR $requested_type IN allowed_membership_type_ids` → else "This promo code is not valid for the selected membership type."
-7. Return discount DTO: `{type, value, computed_dollar_amount, label}`.
+6. Look up `discount_values[membership_type_id]` → if absent or <= 0: "This promo code is not valid for the selected membership type."
+7. Return discount DTO: `{type, value (for this type), computed_dollar_amount, label}`.
 
 **Affiliate code validation sequence** (`STSRC_Discount_Service::validate_affiliate_code`):
 1. Normalize code to uppercase.
 2. Lookup in `wp_stsrc_members.affiliate_code` → else "Invalid referral code."
 3. Member `status = 'active'` → else "This referral code is no longer active."
-4. Return referrer DTO: `{member_id, full_name, discount_amount (from ACF stsrc_affiliate_new_member_discount)}`.
+4. Look up per-type discount from `stsrc_affiliate_type_discounts` option using the selected `membership_type_id` → if absent or <= 0: "No referral discount is configured for the selected membership type."
+5. Return referrer DTO: `{member_id, full_name, discount_amount}`.
 
 ---
 
@@ -367,12 +367,11 @@ CREATE TABLE wp_stsrc_promo_codes (
   code_id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   code_name          VARCHAR(50)     NOT NULL,
   discount_type      ENUM('flat','percentage') NOT NULL,
-  discount_value     DECIMAL(10,2)   NOT NULL,
+  discount_values    TEXT            NOT NULL COMMENT 'JSON object mapping membership_type_id to discount value, e.g. {"1":100,"2":75}',
   expires_at         DATETIME        NULL DEFAULT NULL,
   is_one_time_use    TINYINT(1)      NOT NULL DEFAULT 0,
   usage_limit        INT UNSIGNED    NULL DEFAULT NULL,
   usage_count        INT UNSIGNED    NOT NULL DEFAULT 0,
-  allowed_type_ids   TEXT            NULL DEFAULT NULL COMMENT 'JSON array of membership_type_ids, NULL = all',
   is_active          TINYINT(1)      NOT NULL DEFAULT 1,
   deleted_at         DATETIME        NULL DEFAULT NULL,
   created_at         DATETIME        NOT NULL,
@@ -695,10 +694,10 @@ Add to existing settings form (`admin/partials/settings-form.php`):
 
 | Field Key | Type | Default | Description |
 |---|---|---|---|
-| `stsrc_affiliate_new_member_discount` | Number | 500 | Dollar discount given to new member using a referral code |
+| `stsrc_affiliate_type_discounts` | JSON (Text) | `{}` | JSON object mapping `membership_type_id` to dollar discount for new members using a referral code, e.g. `{"1":100,"2":75,"3":50,"4":25}`. Types without an entry receive no referral discount. |
 | `stsrc_affiliate_referrer_credit` | Number | 50 | Dollar credit owed to the referring member (for treasurer) |
 
-Both fields use the existing `get_field($key, 'option') ?: $default` fallback pattern.
+The settings form renders a dynamic table for `stsrc_affiliate_type_discounts` showing each membership type's name, price, and discount input. `stsrc_affiliate_referrer_credit` uses the existing `get_field($key, 'option') ?: $default` fallback pattern.
 
 ---
 
