@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-renewal-service.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-logger.php';
 
 /**
  * Renewal API class.
@@ -60,7 +61,7 @@ class STSRC_Renewal_API {
 			return;
 		}
 
-		$payment_method = sanitize_text_field( $post_data['payment_method'] ?? 'card' );
+		$payment_method = $this->normalize_payment_method( (string) ( $post_data['payment_method'] ?? 'card' ) );
 		$payload        = $this->normalize_transition_payload( $post_data );
 		$service        = new STSRC_Renewal_Service();
 		$quote_result   = $service->get_quote( (int) $member['member_id'], $target_id, $payment_method, $payload );
@@ -103,8 +104,12 @@ class STSRC_Renewal_API {
 			return;
 		}
 
-		$payment_method = sanitize_text_field( $post_data['payment_method'] ?? 'card' );
+		$payment_method = $this->normalize_payment_method( (string) ( $post_data['payment_method'] ?? 'card' ) );
 		$season_key     = sanitize_text_field( $post_data['season_key'] ?? '' );
+		if ( '' !== $season_key && ! preg_match( '/^[a-z0-9_-]{2,16}$/i', $season_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid season key.', 'smoketree-plugin' ) ), 400 );
+			return;
+		}
 		$payload        = $this->normalize_transition_payload( $post_data );
 		$service        = new STSRC_Renewal_Service();
 		$result         = $service->create_intent(
@@ -175,6 +180,15 @@ class STSRC_Renewal_API {
 		$service = new STSRC_Renewal_Service();
 		$result  = $service->confirm_offline_payment( $renewal_id, $admin_user, $notes );
 		if ( empty( $result['applied'] ) ) {
+			STSRC_Logger::warning(
+				'Admin offline renewal confirmation failed.',
+				array(
+					'method'       => __METHOD__,
+					'renewal_id'   => $renewal_id,
+					'admin_user'   => $admin_user,
+					'failure_code' => (string) ( $result['reason'] ?? 'unknown' ),
+				)
+			);
 			wp_send_json_error(
 				array(
 					'message' => __( 'Unable to confirm offline renewal payment.', 'smoketree-plugin' ),
@@ -189,6 +203,14 @@ class STSRC_Renewal_API {
 			array(
 				'message'    => __( 'Offline renewal payment confirmed and membership activated.', 'smoketree-plugin' ),
 				'renewal_id' => (int) ( $result['renewal_id'] ?? 0 ),
+			)
+		);
+		STSRC_Logger::info(
+			'Admin offline renewal confirmation succeeded.',
+			array(
+				'method'     => __METHOD__,
+				'renewal_id' => $renewal_id,
+				'admin_user' => $admin_user,
 			)
 		);
 	}
@@ -262,9 +284,22 @@ class STSRC_Renewal_API {
 		return array(
 			'retain_family_member_ids' => is_array( $retain_family ) ? array_map( 'absint', $retain_family ) : array(),
 			'retain_extra_member_ids'  => is_array( $retain_extra ) ? array_map( 'absint', $retain_extra ) : array(),
-			'new_family_member_count'  => absint( $post_data['new_family_member_count'] ?? 0 ),
-			'new_extra_member_count'   => absint( $post_data['new_extra_member_count'] ?? 0 ),
+			'new_family_member_count'  => min( 20, absint( $post_data['new_family_member_count'] ?? 0 ) ),
+			'new_extra_member_count'   => min( 20, absint( $post_data['new_extra_member_count'] ?? 0 ) ),
 		);
+	}
+
+	/**
+	 * Normalize and validate renewal payment method.
+	 *
+	 * @param string $method Raw payment method.
+	 * @return string
+	 */
+	private function normalize_payment_method( string $method ): string {
+		$method  = sanitize_key( $method );
+		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'zelle', 'check' );
+
+		return in_array( $method, $allowed, true ) ? $method : 'card';
 	}
 }
 
