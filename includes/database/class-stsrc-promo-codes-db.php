@@ -33,35 +33,34 @@ class STSRC_Promo_Codes_DB {
 			return new WP_Error( 'invalid_discount_type', __( 'Discount type must be flat or percentage.', 'smoketree-plugin' ) );
 		}
 
-		if ( ! isset( $data['discount_value'] ) ) {
-			return new WP_Error( 'missing_discount_value', __( 'Discount value is required.', 'smoketree-plugin' ) );
+		$discount_values = self::normalize_discount_values( $data['discount_values'] ?? null );
+		if ( null === $discount_values ) {
+			return new WP_Error( 'missing_discount_values', __( 'At least one membership type must have a discount value.', 'smoketree-plugin' ) );
 		}
 
 		$now = current_time( 'mysql' );
 
 		$insert_data = array(
-			'code_name'        => sanitize_text_field( $data['code_name'] ),
-			'discount_type'    => sanitize_text_field( $data['discount_type'] ),
-			'discount_value'   => (float) $data['discount_value'],
-			'expires_at'       => ! empty( $data['expires_at'] ) ? sanitize_text_field( $data['expires_at'] ) : null,
-			'is_one_time_use'  => isset( $data['is_one_time_use'] ) ? (int) $data['is_one_time_use'] : 0,
-			'usage_limit'      => isset( $data['usage_limit'] ) && '' !== $data['usage_limit'] ? (int) $data['usage_limit'] : null,
-			'usage_count'      => isset( $data['usage_count'] ) ? (int) $data['usage_count'] : 0,
-			'allowed_type_ids' => self::normalize_allowed_type_ids( $data['allowed_type_ids'] ?? null ),
-			'is_active'        => isset( $data['is_active'] ) ? (int) $data['is_active'] : 1,
-			'created_at'       => $now,
-			'updated_at'       => $now,
+			'code_name'       => sanitize_text_field( $data['code_name'] ),
+			'discount_type'   => sanitize_text_field( $data['discount_type'] ),
+			'discount_values' => $discount_values,
+			'expires_at'      => ! empty( $data['expires_at'] ) ? sanitize_text_field( $data['expires_at'] ) : null,
+			'is_one_time_use' => isset( $data['is_one_time_use'] ) ? (int) $data['is_one_time_use'] : 0,
+			'usage_limit'     => isset( $data['usage_limit'] ) && '' !== $data['usage_limit'] ? (int) $data['usage_limit'] : null,
+			'usage_count'     => isset( $data['usage_count'] ) ? (int) $data['usage_count'] : 0,
+			'is_active'       => isset( $data['is_active'] ) ? (int) $data['is_active'] : 1,
+			'created_at'      => $now,
+			'updated_at'      => $now,
 		);
 
 		$insert_format = array(
 			'%s',
 			'%s',
-			'%f',
+			'%s',
 			'%s',
 			'%d',
 			'%d',
 			'%d',
-			'%s',
 			'%d',
 			'%s',
 			'%s',
@@ -102,9 +101,13 @@ class STSRC_Promo_Codes_DB {
 			$update['discount_type'] = sanitize_text_field( $data['discount_type'] );
 			$formats[]               = '%s';
 		}
-		if ( isset( $data['discount_value'] ) ) {
-			$update['discount_value'] = (float) $data['discount_value'];
-			$formats[]                = '%f';
+		if ( array_key_exists( 'discount_values', $data ) ) {
+			$normalized = self::normalize_discount_values( $data['discount_values'] );
+			if ( null === $normalized ) {
+				return new WP_Error( 'missing_discount_values', __( 'At least one membership type must have a discount value.', 'smoketree-plugin' ) );
+			}
+			$update['discount_values'] = $normalized;
+			$formats[]                 = '%s';
 		}
 		if ( array_key_exists( 'expires_at', $data ) ) {
 			$update['expires_at'] = ! empty( $data['expires_at'] ) ? sanitize_text_field( $data['expires_at'] ) : null;
@@ -121,10 +124,6 @@ class STSRC_Promo_Codes_DB {
 		if ( isset( $data['usage_count'] ) ) {
 			$update['usage_count'] = (int) $data['usage_count'];
 			$formats[]             = '%d';
-		}
-		if ( array_key_exists( 'allowed_type_ids', $data ) ) {
-			$update['allowed_type_ids'] = self::normalize_allowed_type_ids( $data['allowed_type_ids'] );
-			$formats[]                  = '%s';
 		}
 		if ( isset( $data['is_active'] ) ) {
 			$update['is_active'] = (int) $data['is_active'];
@@ -340,7 +339,7 @@ class STSRC_Promo_Codes_DB {
 				u.code_id,
 				pc.code_name,
 				pc.discount_type,
-				pc.discount_value,
+				pc.discount_values,
 				u.member_id,
 				CONCAT(m.first_name, ' ', m.last_name) AS member_name,
 				u.membership_type_id,
@@ -363,42 +362,47 @@ class STSRC_Promo_Codes_DB {
 	}
 
 	/**
-	 * Normalize membership type restrictions as JSON text.
+	 * Normalize per-membership-type discount values as a JSON object.
 	 *
-	 * @since    1.4.0
-	 * @param    mixed $allowed_type_ids Raw allowed type IDs input.
+	 * Accepts an associative array or JSON string mapping membership_type_id
+	 * to discount value.  Returns null when no valid entries remain.
+	 *
+	 * @since    1.5.0
+	 * @param    mixed $discount_values Raw discount values input.
 	 * @return   string|null
 	 */
-	private static function normalize_allowed_type_ids( mixed $allowed_type_ids ): ?string {
-		if ( null === $allowed_type_ids || '' === $allowed_type_ids ) {
+	private static function normalize_discount_values( mixed $discount_values ): ?string {
+		if ( null === $discount_values || '' === $discount_values ) {
 			return null;
 		}
 
-		if ( is_string( $allowed_type_ids ) ) {
-			$decoded = json_decode( $allowed_type_ids, true );
+		if ( is_string( $discount_values ) ) {
+			$decoded = json_decode( $discount_values, true );
 			if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-				$allowed_type_ids = $decoded;
+				$discount_values = $decoded;
 			} else {
-				$allowed_type_ids = array_filter( array_map( 'trim', explode( ',', $allowed_type_ids ) ) );
+				return null;
 			}
 		}
 
-		if ( ! is_array( $allowed_type_ids ) ) {
+		if ( ! is_array( $discount_values ) ) {
 			return null;
 		}
 
-		$allowed_type_ids = array_values(
-			array_filter(
-				array_map( 'absint', $allowed_type_ids ),
-				static fn ( int $value ): bool => $value > 0
-			)
-		);
+		$cleaned = array();
+		foreach ( $discount_values as $type_id => $value ) {
+			$type_id = absint( $type_id );
+			$value   = round( (float) $value, 2 );
+			if ( $type_id > 0 && $value > 0 ) {
+				$cleaned[ (string) $type_id ] = $value;
+			}
+		}
 
-		if ( empty( $allowed_type_ids ) ) {
+		if ( empty( $cleaned ) ) {
 			return null;
 		}
 
-		return wp_json_encode( $allowed_type_ids );
+		return wp_json_encode( $cleaned );
 	}
 }
 
