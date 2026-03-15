@@ -6,7 +6,7 @@
  * Handles promo/referral validation, affiliate code generation, and usage recording.
  *
  * @link       https://smoketree.us
- * @since      1.4.1
+ * @since      1.4.2
  *
  * @package    Smoketree_Plugin
  * @subpackage Smoketree_Plugin/includes/services
@@ -16,7 +16,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Validate a promo code against business rules.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    string $code               Promo code text.
 	 * @param    int    $membership_type_id Selected membership type ID.
 	 * @return   array|WP_Error
@@ -99,7 +99,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Validate an affiliate code.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    string $code               Affiliate code.
 	 * @param    int    $membership_type_id Selected membership type ID.
 	 * @return   array|WP_Error
@@ -151,7 +151,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Compute final total after a discount.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    float  $base           Original amount.
 	 * @param    string $discount_type  flat|percentage.
 	 * @param    float  $discount_value Discount value.
@@ -172,7 +172,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Generate a unique affiliate code.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    string $last_name Member last name.
 	 * @return   string
 	 */
@@ -220,7 +220,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Backfill affiliate codes for members that do not have one.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   array
 	 */
 	public static function backfill_affiliate_codes(): array {
@@ -282,7 +282,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Record usage for promo or affiliate discount payloads.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int   $member_id         Newly registered member ID.
 	 * @param    array $discount_payload  Discount payload.
 	 * @return   void
@@ -309,7 +309,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Persist promo-code usage with one-time guard.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int   $member_id Newly registered member ID.
 	 * @param    array $payload   Discount payload.
 	 * @return   void
@@ -383,7 +383,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Persist affiliate referral usage with idempotency.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int   $member_id Newly registered member ID.
 	 * @param    array $payload   Discount payload.
 	 * @return   void
@@ -483,7 +483,7 @@ class STSRC_Discount_Service {
 	/**
 	 * Get configured affiliate credit amount with fallback.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   float
 	 */
 	private static function get_affiliate_referrer_credit(): float {

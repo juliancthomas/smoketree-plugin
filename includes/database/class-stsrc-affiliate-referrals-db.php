@@ -6,7 +6,7 @@
  * Handles writes and reporting for affiliate referral usage and payout status.
  *
  * @link       https://smoketree.us
- * @since      1.4.1
+ * @since      1.4.2
  *
  * @package    Smoketree_Plugin
  * @subpackage Smoketree_Plugin/includes/database
@@ -16,7 +16,7 @@ class STSRC_Affiliate_Referrals_DB {
 	/**
 	 * Create a referral record.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    array $data Referral data payload.
 	 * @return   int|WP_Error
 	 */
@@ -75,7 +75,7 @@ class STSRC_Affiliate_Referrals_DB {
 	/**
 	 * Update payout status for a referral.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int    $referral_id    Referral ID.
 	 * @param    string $status         Target status ("pending" or "paid").
 	 * @param    int    $admin_user_id  Admin user performing update.
@@ -111,7 +111,7 @@ class STSRC_Affiliate_Referrals_DB {
 	/**
 	 * Get referral log rows.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    array $filters Filter array.
 	 * @return   array
 	 */
@@ -174,7 +174,7 @@ class STSRC_Affiliate_Referrals_DB {
 	/**
 	 * Lookup referral by new member ID for idempotency checks.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int $member_id New member ID.
 	 * @return   object|null
 	 */

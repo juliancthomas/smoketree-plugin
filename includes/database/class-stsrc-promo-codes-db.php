@@ -6,7 +6,7 @@
  * Handles CRUD and reporting operations for promo codes and usage records.
  *
  * @link       https://smoketree.us
- * @since      1.4.1
+ * @since      1.4.2
  *
  * @package    Smoketree_Plugin
  * @subpackage Smoketree_Plugin/includes/database
@@ -16,7 +16,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Create a promo code.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    array $data Promo code data.
 	 * @return   int|WP_Error
 	 */
@@ -78,7 +78,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Update a promo code.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int   $code_id Promo code ID.
 	 * @param    array $data    Promo code data to update.
 	 * @return   bool|WP_Error
@@ -151,7 +151,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Soft-delete a promo code.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int $code_id Promo code ID.
 	 * @return   bool
 	 */
@@ -177,7 +177,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Get promo code by name.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    string $name Promo code name.
 	 * @return   object|null
 	 */
@@ -203,7 +203,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Get all promo codes with optional filters.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    array $filters Query filters.
 	 * @return   array
 	 */
@@ -242,7 +242,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Increment promo code usage count atomically.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int $code_id Promo code ID.
 	 * @return   void
 	 */
@@ -262,7 +262,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Record promo code usage for a member.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    int   $code_id          Promo code ID.
 	 * @param    int   $member_id        Member ID.
 	 * @param    float $discount_amount  Applied discount amount.
@@ -296,7 +296,7 @@ class STSRC_Promo_Codes_DB {
 	/**
 	 * Get promo usage report rows.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @param    array $filters Query filters.
 	 * @return   array
 	 */

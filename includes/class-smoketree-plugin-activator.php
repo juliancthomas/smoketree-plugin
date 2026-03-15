@@ -130,7 +130,7 @@ class Smoketree_Plugin_Activator {
 	/**
 	 * Ensure promo and referral schema is installed/upgraded safely.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	private static function upgrade_promo_database(): void {

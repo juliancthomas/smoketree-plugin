@@ -6,7 +6,7 @@
  * Handles promo and affiliate discount validation plus admin CRUD actions.
  *
  * @link       https://smoketree.us
- * @since      1.4.1
+ * @since      1.4.2
  *
  * @package    Smoketree_Plugin
  * @subpackage Smoketree_Plugin/includes/api
@@ -16,7 +16,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Validate promo code for registration.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function validate_promo_code(): void {
@@ -45,7 +45,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Validate affiliate/referral code for registration.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function validate_affiliate_code(): void {
@@ -74,7 +74,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Create promo code (admin).
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function create_promo_code(): void {
@@ -93,7 +93,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Update promo code (admin).
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function update_promo_code(): void {
@@ -117,7 +117,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Soft-delete promo code (admin).
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function delete_promo_code(): void {
@@ -141,7 +141,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Toggle affiliate payout status (admin).
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function toggle_payout_status(): void {
@@ -167,7 +167,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Run affiliate-code backfill on demand (admin).
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	public function run_affiliate_backfill(): void {
@@ -193,7 +193,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Validate admin AJAX permissions and nonce.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   void
 	 */
 	private function assert_admin_request(): void {
@@ -210,7 +210,7 @@ class STSRC_Discount_Ajax {
 	/**
 	 * Sanitize incoming promo-code payload.
 	 *
-	 * @since    1.4.1
+	 * @since    1.4.2
 	 * @return   array
 	 */
 	private function sanitize_promo_payload(): array {
