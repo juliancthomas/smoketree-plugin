@@ -148,6 +148,21 @@
 			$(this).addClass('is-current');
 		});
 
+		var $instructionsWrap = $('#stsrc-renewal-payment-instructions');
+		function updatePaymentInstructions() {
+			var method = getPaymentMethod();
+			$instructionsWrap.find('.stsrc-renewal-instruction').hide();
+			var $match = $instructionsWrap.find('[data-method="' + method + '"]');
+			if ($match.length) {
+				$match.show();
+				$instructionsWrap.slideDown(200);
+			} else {
+				$instructionsWrap.slideUp(200);
+			}
+		}
+		$form.on('change', 'input[name="payment_method"]', updatePaymentInstructions);
+		updatePaymentInstructions();
+
 		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
 		$form.closest('.stsrc-renewal-section').prepend($errorBanner);
 

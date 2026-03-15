@@ -21,6 +21,22 @@ $current_type_id = (int) ( $member['membership_type_id'] ?? 0 );
 $current_price   = (float) ( $membership_type['price'] ?? 0.00 );
 $balance_owed    = (float) ( $member['balance_owed'] ?? 0.00 );
 $renewal_nonce   = wp_create_nonce( 'stsrc_renewal_nonce' );
+
+$payment_instructions = array();
+$instruction_fields   = array(
+	'zelle'        => 'zelle_instructions',
+	'check'        => 'check_instructions',
+	'cash'         => 'cash_instructions',
+	'payment_plan' => 'payment_plan_instructions',
+);
+if ( function_exists( 'get_field' ) ) {
+	foreach ( $instruction_fields as $method => $field_name ) {
+		$value = get_field( $field_name, 'option' );
+		if ( ! empty( $value ) ) {
+			$payment_instructions[ $method ] = $value;
+		}
+	}
+}
 ?>
 
 <section class="stsrc-portal-section stsrc-renewal-section" id="stsrc-renewal-section">
@@ -45,6 +61,27 @@ $renewal_nonce   = wp_create_nonce( 'stsrc_renewal_nonce' );
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( $renewal_nonce ); ?>">
 
 		<div class="stsrc-renewal-main">
+			<div class="stsrc-renewal-payment-methods">
+				<h3><?php echo esc_html__( 'Payment Method', 'smoketree-plugin' ); ?></h3>
+				<label><input type="radio" name="payment_method" value="card" checked> <?php echo esc_html__( 'Credit/Debit Card', 'smoketree-plugin' ); ?></label>
+				<label><input type="radio" name="payment_method" value="ach"> <?php echo esc_html__( 'Bank Account (ACH)', 'smoketree-plugin' ); ?></label>
+				<label><input type="radio" name="payment_method" value="zelle"> <?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?></label>
+				<label><input type="radio" name="payment_method" value="check"> <?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?></label>
+				<label><input type="radio" name="payment_method" value="cash"> <?php echo esc_html__( 'Cash', 'smoketree-plugin' ); ?></label>
+				<label><input type="radio" name="payment_method" value="payment_plan"> <?php echo esc_html__( 'Payment Plan', 'smoketree-plugin' ); ?></label>
+			</div>
+
+			<?php if ( ! empty( $payment_instructions ) ) : ?>
+				<div class="stsrc-renewal-payment-instructions" id="stsrc-renewal-payment-instructions" style="display:none;">
+					<?php foreach ( $payment_instructions as $method => $instructions ) : ?>
+						<div class="stsrc-renewal-instruction" data-method="<?php echo esc_attr( $method ); ?>" style="display:none;">
+							<h4><?php echo esc_html__( 'Payment Instructions', 'smoketree-plugin' ); ?></h4>
+							<div class="stsrc-renewal-instruction__body"><?php echo wp_kses_post( $instructions ); ?></div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+
 			<div class="stsrc-renewal-cards">
 				<?php foreach ( $types as $type ) : ?>
 					<?php
@@ -83,14 +120,6 @@ $renewal_nonce   = wp_create_nonce( 'stsrc_renewal_nonce' );
 						<?php endif; ?>
 					</label>
 				<?php endforeach; ?>
-			</div>
-
-			<div class="stsrc-renewal-payment-methods">
-				<h3><?php echo esc_html__( 'Payment Method', 'smoketree-plugin' ); ?></h3>
-				<label><input type="radio" name="payment_method" value="card" checked> <?php echo esc_html__( 'Credit/Debit Card', 'smoketree-plugin' ); ?></label>
-				<label><input type="radio" name="payment_method" value="ach"> <?php echo esc_html__( 'Bank Account (ACH)', 'smoketree-plugin' ); ?></label>
-				<label><input type="radio" name="payment_method" value="zelle"> <?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?></label>
-				<label><input type="radio" name="payment_method" value="check"> <?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?></label>
 			</div>
 		</div>
 
