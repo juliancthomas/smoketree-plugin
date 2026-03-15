@@ -94,6 +94,16 @@ class STSRC_Members_Page {
 		if ( isset( $request['auto_renewal'] ) && '' !== $request['auto_renewal'] ) {
 			$filters['auto_renewal'] = sanitize_text_field( $request['auto_renewal'] );
 		}
+		$demo_filter = isset( $request['demo_filter'] ) ? sanitize_key( $request['demo_filter'] ) : 'all';
+		if ( ! in_array( $demo_filter, array( 'all', 'real', 'demo' ), true ) ) {
+			$demo_filter = 'all';
+		}
+		$filters['demo_filter'] = $demo_filter;
+		if ( 'real' === $demo_filter ) {
+			$filters['is_demo'] = 0;
+		} elseif ( 'demo' === $demo_filter ) {
+			$filters['is_demo'] = 1;
+		}
 		$filters['show_deleted'] = ! empty( $request['show_deleted'] ) ? '1' : '0';
 
 		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';

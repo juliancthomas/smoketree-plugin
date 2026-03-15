@@ -32,6 +32,7 @@ $balance_sort_url = add_query_arg(
 		'date_to'            => $filters['date_to'] ?? '',
 		'balance_status'     => $filters['balance_status'] ?? '',
 		'auto_renewal'       => $filters['auto_renewal'] ?? '',
+		'demo_filter'        => $filters['demo_filter'] ?? 'all',
 		'show_deleted'       => $filters['show_deleted'] ?? '',
 		'orderby'            => 'balance',
 		'order'              => $next_balance_order,
@@ -118,6 +119,15 @@ $balance_sort_url = add_query_arg(
 						<option value=""><?php echo esc_html__( 'All', 'smoketree-plugin' ); ?></option>
 						<option value="1" <?php selected( $filters['auto_renewal'] ?? '', '1' ); ?>><?php echo esc_html__( 'Enabled', 'smoketree-plugin' ); ?></option>
 						<option value="0" <?php selected( $filters['auto_renewal'] ?? '', '0' ); ?>><?php echo esc_html__( 'Disabled', 'smoketree-plugin' ); ?></option>
+					</select>
+				</div>
+
+				<div class="stsrc-filter-group">
+					<label for="demo_filter"><?php echo esc_html__( 'Demo Filter', 'smoketree-plugin' ); ?>:</label>
+					<select name="demo_filter" id="demo_filter">
+						<option value="all" <?php selected( $filters['demo_filter'] ?? 'all', 'all' ); ?>><?php echo esc_html__( 'All Members', 'smoketree-plugin' ); ?></option>
+						<option value="real" <?php selected( $filters['demo_filter'] ?? 'all', 'real' ); ?>><?php echo esc_html__( 'Real Members Only', 'smoketree-plugin' ); ?></option>
+						<option value="demo" <?php selected( $filters['demo_filter'] ?? 'all', 'demo' ); ?>><?php echo esc_html__( 'Demo Members Only', 'smoketree-plugin' ); ?></option>
 					</select>
 				</div>
 
@@ -264,6 +274,9 @@ $balance_sort_url = add_query_arg(
 										<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $mid ) ); ?>">
 											<?php echo esc_html( $member['first_name'] . ' ' . $member['last_name'] ); ?>
 										</a>
+										<?php if ( 1 === (int) ( $member['is_demo'] ?? 0 ) ) : ?>
+											<span class="stsrc-demo-badge"><?php echo esc_html__( 'Demo', 'smoketree-plugin' ); ?></span>
+										<?php endif; ?>
 									</strong>
 									<div class="row-actions">
 										<span class="edit">
