@@ -160,6 +160,76 @@ class STSRC_Renewal_API {
 	}
 
 	/**
+	 * Cancel a stuck or stale renewal from admin.
+	 *
+	 * @return void
+	 */
+	public function admin_cancel_renewal(): void {
+		if ( ! $this->validate_admin_request() ) {
+			return;
+		}
+
+		$post_data  = wp_unslash( $_POST );
+		$renewal_id = absint( $post_data['renewal_id'] ?? 0 );
+
+		if ( $renewal_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid renewal ID.', 'smoketree-plugin' ) ), 400 );
+			return;
+		}
+
+		$renewal = STSRC_Renewal_DB::get_renewal( $renewal_id );
+		if ( empty( $renewal ) ) {
+			wp_send_json_error( array( 'message' => __( 'Renewal record not found.', 'smoketree-plugin' ) ), 404 );
+			return;
+		}
+
+		$cancellable = array(
+			STSRC_Renewal_DB::STATUS_INITIATED,
+			STSRC_Renewal_DB::STATUS_PENDING_PAYMENT,
+		);
+		$status = (string) ( $renewal['status'] ?? '' );
+
+		if ( ! in_array( $status, $cancellable, true ) ) {
+			wp_send_json_error(
+				array( 'message' => sprintf(
+					/* translators: %s renewal status */
+					__( 'Cannot cancel a renewal with status "%s".', 'smoketree-plugin' ),
+					$status
+				) ),
+				409
+			);
+			return;
+		}
+
+		$admin_user = get_current_user_id();
+		$notes      = sprintf( 'Cancelled by admin user %d.', $admin_user );
+
+		$applied = STSRC_Renewal_DB::transition_status(
+			$renewal_id,
+			$cancellable,
+			STSRC_Renewal_DB::STATUS_CANCELLED,
+			array( 'notes' => $notes )
+		);
+
+		if ( ! $applied ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to cancel renewal. Please try again.', 'smoketree-plugin' ) ), 500 );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Admin cancelled renewal.',
+			array(
+				'method'     => __METHOD__,
+				'renewal_id' => $renewal_id,
+				'member_id'  => (int) ( $renewal['member_id'] ?? 0 ),
+				'admin_user' => $admin_user,
+			)
+		);
+
+		wp_send_json_success( array( 'message' => __( 'Renewal cancelled. The member can now submit a new renewal.', 'smoketree-plugin' ) ) );
+	}
+
+	/**
 	 * Confirm a pending offline renewal payment from admin.
 	 *
 	 * @return void

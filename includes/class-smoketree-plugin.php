@@ -434,6 +434,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_adjust_balance', $balance_ajax, 'handle_admin_adjust_balance' );
 		$this->loader->add_action( 'wp_ajax_stsrc_record_payment', $balance_ajax, 'handle_admin_record_payment' );
 		$this->loader->add_action( 'wp_ajax_stsrc_renewal_confirm_offline_payment', $renewal_api, 'confirm_offline_payment' );
+		$this->loader->add_action( 'wp_ajax_stsrc_renewal_admin_cancel', $renewal_api, 'admin_cancel_renewal' );
 		$this->loader->add_action( 'wp_ajax_stsrc_create_promo_code', $discount_ajax, 'create_promo_code' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_promo_code', $discount_ajax, 'update_promo_code' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_promo_code', $discount_ajax, 'delete_promo_code' );

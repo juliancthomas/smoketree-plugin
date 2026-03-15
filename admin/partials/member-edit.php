@@ -185,31 +185,82 @@ $is_demo = $is_edit && 1 === (int) ( $member['is_demo'] ?? 0 );
 			<?php
 			// Balance section (v1.1.0+) - only show for existing members
 			if ( $is_edit ) {
-				if ( ! empty( $pending_renewal ) && in_array( (string) ( $pending_renewal['payment_method'] ?? '' ), array( 'zelle', 'check' ), true ) ) {
+				if ( ! empty( $pending_renewal ) ) {
+					$renewal_status  = (string) ( $pending_renewal['status'] ?? '' );
+					$renewal_method  = (string) ( $pending_renewal['payment_method'] ?? '' );
+					$renewal_id_val  = (int) ( $pending_renewal['renewal_id'] ?? 0 );
+					$renewal_amount  = (float) ( $pending_renewal['total_amount'] ?? 0 );
+					$renewal_date    = $pending_renewal['created_at'] ?? '';
+					$is_offline      = in_array( $renewal_method, array( 'zelle', 'check' ), true );
+					$is_cancellable  = in_array( $renewal_status, array( 'initiated', 'pending_payment' ), true );
+					$is_completed    = 'completed' === $renewal_status;
+
+					$status_labels = array(
+						'initiated'       => __( 'Initiated (awaiting payment)', 'smoketree-plugin' ),
+						'pending_payment' => __( 'Pending Payment (awaiting offline confirmation)', 'smoketree-plugin' ),
+						'completed'       => __( 'Completed', 'smoketree-plugin' ),
+					);
+					$status_label = $status_labels[ $renewal_status ] ?? ucfirst( $renewal_status );
 					?>
 					<div class="stsrc-form-section">
-						<h2><?php echo esc_html__( 'Pending Renewal Payment', 'smoketree-plugin' ); ?></h2>
-						<p class="description">
-							<?php echo esc_html__( 'This renewal is awaiting offline payment confirmation. Confirm once funds are received.', 'smoketree-plugin' ); ?>
-						</p>
-						<p>
-							<strong><?php echo esc_html__( 'Renewal ID:', 'smoketree-plugin' ); ?></strong>
-							<?php echo esc_html( (string) ( $pending_renewal['renewal_id'] ?? '' ) ); ?>
-							<br>
-							<strong><?php echo esc_html__( 'Method:', 'smoketree-plugin' ); ?></strong>
-							<?php echo esc_html( ucfirst( (string) ( $pending_renewal['payment_method'] ?? '' ) ) ); ?>
-							<br>
-							<strong><?php echo esc_html__( 'Amount:', 'smoketree-plugin' ); ?></strong>
-							<?php echo esc_html( '$' . number_format( (float) ( $pending_renewal['total_amount'] ?? 0 ), 2 ) ); ?>
-						</p>
-						<p>
-							<textarea id="stsrc-renewal-confirm-notes" class="large-text" rows="3" placeholder="<?php echo esc_attr__( 'Optional confirmation notes', 'smoketree-plugin' ); ?>"></textarea>
-						</p>
-						<p>
-							<button type="button" class="button button-primary" id="stsrc-confirm-offline-renewal-btn" data-renewal-id="<?php echo esc_attr( (int) ( $pending_renewal['renewal_id'] ?? 0 ) ); ?>">
-								<?php echo esc_html__( 'Confirm Offline Renewal Payment', 'smoketree-plugin' ); ?>
-							</button>
-						</p>
+						<h2><?php echo esc_html__( 'Renewal Status', 'smoketree-plugin' ); ?>
+							<?php if ( $is_completed ) : ?>
+								<span style="color: #00a32a; font-size: 14px; font-weight: normal; margin-left: 8px;">&#10003; <?php echo esc_html__( 'Complete', 'smoketree-plugin' ); ?></span>
+							<?php elseif ( $is_cancellable ) : ?>
+								<span style="color: #dba617; font-size: 14px; font-weight: normal; margin-left: 8px;">&#9679; <?php echo esc_html__( 'In Progress', 'smoketree-plugin' ); ?></span>
+							<?php endif; ?>
+						</h2>
+						<table class="form-table">
+							<tr>
+								<th><?php echo esc_html__( 'Renewal ID', 'smoketree-plugin' ); ?></th>
+								<td><code><?php echo esc_html( (string) $renewal_id_val ); ?></code></td>
+							</tr>
+							<tr>
+								<th><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
+								<td><?php echo esc_html( $status_label ); ?></td>
+							</tr>
+							<tr>
+								<th><?php echo esc_html__( 'Payment Method', 'smoketree-plugin' ); ?></th>
+								<td><?php echo esc_html( ucfirst( $renewal_method ) ); ?></td>
+							</tr>
+							<tr>
+								<th><?php echo esc_html__( 'Amount', 'smoketree-plugin' ); ?></th>
+								<td><?php echo esc_html( '$' . number_format( $renewal_amount, 2 ) ); ?></td>
+							</tr>
+							<?php if ( $renewal_date ) : ?>
+							<tr>
+								<th><?php echo esc_html__( 'Submitted', 'smoketree-plugin' ); ?></th>
+								<td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $renewal_date ) ) ); ?></td>
+							</tr>
+							<?php endif; ?>
+						</table>
+
+						<?php if ( $is_offline && 'pending_payment' === $renewal_status ) : ?>
+							<h3 style="margin-top: 16px;"><?php echo esc_html__( 'Confirm Offline Payment', 'smoketree-plugin' ); ?></h3>
+							<p class="description">
+								<?php echo esc_html__( 'This renewal is awaiting offline payment. Confirm once funds are received.', 'smoketree-plugin' ); ?>
+							</p>
+							<p>
+								<textarea id="stsrc-renewal-confirm-notes" class="large-text" rows="2" placeholder="<?php echo esc_attr__( 'Optional confirmation notes', 'smoketree-plugin' ); ?>"></textarea>
+							</p>
+							<p>
+								<button type="button" class="button button-primary" id="stsrc-confirm-offline-renewal-btn" data-renewal-id="<?php echo esc_attr( $renewal_id_val ); ?>">
+									<?php echo esc_html__( 'Confirm Payment & Activate', 'smoketree-plugin' ); ?>
+								</button>
+							</p>
+						<?php endif; ?>
+
+						<?php if ( $is_cancellable ) : ?>
+							<hr style="margin: 16px 0;">
+							<p class="description">
+								<?php echo esc_html__( 'If this renewal is stuck or was started by mistake, cancel it so the member can try again.', 'smoketree-plugin' ); ?>
+							</p>
+							<p>
+								<button type="button" class="button" id="stsrc-cancel-renewal-btn" data-renewal-id="<?php echo esc_attr( $renewal_id_val ); ?>" style="color: #b32d2e;">
+									<?php echo esc_html__( 'Cancel This Renewal', 'smoketree-plugin' ); ?>
+								</button>
+							</p>
+						<?php endif; ?>
 					</div>
 					<?php
 				}
@@ -738,11 +789,51 @@ jQuery(document).ready(function($) {
 					return;
 				}
 				alert((response.data && response.data.message) ? response.data.message : 'Failed to confirm renewal.');
-				$button.prop('disabled', false).text('Confirm Offline Renewal Payment');
+				$button.prop('disabled', false).text('Confirm Payment & Activate');
 			},
 			error: function() {
 				alert('An error occurred. Please try again.');
-				$button.prop('disabled', false).text('Confirm Offline Renewal Payment');
+				$button.prop('disabled', false).text('Confirm Payment & Activate');
+			}
+		});
+	});
+
+	$('#stsrc-cancel-renewal-btn').on('click', function(e) {
+		e.preventDefault();
+
+		const renewalId = parseInt($(this).data('renewal-id'), 10) || 0;
+		if (renewalId <= 0) {
+			alert('Missing renewal ID.');
+			return;
+		}
+
+		if (!confirm('Cancel this renewal? The member will be able to start a new renewal afterwards.')) {
+			return;
+		}
+
+		const $button = $(this);
+		$button.prop('disabled', true).text('Cancelling...');
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_renewal_admin_cancel',
+				nonce: nonce,
+				renewal_id: renewalId
+			},
+			success: function(response) {
+				if (response.success) {
+					alert(response.data.message || 'Renewal cancelled.');
+					location.reload();
+					return;
+				}
+				alert((response.data && response.data.message) ? response.data.message : 'Failed to cancel renewal.');
+				$button.prop('disabled', false).text('Cancel This Renewal');
+			},
+			error: function() {
+				alert('An error occurred. Please try again.');
+				$button.prop('disabled', false).text('Cancel This Renewal');
 			}
 		});
 	});

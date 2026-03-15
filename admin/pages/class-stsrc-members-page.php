@@ -239,12 +239,16 @@ class STSRC_Members_Page {
 			);
 		}
 
-		$pending_renewal = null;
+		$active_renewal = null;
 		if ( $member && STSRC_Renewal_Helpers::is_renewal_enabled() ) {
-			$pending_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
+			$active_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
 				$member_id,
 				STSRC_Renewal_Helpers::get_season_key(),
-				array( STSRC_Renewal_DB::STATUS_PENDING_PAYMENT )
+				array(
+					STSRC_Renewal_DB::STATUS_INITIATED,
+					STSRC_Renewal_DB::STATUS_PENDING_PAYMENT,
+					STSRC_Renewal_DB::STATUS_COMPLETED,
+				)
 			);
 		}
 
@@ -254,7 +258,7 @@ class STSRC_Members_Page {
 			'family_members'  => $family_members,
 			'extra_members'   => $extra_members,
 			'delete_meta'     => $delete_meta,
-			'pending_renewal' => $pending_renewal,
+			'pending_renewal' => $active_renewal,
 		);
 
 		// Include edit template
