@@ -147,6 +147,7 @@
 			}
 
 			updateToolbarVisibility(stepIdx);
+			setTimeout(function() { $wizard.smartWizard('fixHeight'); }, 0);
 		});
 
 		function updateToolbarVisibility(stepIdx) {
@@ -573,6 +574,7 @@
 			$newFamilyContainer.append(buildNewMemberRow(familyRowIndex++, 'new_family_members'));
 			updateAddButtons();
 			updateFamilyHint();
+			$wizard.smartWizard('fixHeight');
 		});
 
 		$addExtraBtn.on('click', function() {
@@ -582,12 +584,14 @@
 			}
 			$newExtrasContainer.append(buildNewMemberRow(extraRowIndex++, 'new_extra_members'));
 			updateAddButtons();
+			$wizard.smartWizard('fixHeight');
 		});
 
 		$form.on('click', '.stsrc-new-member-row__remove', function() {
 			$(this).closest('.stsrc-new-member-row').remove();
 			updateAddButtons();
 			updateFamilyHint();
+			$wizard.smartWizard('fixHeight');
 		});
 
 		$form.on('change', 'input[name="retain_family_member_ids[]"]', function() {
