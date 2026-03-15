@@ -286,6 +286,14 @@ class STSRC_Member_DB {
 			$where_values[]  = intval( $filters['auto_renewal'] );
 		}
 
+		if ( isset( $filters['is_demo'] ) && '' !== $filters['is_demo'] ) {
+			$is_demo = intval( $filters['is_demo'] );
+			if ( in_array( $is_demo, array( 0, 1 ), true ) ) {
+				$where_clauses[] = 'is_demo = %d';
+				$where_values[]  = $is_demo;
+			}
+		}
+
 		// Build query
 		$query = "SELECT * FROM {$table_name}";
 
@@ -319,7 +327,8 @@ class STSRC_Member_DB {
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table_name} 
-				WHERE status = %s",
+				WHERE status = %s
+				AND is_demo = 0",
 				'active'
 			)
 		);
@@ -436,7 +445,7 @@ class STSRC_Member_DB {
 
 		// Build query with operator
 		$query = $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE balance_owed {$balance_operator} %f ORDER BY balance_owed DESC",
+			"SELECT * FROM {$table_name} WHERE balance_owed {$balance_operator} %f AND is_demo = 0 ORDER BY balance_owed DESC",
 			$balance_amount
 		);
 
@@ -505,6 +514,7 @@ class STSRC_Member_DB {
 		$members       = $wpdb->get_results(
 			"SELECT member_id, first_name, last_name, email, status, balance_owed
 			FROM {$members_table}
+			WHERE is_demo = 0
 			ORDER BY member_id ASC",
 			ARRAY_A
 		);
@@ -561,6 +571,27 @@ class STSRC_Member_DB {
 		}
 
 		return $report;
+	}
+
+	/**
+	 * Permanently flag a member as a demo account.
+	 *
+	 * @since    1.5.0
+	 * @param    int $member_id Member ID.
+	 * @return   bool
+	 */
+	public static function set_demo_flag( int $member_id ): bool {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'stsrc_members';
+		$result     = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table_name} SET is_demo = 1 WHERE member_id = %d",
+				$member_id
+			)
+		);
+
+		return false !== $result;
 	}
 
 	/**
