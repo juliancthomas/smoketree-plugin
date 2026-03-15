@@ -478,6 +478,16 @@ class STSRC_Renewal_Service {
 			);
 		}
 
+		if ( 1 === (int) ( $member['is_demo'] ?? 0 ) ) {
+			return array(
+				'eligible'         => false,
+				'reason'           => 'demo_account',
+				'season_key'       => $resolved_season_key,
+				'member_id'        => $member_id,
+				'existing_renewal' => null,
+			);
+		}
+
 		if ( ! STSRC_Renewal_Helpers::is_member_eligible_for_current_season( $member ) ) {
 			return array(
 				'eligible'         => false,

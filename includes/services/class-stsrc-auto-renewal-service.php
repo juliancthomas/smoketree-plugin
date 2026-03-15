@@ -103,6 +103,7 @@ class STSRC_Auto_Renewal_Service {
 		$values[] = $status;
 
 		$where[] = 'auto_renewal_enabled = 1';
+		$where[] = 'is_demo = 0';
 
 		// Payment types filter (prepared placeholders).
 		$include_payment_types = array_values(
