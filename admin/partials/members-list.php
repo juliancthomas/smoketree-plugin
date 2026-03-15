@@ -15,6 +15,7 @@ $members = $data['members'] ?? array();
 $membership_types = $data['membership_types'] ?? array();
 $filters = $data['filters'] ?? array();
 $active_count = $data['active_count'] ?? 0;
+$guest_pass_balances = $data['guest_pass_balances'] ?? array();
 $admin_nonce = wp_create_nonce( 'stsrc_admin_nonce' );
 $current_orderby = $filters['orderby'] ?? 'created_at';
 $current_order   = strtoupper( $filters['order'] ?? 'DESC' );
@@ -223,6 +224,7 @@ $balance_sort_url = add_query_arg(
 						<th class="manage-column"><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column"><?php echo esc_html__( 'Payment Type', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column stsrc-auto-renewal-column" title="<?php echo esc_attr__( 'Auto-Renewal', 'smoketree-plugin' ); ?>"><?php echo esc_html__( 'AR', 'smoketree-plugin' ); ?></th>
+						<th class="manage-column stsrc-guest-pass-column" title="<?php echo esc_attr__( 'Guest Passes', 'smoketree-plugin' ); ?>"><?php echo esc_html__( 'GP', 'smoketree-plugin' ); ?></th>
 						<th class="manage-column stsrc-balance-column">
 							<a href="<?php echo esc_url( $balance_sort_url ); ?>" class="stsrc-sort-link">
 								<?php echo esc_html__( 'Balance', 'smoketree-plugin' ); ?>
@@ -243,45 +245,60 @@ $balance_sort_url = add_query_arg(
 							$type_lookup[ $type['membership_type_id'] ] = $type['name'];
 						}
 						?>
-						<?php foreach ( $members as $member ) : ?>
-							<tr>
+						<?php foreach ( $members as $member ) :
+							$mid = (int) $member['member_id'];
+							$gp_balance = $guest_pass_balances[ $mid ] ?? 0;
+						?>
+							<tr id="member-row-<?php echo esc_attr( $mid ); ?>"
+								data-member-id="<?php echo esc_attr( $mid ); ?>"
+								data-status="<?php echo esc_attr( $member['status'] ); ?>"
+								data-membership-type-id="<?php echo esc_attr( $member['membership_type_id'] ); ?>"
+								data-payment-type="<?php echo esc_attr( $member['payment_type'] ); ?>"
+								data-auto-renewal="<?php echo esc_attr( ! empty( $member['auto_renewal_enabled'] ) ? '1' : '0' ); ?>"
+								data-guest-pass-balance="<?php echo esc_attr( $gp_balance ); ?>">
 								<th scope="row" class="check-column">
-									<input type="checkbox" name="member_ids[]" value="<?php echo esc_attr( $member['member_id'] ); ?>">
+									<input type="checkbox" name="member_ids[]" value="<?php echo esc_attr( $mid ); ?>">
 								</th>
 								<td class="column-name">
 									<strong>
-										<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $member['member_id'] ) ); ?>">
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $mid ) ); ?>">
 											<?php echo esc_html( $member['first_name'] . ' ' . $member['last_name'] ); ?>
 										</a>
 									</strong>
 									<div class="row-actions">
 										<span class="edit">
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $member['member_id'] ) ); ?>">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=edit&member_id=' . $mid ) ); ?>">
 												<?php echo esc_html__( 'Edit', 'smoketree-plugin' ); ?>
 											</a> |
 										</span>
 										<span class="view">
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=view&member_id=' . $member['member_id'] ) ); ?>">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-members&action=view&member_id=' . $mid ) ); ?>">
 												<?php echo esc_html__( 'View', 'smoketree-plugin' ); ?>
-											</a>
+											</a> |
+										</span>
+										<span class="quick-edit">
+											<button type="button" class="button-link stsrc-quick-edit-btn" data-member-id="<?php echo esc_attr( $mid ); ?>">
+												<?php echo esc_html__( 'Quick Edit', 'smoketree-plugin' ); ?>
+											</button>
 										</span>
 									</div>
 								</td>
 								<td><?php echo esc_html( $member['email'] ); ?></td>
-								<td><?php echo esc_html( $type_lookup[ $member['membership_type_id'] ] ?? __( 'Unknown', 'smoketree-plugin' ) ); ?></td>
-								<td>
+								<td class="column-membership-type"><?php echo esc_html( $type_lookup[ $member['membership_type_id'] ] ?? __( 'Unknown', 'smoketree-plugin' ) ); ?></td>
+								<td class="column-status">
 									<span class="stsrc-status stsrc-status-<?php echo esc_attr( $member['status'] ); ?>">
 										<?php echo esc_html( ucfirst( $member['status'] ) ); ?>
 									</span>
 								</td>
-								<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $member['payment_type'] ) ) ); ?></td>
-								<td class="stsrc-auto-renewal-column">
+								<td class="column-payment-type"><?php echo esc_html( ucfirst( str_replace( '_', ' ', $member['payment_type'] ) ) ); ?></td>
+								<td class="stsrc-auto-renewal-column column-auto-renewal">
 									<?php if ( ! empty( $member['auto_renewal_enabled'] ) ) : ?>
 										<span class="dashicons dashicons-update" style="color: #00a32a;" title="<?php echo esc_attr__( 'Auto-renewal enabled', 'smoketree-plugin' ); ?>"></span>
 									<?php else : ?>
 										<span class="dashicons dashicons-minus" style="color: #b0b0b0;" title="<?php echo esc_attr__( 'Auto-renewal disabled', 'smoketree-plugin' ); ?>"></span>
 									<?php endif; ?>
 								</td>
+								<td class="stsrc-guest-pass-column column-guest-passes"><?php echo esc_html( $gp_balance ); ?></td>
 								<?php
 								$balance = (float) ( $member['balance_owed'] ?? 0 );
 								$balance_class = $balance > 0.01 ? 'stsrc-balance-positive' : ( $balance < -0.01 ? 'stsrc-balance-negative' : 'stsrc-balance-zero' );
@@ -298,13 +315,80 @@ $balance_sort_url = add_query_arg(
 						<?php endforeach; ?>
 					<?php else : ?>
 						<tr>
-							<td colspan="9"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
+							<td colspan="10"><?php echo esc_html__( 'No members found.', 'smoketree-plugin' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
 			</table>
 		</div>
 	</form>
+
+	<!-- Quick Edit Template (hidden, cloned by JS) -->
+	<table style="display:none;">
+		<tbody>
+			<tr id="stsrc-quick-edit-template" class="stsrc-quick-edit-row inline-edit-row">
+				<td colspan="10">
+					<div class="stsrc-quick-edit-inner">
+						<h3><?php echo esc_html__( 'Quick Edit', 'smoketree-plugin' ); ?></h3>
+						<input type="hidden" class="stsrc-qe-member-id" value="">
+
+						<div class="stsrc-quick-edit-fields">
+							<div class="stsrc-qe-field">
+								<label><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></label>
+								<select class="stsrc-qe-status">
+									<option value="active"><?php echo esc_html__( 'Active', 'smoketree-plugin' ); ?></option>
+									<option value="pending"><?php echo esc_html__( 'Pending', 'smoketree-plugin' ); ?></option>
+									<option value="inactive"><?php echo esc_html__( 'Inactive', 'smoketree-plugin' ); ?></option>
+									<option value="cancelled"><?php echo esc_html__( 'Cancelled', 'smoketree-plugin' ); ?></option>
+								</select>
+							</div>
+
+							<div class="stsrc-qe-field">
+								<label><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></label>
+								<select class="stsrc-qe-membership-type">
+									<?php foreach ( $membership_types as $type ) : ?>
+										<option value="<?php echo esc_attr( $type['membership_type_id'] ); ?>">
+											<?php echo esc_html( $type['name'] ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+
+							<div class="stsrc-qe-field">
+								<label><?php echo esc_html__( 'Payment Type', 'smoketree-plugin' ); ?></label>
+								<select class="stsrc-qe-payment-type">
+									<option value="card"><?php echo esc_html__( 'Card', 'smoketree-plugin' ); ?></option>
+									<option value="bank_account"><?php echo esc_html__( 'Bank Account', 'smoketree-plugin' ); ?></option>
+									<option value="zelle"><?php echo esc_html__( 'Zelle', 'smoketree-plugin' ); ?></option>
+									<option value="check"><?php echo esc_html__( 'Check', 'smoketree-plugin' ); ?></option>
+									<option value="pay_later"><?php echo esc_html__( 'Pay Later', 'smoketree-plugin' ); ?></option>
+								</select>
+							</div>
+
+							<div class="stsrc-qe-field">
+								<label class="stsrc-inline-checkbox">
+									<input type="checkbox" class="stsrc-qe-auto-renewal" value="1">
+									<span><?php echo esc_html__( 'Auto-Renewal', 'smoketree-plugin' ); ?></span>
+								</label>
+							</div>
+
+							<div class="stsrc-qe-field">
+								<label><?php echo esc_html__( 'Add Guest Passes', 'smoketree-plugin' ); ?></label>
+								<input type="number" class="stsrc-qe-guest-passes" min="0" step="1" value="" placeholder="0">
+								<p class="description"><?php echo esc_html__( 'Adds to the current balance.', 'smoketree-plugin' ); ?></p>
+							</div>
+						</div>
+
+						<div class="stsrc-quick-edit-actions">
+							<button type="button" class="button button-primary stsrc-qe-save"><?php echo esc_html__( 'Update', 'smoketree-plugin' ); ?></button>
+							<button type="button" class="button stsrc-qe-cancel"><?php echo esc_html__( 'Cancel', 'smoketree-plugin' ); ?></button>
+							<span class="stsrc-qe-spinner spinner"></span>
+						</div>
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 
 	<!-- Season Reset -->
 	<div class="stsrc-season-reset-box">

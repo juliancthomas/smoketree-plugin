@@ -65,6 +65,7 @@ class STSRC_Members_Page {
 	private function render_list(): void {
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-member-db.php';
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-guest-pass-db.php';
 
 		// Get filters from request
 		$filters = array();
@@ -163,11 +164,19 @@ class STSRC_Members_Page {
 		// Get active member count
 		$active_count = STSRC_Member_DB::get_active_member_count();
 
+		// Build guest pass balance lookup.
+		$guest_pass_balances = array();
+		foreach ( $members as $member ) {
+			$mid = (int) $member['member_id'];
+			$guest_pass_balances[ $mid ] = STSRC_Guest_Pass_DB::get_guest_pass_balance( $mid );
+		}
+
 		$data = array(
-			'members'         => $members,
-			'membership_types' => $membership_types,
-			'filters'         => $filters,
-			'active_count'    => $active_count,
+			'members'              => $members,
+			'membership_types'     => $membership_types,
+			'filters'              => $filters,
+			'active_count'         => $active_count,
+			'guest_pass_balances'  => $guest_pass_balances,
 		);
 
 		// Include list template

@@ -3039,6 +3039,123 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Quick-edit a member inline from the members list table.
+	 *
+	 * Accepts only the fields the admin changed. Supports: status,
+	 * membership_type_id, payment_type, auto_renewal_enabled, and
+	 * guest_pass_adjustment (additive credit).
+	 *
+	 * @since    1.3.0
+	 * @return   void
+	 */
+	public function quick_edit_member(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+
+		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$member_id = intval( $post_data['member_id'] ?? 0 );
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+
+		$current_member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $current_member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		$allowed_statuses       = array( 'active', 'pending', 'inactive', 'cancelled' );
+		$allowed_payment_types  = array( 'card', 'bank_account', 'zelle', 'check', 'pay_later' );
+		$update_data            = array();
+		$changed                = false;
+
+		if ( isset( $post_data['status'] ) ) {
+			$status = sanitize_text_field( $post_data['status'] );
+			if ( in_array( $status, $allowed_statuses, true ) ) {
+				$update_data['status'] = $status;
+				$changed = true;
+			}
+		}
+
+		if ( isset( $post_data['membership_type_id'] ) ) {
+			$update_data['membership_type_id'] = intval( $post_data['membership_type_id'] );
+			$changed = true;
+		}
+
+		if ( isset( $post_data['payment_type'] ) ) {
+			$payment_type = sanitize_text_field( $post_data['payment_type'] );
+			if ( in_array( $payment_type, $allowed_payment_types, true ) ) {
+				$update_data['payment_type'] = $payment_type;
+				$changed = true;
+			}
+		}
+
+		if ( isset( $post_data['auto_renewal_enabled'] ) ) {
+			$update_data['auto_renewal_enabled'] = intval( $post_data['auto_renewal_enabled'] ) ? 1 : 0;
+			$changed = true;
+		}
+
+		if ( ! empty( $update_data ) ) {
+			$result = STSRC_Member_DB::update_member( $member_id, $update_data );
+			if ( ! $result ) {
+				wp_send_json_error( array( 'message' => 'Failed to update member.' ) );
+				return;
+			}
+
+			$new_status      = $update_data['status'] ?? null;
+			$previous_status = $current_member['status'] ?? '';
+			if ( 'active' === $new_status && 'active' !== $previous_status ) {
+				require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-balance-service.php';
+				STSRC_Balance_Service::handle_admin_status_override(
+					$member_id,
+					get_current_user_id(),
+					'admin_quick_edit'
+				);
+			}
+		}
+
+		$guest_pass_adjustment = intval( $post_data['guest_pass_adjustment'] ?? 0 );
+		if ( $guest_pass_adjustment > 0 ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
+			$gp_result = STSRC_Guest_Pass_DB::admin_adjust_balance( $member_id, $guest_pass_adjustment, 'Quick edit credit' );
+			if ( ! $gp_result ) {
+				wp_send_json_error( array( 'message' => 'Member updated but guest pass adjustment failed.' ) );
+				return;
+			}
+			$changed = true;
+		}
+
+		if ( ! $changed ) {
+			wp_send_json_error( array( 'message' => 'No changes detected.' ) );
+			return;
+		}
+
+		$updated_member = STSRC_Member_DB::get_member( $member_id );
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
+		$gp_balance = STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id );
+
+		wp_send_json_success(
+			array(
+				'message'            => 'Member updated successfully.',
+				'member'             => $updated_member,
+				'guest_pass_balance' => $gp_balance,
+			)
+		);
+	}
+
+	/**
 	 * Create member (admin).
 	 *
 	 * @since    1.0.0

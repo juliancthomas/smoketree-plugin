@@ -78,6 +78,11 @@
 			if ($('#stsrc-membership-type-form').length) {
 				this.initMembershipTypeForm();
 			}
+
+			// Quick Edit (members list)
+			if ($('#stsrc-quick-edit-template').length) {
+				this.initQuickEdit();
+			}
 		},
 
 		/**
@@ -976,6 +981,175 @@
 						STSRCAdmin.showNotice('An error occurred while deleting the member.', 'error');
 						$confirmDeleteButton.prop('disabled', false).removeClass('disabled').text('Yes, Delete Member');
 					}
+				});
+			});
+		},
+
+		/**
+		 * Initialize inline quick-edit for the members list table.
+		 */
+		initQuickEdit: function() {
+			const self = this;
+			const $template = $('#stsrc-quick-edit-template');
+
+			function closeQuickEdit() {
+				$('.stsrc-quick-edit-row:not(#stsrc-quick-edit-template)').each(function() {
+					const memberId = $(this).find('.stsrc-qe-member-id').val();
+					$('#member-row-' + memberId).show();
+					$(this).remove();
+				});
+			}
+
+			$(document).on('click', '.stsrc-quick-edit-btn', function(e) {
+				e.preventDefault();
+				closeQuickEdit();
+
+				const memberId = $(this).data('member-id');
+				const $row = $('#member-row-' + memberId);
+				const data = $row.data();
+
+				const $editRow = $template.clone().removeAttr('id');
+				$editRow.find('.stsrc-qe-member-id').val(memberId);
+				$editRow.find('.stsrc-qe-status').val(data.status);
+				$editRow.find('.stsrc-qe-membership-type').val(data.membershipTypeId);
+				$editRow.find('.stsrc-qe-payment-type').val(data.paymentType);
+				$editRow.find('.stsrc-qe-auto-renewal').prop('checked', data.autoRenewal === 1 || data.autoRenewal === '1');
+				$editRow.find('.stsrc-qe-guest-passes').val('');
+
+				$editRow.data('original', {
+					status: String(data.status),
+					membershipTypeId: String(data.membershipTypeId),
+					paymentType: String(data.paymentType),
+					autoRenewal: data.autoRenewal === 1 || data.autoRenewal === '1'
+				});
+
+				$row.hide();
+				$row.after($editRow);
+				$editRow.show();
+				$editRow.find('.stsrc-qe-status').trigger('focus');
+			});
+
+			$(document).on('click', '.stsrc-qe-cancel', function(e) {
+				e.preventDefault();
+				closeQuickEdit();
+			});
+
+			$(document).on('keydown', '.stsrc-quick-edit-row', function(e) {
+				if (e.key === 'Escape') {
+					closeQuickEdit();
+				}
+			});
+
+			$(document).on('click', '.stsrc-qe-save', function(e) {
+				e.preventDefault();
+				const $editRow = $(this).closest('.stsrc-quick-edit-row');
+				const memberId = $editRow.find('.stsrc-qe-member-id').val();
+				const original = $editRow.data('original');
+
+				const currentStatus = $editRow.find('.stsrc-qe-status').val();
+				const currentType = $editRow.find('.stsrc-qe-membership-type').val();
+				const currentPayment = $editRow.find('.stsrc-qe-payment-type').val();
+				const currentAR = $editRow.find('.stsrc-qe-auto-renewal').is(':checked');
+				const gpRaw = $editRow.find('.stsrc-qe-guest-passes').val().trim();
+
+				if (gpRaw !== '' && (!/^\d+$/.test(gpRaw) || parseInt(gpRaw, 10) < 0)) {
+					alert('Guest passes must be a positive whole number.');
+					$editRow.find('.stsrc-qe-guest-passes').trigger('focus');
+					return;
+				}
+				const gpAmount = gpRaw !== '' ? parseInt(gpRaw, 10) : 0;
+
+				const payload = {
+					action: 'stsrc_quick_edit_member',
+					nonce: self.nonce,
+					member_id: memberId
+				};
+				let hasChanges = false;
+
+				if (currentStatus !== original.status) {
+					payload.status = currentStatus;
+					hasChanges = true;
+				}
+				if (currentType !== original.membershipTypeId) {
+					payload.membership_type_id = currentType;
+					hasChanges = true;
+				}
+				if (currentPayment !== original.paymentType) {
+					payload.payment_type = currentPayment;
+					hasChanges = true;
+				}
+				if (currentAR !== original.autoRenewal) {
+					payload.auto_renewal_enabled = currentAR ? 1 : 0;
+					hasChanges = true;
+				}
+				if (gpAmount > 0) {
+					payload.guest_pass_adjustment = gpAmount;
+					hasChanges = true;
+				}
+
+				if (!hasChanges) {
+					closeQuickEdit();
+					return;
+				}
+
+				const $saveBtn = $editRow.find('.stsrc-qe-save');
+				const $spinner = $editRow.find('.stsrc-qe-spinner');
+				$saveBtn.prop('disabled', true);
+				$spinner.addClass('is-active');
+
+				$.post(self.ajaxUrl, payload, function(response) {
+					$spinner.removeClass('is-active');
+					$saveBtn.prop('disabled', false);
+
+					if (response.success) {
+						const m = response.data.member;
+						const gpBal = response.data.guest_pass_balance;
+						const $row = $('#member-row-' + memberId);
+
+						$row.data('status', m.status);
+						$row.attr('data-status', m.status);
+						$row.data('membershipTypeId', m.membership_type_id);
+						$row.attr('data-membership-type-id', m.membership_type_id);
+						$row.data('paymentType', m.payment_type);
+						$row.attr('data-payment-type', m.payment_type);
+						$row.data('autoRenewal', m.auto_renewal_enabled ? '1' : '0');
+						$row.attr('data-auto-renewal', m.auto_renewal_enabled ? '1' : '0');
+						$row.data('guestPassBalance', gpBal);
+						$row.attr('data-guest-pass-balance', gpBal);
+
+						const typeSelect = $editRow.find('.stsrc-qe-membership-type');
+						const typeName = typeSelect.find('option:selected').text().trim();
+						$row.find('.column-membership-type').text(typeName);
+
+						const statusLabel = m.status.charAt(0).toUpperCase() + m.status.slice(1);
+						$row.find('.column-status').html(
+							'<span class="stsrc-status stsrc-status-' + m.status + '">' + statusLabel + '</span>'
+						);
+
+						const ptLabel = m.payment_type.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+						$row.find('.column-payment-type').text(ptLabel);
+
+						if (parseInt(m.auto_renewal_enabled)) {
+							$row.find('.column-auto-renewal').html(
+								'<span class="dashicons dashicons-update" style="color: #00a32a;" title="Auto-renewal enabled"></span>'
+							);
+						} else {
+							$row.find('.column-auto-renewal').html(
+								'<span class="dashicons dashicons-minus" style="color: #b0b0b0;" title="Auto-renewal disabled"></span>'
+							);
+						}
+
+						$row.find('.column-guest-passes').text(gpBal);
+
+						closeQuickEdit();
+						self.showNotice(response.data.message, 'success');
+					} else {
+						alert(response.data.message || 'An error occurred.');
+					}
+				}).fail(function() {
+					$spinner.removeClass('is-active');
+					$saveBtn.prop('disabled', false);
+					alert('An error occurred. Please try again.');
 				});
 			});
 		},

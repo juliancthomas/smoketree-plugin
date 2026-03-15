@@ -242,6 +242,94 @@
 	border-bottom: none;
 }
 
+/* Members list: guest pass column */
+.stsrc-guest-pass-column {
+	text-align: center;
+	white-space: nowrap;
+	width: 40px;
+}
+
+/* Members list: quick edit inline row */
+.stsrc-quick-edit-row td {
+	padding: 0 !important;
+}
+
+.stsrc-quick-edit-inner {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	padding: 16px 20px;
+}
+
+.stsrc-quick-edit-inner h3 {
+	margin: 0 0 12px;
+	font-size: 14px;
+}
+
+.stsrc-quick-edit-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: flex-start;
+}
+
+.stsrc-qe-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 140px;
+}
+
+.stsrc-qe-field label {
+	font-weight: 600;
+	font-size: 12px;
+}
+
+.stsrc-qe-field .stsrc-inline-checkbox {
+	flex-direction: row;
+	align-items: center;
+	gap: 6px;
+	margin-top: 18px;
+	font-weight: normal;
+}
+
+.stsrc-qe-field select,
+.stsrc-qe-field input[type="number"] {
+	max-width: 200px;
+}
+
+.stsrc-qe-field .description {
+	font-size: 11px;
+	font-style: italic;
+	color: #646970;
+	margin: 2px 0 0;
+}
+
+.stsrc-quick-edit-actions {
+	margin-top: 12px;
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.stsrc-qe-spinner.is-active {
+	visibility: visible;
+}
+
+/* Members list: quick edit button link */
+.stsrc-quick-edit-btn {
+	color: #2271b1;
+	cursor: pointer;
+	text-decoration: none;
+	background: none;
+	border: none;
+	padding: 0;
+	font-size: inherit;
+}
+
+.stsrc-quick-edit-btn:hover {
+	color: #135e96;
+}
+
 /* Members list: balance column */
 .stsrc-balance-column {
 	text-align: right;

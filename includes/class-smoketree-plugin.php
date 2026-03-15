@@ -332,6 +332,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_access_code', $ajax_handler, 'delete_access_code' );
 		$this->loader->add_action( 'wp_ajax_stsrc_save_settings', $ajax_handler, 'save_settings' );
 		$this->loader->add_action( 'wp_ajax_stsrc_admin_adjust_guest_passes', $ajax_handler, 'admin_adjust_guest_passes' );
+		$this->loader->add_action( 'wp_ajax_stsrc_quick_edit_member', $ajax_handler, 'quick_edit_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_bulk_update_members', $ajax_handler, 'bulk_update_members' );
 		$this->loader->add_action( 'wp_ajax_stsrc_trigger_renewal_notifications', $ajax_handler, 'trigger_renewal_notifications' );
 		$this->loader->add_action( 'wp_ajax_stsrc_trigger_renewal_processing', $ajax_handler, 'trigger_renewal_processing' );
