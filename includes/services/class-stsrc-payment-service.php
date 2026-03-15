@@ -534,6 +534,17 @@ class STSRC_Payment_Service {
 			);
 		}
 
+		$metadata = array(
+			'payment_context' => 'renewal',
+			'renewal_id'      => (string) $renewal_id,
+			'member_id'       => (string) $member_id,
+			'season_key'      => $season_key,
+		);
+
+		if ( $this->is_demo_member( $member ) ) {
+			$metadata['is_demo'] = '1';
+		}
+
 		return $this->create_checkout_session_with_details(
 			array(
 				'amount'               => (float) ( $quote['total'] ?? 0 ),
@@ -544,12 +555,7 @@ class STSRC_Payment_Service {
 				'customer_name'        => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
 				'success_url'          => home_url( '/member-portal?payment=success&context=renewal&session_id={CHECKOUT_SESSION_ID}' ),
 				'cancel_url'           => home_url( '/member-portal?payment=cancelled&context=renewal' ),
-				'metadata'             => array(
-					'payment_context' => 'renewal',
-					'renewal_id'      => (string) $renewal_id,
-					'member_id'       => (string) $member_id,
-					'season_key'      => $season_key,
-				),
+				'metadata'             => $metadata,
 			),
 			$this->get_secret_key_for_member( $member ),
 			$member

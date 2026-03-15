@@ -109,6 +109,7 @@ $data = array(
 );
 $renewal_context = STSRC_Member_Portal::get_renewal_context( $member );
 $data['renewal_context'] = $renewal_context;
+$is_renewal_active = ! empty( $renewal_context['show_section'] );
 
 $request_params        = wp_unslash( $_GET );
 $payment_status        = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
@@ -159,17 +160,19 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<!-- Member Profile Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-profile.php'; ?>
 
-		<!-- Guest Pass Balance Section -->
-		<?php include plugin_dir_path( __FILE__ ) . '../partials/guest-pass-balance.php'; ?>
+		<?php if ( ! $is_renewal_active ) : ?>
+			<!-- Guest Pass Balance Section -->
+			<?php include plugin_dir_path( __FILE__ ) . '../partials/guest-pass-balance.php'; ?>
 
-		<!-- Family Members Section (Household & Duo only) -->
-		<?php if ( ! empty( $membership_type ) && in_array( strtolower( $membership_type['name'] ), array( 'household', 'duo' ), true ) ) : ?>
-			<?php include plugin_dir_path( __FILE__ ) . '../partials/family-members.php'; ?>
-		<?php endif; ?>
+			<!-- Family Members Section (Household & Duo only) -->
+			<?php if ( ! empty( $membership_type ) && in_array( strtolower( $membership_type['name'] ), array( 'household', 'duo' ), true ) ) : ?>
+				<?php include plugin_dir_path( __FILE__ ) . '../partials/family-members.php'; ?>
+			<?php endif; ?>
 
-		<!-- Extra Members Section -->
-		<?php if ( ! empty( $membership_type ) && 'household' === strtolower( $membership_type['name'] ) ) : ?>
-			<?php include plugin_dir_path( __FILE__ ) . '../partials/extra-members.php'; ?>
+			<!-- Extra Members Section -->
+			<?php if ( ! empty( $membership_type ) && 'household' === strtolower( $membership_type['name'] ) ) : ?>
+				<?php include plugin_dir_path( __FILE__ ) . '../partials/extra-members.php'; ?>
+			<?php endif; ?>
 		<?php endif; ?>
 
 		<!-- Restore Deleted Members Section -->
@@ -228,25 +231,27 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 			</div>
 		<?php endif; ?>
 
-		<!-- Access Codes Section -->
-		<?php if ( ! empty( $access_codes ) ) : ?>
-			<div class="stsrc-portal-section">
-				<h2><?php echo esc_html__( 'Access Codes', 'smoketree-plugin' ); ?></h2>
-				<div class="stsrc-access-codes">
-					<?php foreach ( $access_codes as $code ) : ?>
-						<div class="stsrc-access-code-item">
-							<strong><?php echo esc_html( $code['code'] ); ?></strong>
-							<?php if ( ! empty( $code['description'] ) ) : ?>
-								<p><?php echo esc_html( $code['description'] ); ?></p>
-							<?php endif; ?>
-						</div>
-					<?php endforeach; ?>
+		<?php if ( ! $is_renewal_active ) : ?>
+			<!-- Access Codes Section -->
+			<?php if ( ! empty( $access_codes ) ) : ?>
+				<div class="stsrc-portal-section">
+					<h2><?php echo esc_html__( 'Access Codes', 'smoketree-plugin' ); ?></h2>
+					<div class="stsrc-access-codes">
+						<?php foreach ( $access_codes as $code ) : ?>
+							<div class="stsrc-access-code-item">
+								<strong><?php echo esc_html( $code['code'] ); ?></strong>
+								<?php if ( ! empty( $code['description'] ) ) : ?>
+									<p><?php echo esc_html( $code['description'] ); ?></p>
+								<?php endif; ?>
+							</div>
+						<?php endforeach; ?>
+					</div>
 				</div>
-			</div>
-		<?php endif; ?>
+			<?php endif; ?>
 
-		<!-- Transaction History Section -->
-		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>
+			<!-- Transaction History Section -->
+			<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>
+		<?php endif; ?>
 	</div>
 </div>
 
