@@ -148,7 +148,7 @@
 
 			updateToolbarVisibility(stepIdx);
 			stripDoneFromFutureSteps(stepIdx);
-			setTimeout(function() { $wizard.smartWizard('fixHeight'); }, 0);
+			setTimeout(function() { $wizard.smartWizard('fixHeight'); }, 300);
 		});
 
 		function stripDoneFromFutureSteps(currentIdx) {
