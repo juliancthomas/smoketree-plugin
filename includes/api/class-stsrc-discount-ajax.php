@@ -163,6 +163,32 @@ class STSRC_Discount_Ajax {
 	}
 
 	/**
+	 * Run affiliate-code backfill on demand (admin).
+	 *
+	 * @since    1.4.0
+	 * @return   void
+	 */
+	public function run_affiliate_backfill(): void {
+		$this->assert_admin_request();
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
+		$result = STSRC_Discount_Service::backfill_affiliate_codes();
+		$errors = is_array( $result['errors'] ?? null ) ? $result['errors'] : array();
+
+		if ( empty( $errors ) ) {
+			update_option( 'stsrc_affiliate_code_backfill_done', '1' );
+		}
+
+		wp_send_json_success(
+			array(
+				'processed' => (int) ( $result['processed'] ?? 0 ),
+				'skipped'   => (int) ( $result['skipped'] ?? 0 ),
+				'errors'    => $errors,
+			)
+		);
+	}
+
+	/**
 	 * Validate admin AJAX permissions and nonce.
 	 *
 	 * @since    1.4.0

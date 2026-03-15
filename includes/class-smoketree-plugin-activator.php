@@ -137,39 +137,57 @@ class Smoketree_Plugin_Activator {
 
 		$promo_db_version = get_option( 'stsrc_promo_db_version', '0.0.0' );
 
-		if ( version_compare( $promo_db_version, '1.0.0', '>=' ) ) {
-			return;
+		if ( version_compare( $promo_db_version, '1.0.0', '<' ) ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-database.php';
+			STSRC_Database::create_tables();
+
+			$table_members = $wpdb->prefix . 'stsrc_members';
+
+			$wpdb->query(
+				"ALTER TABLE {$table_members}
+				ADD COLUMN IF NOT EXISTS affiliate_code VARCHAR(30) NULL DEFAULT NULL"
+			);
+
+			$existing_unique_index = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT INDEX_NAME
+					FROM information_schema.STATISTICS
+					WHERE TABLE_SCHEMA = %s
+					AND TABLE_NAME = %s
+					AND INDEX_NAME = %s
+					LIMIT 1",
+					DB_NAME,
+					$table_members,
+					'uq_affiliate_code'
+				)
+			);
+
+			if ( empty( $existing_unique_index ) ) {
+				$wpdb->query( "ALTER TABLE {$table_members} ADD UNIQUE KEY uq_affiliate_code (affiliate_code)" );
+			}
+
+			update_option( 'stsrc_promo_db_version', '1.0.0' );
 		}
 
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-database.php';
-		STSRC_Database::create_tables();
+		$backfill_done = get_option( 'stsrc_affiliate_code_backfill_done', '0' );
+		if ( '1' !== (string) $backfill_done ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/services/class-stsrc-discount-service.php';
+			$backfill_result = STSRC_Discount_Service::backfill_affiliate_codes();
+			$errors          = is_array( $backfill_result['errors'] ?? null ) ? $backfill_result['errors'] : array();
 
-		$table_members = $wpdb->prefix . 'stsrc_members';
+			error_log(
+				sprintf(
+					'STSRC Affiliate Backfill: processed %d, skipped %d, errors %d',
+					(int) ( $backfill_result['processed'] ?? 0 ),
+					(int) ( $backfill_result['skipped'] ?? 0 ),
+					count( $errors )
+				)
+			);
 
-		$wpdb->query(
-			"ALTER TABLE {$table_members}
-			ADD COLUMN IF NOT EXISTS affiliate_code VARCHAR(30) NULL DEFAULT NULL"
-		);
-
-		$existing_unique_index = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT INDEX_NAME
-				FROM information_schema.STATISTICS
-				WHERE TABLE_SCHEMA = %s
-				AND TABLE_NAME = %s
-				AND INDEX_NAME = %s
-				LIMIT 1",
-				DB_NAME,
-				$table_members,
-				'uq_affiliate_code'
-			)
-		);
-
-		if ( empty( $existing_unique_index ) ) {
-			$wpdb->query( "ALTER TABLE {$table_members} ADD UNIQUE KEY uq_affiliate_code (affiliate_code)" );
+			if ( empty( $errors ) ) {
+				update_option( 'stsrc_affiliate_code_backfill_done', '1' );
+			}
 		}
-
-		update_option( 'stsrc_promo_db_version', '1.0.0' );
 	}
 
 	/**

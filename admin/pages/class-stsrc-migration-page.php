@@ -203,7 +203,73 @@ class STSRC_Migration_Page {
 					<li><strong>Extra Members:</strong> Extra members are NOT migrated automatically. You'll need to run a separate migration if needed.</li>
 				</ul>
 			</div>
+
+			<div class="card" style="max-width: 800px; margin-top: 20px;">
+				<h2>Affiliate Code Backfill</h2>
+				<p>
+					Use this tool to generate affiliate codes for existing members who do not already have one.
+					This can be safely run multiple times and only fills missing codes.
+				</p>
+				<p>
+					<button type="button" class="button button-secondary" id="stsrc-run-affiliate-backfill-btn">
+						Backfill Affiliate Codes
+					</button>
+				</p>
+				<div id="stsrc-affiliate-backfill-result" style="display:none;"></div>
+			</div>
 		</div>
+		<script>
+			(function($) {
+				'use strict';
+				$(function() {
+					var $button = $('#stsrc-run-affiliate-backfill-btn');
+					var $result = $('#stsrc-affiliate-backfill-result');
+					if ($button.length === 0) {
+						return;
+					}
+
+					$button.on('click', function() {
+						if (!window.confirm('Run affiliate code backfill now?')) {
+							return;
+						}
+
+						$button.prop('disabled', true).text('Running backfill...');
+						$result.hide().removeClass('notice notice-success notice-error').empty();
+
+						$.post(ajaxurl, {
+							action: 'stsrc_run_affiliate_backfill',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>'
+						}).done(function(response) {
+							if (!response || !response.success) {
+								var msg = (response && response.data && response.data.message) ? response.data.message : 'Backfill failed.';
+								$result.addClass('notice notice-error').html('<p><strong>Error:</strong> ' + msg + '</p>').show();
+								return;
+							}
+
+							var data = response.data || {};
+							var errors = Array.isArray(data.errors) ? data.errors : [];
+							var html = '<p><strong>Backfill complete.</strong><br>' +
+								'Processed: ' + Number(data.processed || 0) + '<br>' +
+								'Skipped: ' + Number(data.skipped || 0) + '<br>' +
+								'Errors: ' + errors.length + '</p>';
+							if (errors.length > 0) {
+								html += '<ul style="list-style: disc; padding-left: 30px;">';
+								errors.forEach(function(error) {
+									html += '<li>' + String(error) + '</li>';
+								});
+								html += '</ul>';
+							}
+
+							$result.addClass(errors.length ? 'notice notice-error' : 'notice notice-success').html(html).show();
+						}).fail(function() {
+							$result.addClass('notice notice-error').html('<p><strong>Error:</strong> Request failed.</p>').show();
+						}).always(function() {
+							$button.prop('disabled', false).text('Backfill Affiliate Codes');
+						});
+					});
+				});
+			})(jQuery);
+		</script>
 		<?php
 	}
 
