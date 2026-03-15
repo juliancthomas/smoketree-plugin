@@ -15,6 +15,30 @@ $member = $data['member'] ?? array();
 $membership_type = $data['membership_type'] ?? null;
 $auto_renewal_enabled = ! empty( $member['auto_renewal_enabled'] );
 $auto_renewal_nonce = wp_create_nonce( 'stsrc_auto_renewal_nonce' );
+$is_active_member = 'active' === ( $member['status'] ?? '' );
+$affiliate_code   = sanitize_text_field( (string) ( $member['affiliate_code'] ?? '' ) );
+
+if ( $is_active_member && '' === $affiliate_code && ! empty( $member['member_id'] ) ) {
+	require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/services/class-stsrc-discount-service.php';
+	require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-member-db.php';
+
+	$generated_code = STSRC_Discount_Service::generate_affiliate_code( (string) ( $member['last_name'] ?? '' ) );
+	if ( '' !== $generated_code ) {
+		$updated = STSRC_Member_DB::update_member(
+			(int) $member['member_id'],
+			array( 'affiliate_code' => $generated_code )
+		);
+
+		if ( $updated ) {
+			$affiliate_code = $generated_code;
+		}
+	}
+}
+
+$referral_link = '';
+if ( $is_active_member && '' !== $affiliate_code ) {
+	$referral_link = add_query_arg( 'ref', $affiliate_code, home_url( '/register/' ) );
+}
 ?>
 
 <div class="stsrc-portal-section">
@@ -95,6 +119,29 @@ $auto_renewal_nonce = wp_create_nonce( 'stsrc_auto_renewal_nonce' );
 			</div>
 		<?php endif; ?>
 	</div>
+
+	<?php if ( $is_active_member && '' !== $affiliate_code && '' !== $referral_link ) : ?>
+		<div class="stsrc-affiliate-referral-block">
+			<h3><?php echo esc_html__( 'Share & Save', 'smoketree-plugin' ); ?></h3>
+			<p class="stsrc-affiliate-referral-line">
+				<strong><?php echo esc_html__( 'Your Referral Code:', 'smoketree-plugin' ); ?></strong>
+				<code><?php echo esc_html( $affiliate_code ); ?></code>
+			</p>
+			<p class="stsrc-affiliate-referral-line">
+				<strong><?php echo esc_html__( 'Referral Link:', 'smoketree-plugin' ); ?></strong>
+				<span class="stsrc-affiliate-referral-url"><?php echo esc_html( $referral_link ); ?></span>
+			</p>
+			<button
+				type="button"
+				class="stsrc-button stsrc-button-secondary stsrc-referral-copy-btn"
+				id="copy-referral-btn"
+				data-url="<?php echo esc_attr( $referral_link ); ?>"
+				data-default-text="<?php echo esc_attr__( 'Copy Referral Link', 'smoketree-plugin' ); ?>"
+			>
+				<?php echo esc_html__( 'Copy Referral Link', 'smoketree-plugin' ); ?>
+			</button>
+		</div>
+	<?php endif; ?>
 
 	<div class="stsrc-portal-actions">
 		<button type="button" class="stsrc-button stsrc-button-primary" id="stsrc-edit-profile-btn">

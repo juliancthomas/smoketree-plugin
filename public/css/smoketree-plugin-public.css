@@ -1457,6 +1457,53 @@ body.admin-bar .stsrc-progress-bar {
 	color: var(--stsrc-text-secondary);
 }
 
+.stsrc-affiliate-referral-block {
+	margin-top: var(--stsrc-spacing-lg);
+	padding: var(--stsrc-spacing-md);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-md);
+	background: var(--stsrc-bg-secondary);
+}
+
+.stsrc-affiliate-referral-block h3 {
+	margin: 0 0 var(--stsrc-spacing-sm);
+	font-size: 1rem;
+}
+
+.stsrc-affiliate-referral-line {
+	margin: 0 0 var(--stsrc-spacing-sm);
+	color: var(--stsrc-text-primary);
+}
+
+.stsrc-affiliate-referral-line:last-of-type {
+	margin-bottom: var(--stsrc-spacing-md);
+}
+
+.stsrc-affiliate-referral-line code {
+	display: inline-block;
+	margin-left: var(--stsrc-spacing-xs);
+	padding: 2px 6px;
+	background: var(--stsrc-bg-primary);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-sm);
+	font-family: Consolas, Monaco, "Courier New", monospace;
+	font-size: 0.9rem;
+}
+
+.stsrc-affiliate-referral-url {
+	display: block;
+	margin-top: 4px;
+	word-break: break-all;
+	font-family: Consolas, Monaco, "Courier New", monospace;
+	font-size: 0.875rem;
+	color: var(--stsrc-text-secondary);
+}
+
+.stsrc-referral-copy-btn.is-copied {
+	color: var(--stsrc-success);
+	border-color: var(--stsrc-success);
+}
+
 /* ==========================================================================
    Status Badges
    ========================================================================== */

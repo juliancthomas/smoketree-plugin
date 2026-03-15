@@ -13,6 +13,7 @@
 	$(document).ready(function() {
 		initTransactionToggle();
 		initRenewalSection();
+		initReferralCopyButton();
 	});
 
 	function initTransactionToggle() {
@@ -149,5 +150,54 @@
 
 		$form.on('change', 'input[name="target_membership_type_id"], input[name="payment_method"]', requestQuote);
 		requestQuote();
-	});
+	}
+
+	function initReferralCopyButton() {
+		const $button = $('#copy-referral-btn');
+		if ($button.length === 0) {
+			return;
+		}
+
+		$button.on('click', function() {
+			const $btn = $(this);
+			const referralUrl = String($btn.data('url') || '');
+			const defaultText = String($btn.data('default-text') || 'Copy Referral Link');
+			if (!referralUrl) {
+				return;
+			}
+
+			const setCopiedState = function() {
+				$btn.text('Copied!').addClass('is-copied');
+				window.setTimeout(function() {
+					$btn.text(defaultText).removeClass('is-copied');
+				}, 2000);
+			};
+
+			if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+				navigator.clipboard.writeText(referralUrl).then(setCopiedState).catch(function() {
+					copyWithFallback(referralUrl, setCopiedState);
+				});
+				return;
+			}
+
+			copyWithFallback(referralUrl, setCopiedState);
+		});
+	}
+
+	function copyWithFallback(text, onSuccess) {
+		const input = document.createElement('input');
+		input.value = text;
+		input.setAttribute('readonly', 'readonly');
+		input.style.position = 'absolute';
+		input.style.left = '-9999px';
+		document.body.appendChild(input);
+		input.select();
+		input.setSelectionRange(0, input.value.length);
+
+		const successful = document.execCommand('copy');
+		document.body.removeChild(input);
+		if (successful && typeof onSuccess === 'function') {
+			onSuccess();
+		}
+	}
 })(jQuery);
