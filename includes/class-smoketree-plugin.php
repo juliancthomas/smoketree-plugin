@@ -121,6 +121,7 @@ class Smoketree_Plugin {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-smoketree-plugin-admin.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-stsrc-dashboard-widgets.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/pages/class-stsrc-promo-codes-page.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
@@ -188,10 +189,13 @@ class Smoketree_Plugin {
 
 		$plugin_admin = new Smoketree_Plugin_Admin( $this->get_plugin_name(), $this->get_version() );
 		$dashboard_widgets = new STSRC_Dashboard_Widgets();
+		$promo_codes_page  = new STSRC_Promo_Codes_Page();
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wp_dashboard_setup', $dashboard_widgets, 'register_widgets' );
+		$this->loader->add_action( 'admin_menu', $promo_codes_page, 'register_submenu' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $promo_codes_page, 'enqueue_assets' );
 
 	}
 

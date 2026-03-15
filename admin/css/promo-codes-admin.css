@@ -1,0 +1,89 @@
+.stsrc-promo-filters {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 12px 0 16px;
+}
+
+.stsrc-status-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.stsrc-status-badge.is-active {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.stsrc-status-badge.is-inactive {
+	background: #f3f4f6;
+	color: #4b5563;
+}
+
+.stsrc-promo-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+}
+
+.stsrc-promo-modal__overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.stsrc-promo-modal__dialog {
+	position: relative;
+	z-index: 2;
+	width: min(760px, calc(100% - 40px));
+	margin: 40px auto;
+	background: #fff;
+	border-radius: 8px;
+	padding: 20px;
+	max-height: calc(100vh - 80px);
+	overflow: auto;
+}
+
+.stsrc-promo-modal__close {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	border: 0;
+	background: transparent;
+	font-size: 24px;
+	cursor: pointer;
+}
+
+.stsrc-promo-form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px 16px;
+}
+
+.stsrc-promo-form-grid label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.stsrc-promo-form-grid input[type="text"],
+.stsrc-promo-form-grid input[type="number"],
+.stsrc-promo-form-grid input[type="date"],
+.stsrc-promo-form-grid select {
+	width: 100%;
+}
+
+.stsrc-promo-form-grid__full {
+	grid-column: 1 / -1;
+}
+
+.stsrc-promo-modal__actions {
+	margin-top: 16px;
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
