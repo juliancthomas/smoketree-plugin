@@ -367,6 +367,12 @@ class Smoketree_Stripe_Webhooks {
 			return false;
 		}
 
+		$discount_payload = self::build_discount_payload_from_metadata( $metadata );
+		if ( is_array( $discount_payload ) ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
+			STSRC_Discount_Service::record_discount_usage( $member_id, $discount_payload );
+		}
+
 		// Get membership type for email
 		$membership_type = STSRC_Membership_DB::get_membership_type( $member['membership_type_id'] );
 		$membership_type_name = $membership_type['name'] ?? '';
@@ -404,6 +410,56 @@ class Smoketree_Stripe_Webhooks {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Build discount usage payload from Stripe session metadata.
+	 *
+	 * @since    1.4.0
+	 * @param    array $metadata Session metadata.
+	 * @return   array|null
+	 */
+	private static function build_discount_payload_from_metadata( array $metadata ): ?array {
+		$discount_type = sanitize_key( (string) ( $metadata['discount_type'] ?? '' ) );
+		$discount_code = sanitize_text_field( (string) ( $metadata['discount_code'] ?? '' ) );
+		$discount_amt  = isset( $metadata['discount_amount'] ) ? (float) $metadata['discount_amount'] : 0.00;
+		$type_id       = isset( $metadata['membership_type_id'] ) ? (int) $metadata['membership_type_id'] : 0;
+
+		if ( '' === $discount_type || '' === $discount_code || $discount_amt <= 0 ) {
+			return null;
+		}
+
+		if ( 'promo' === $discount_type ) {
+			$code_id = isset( $metadata['discount_code_id'] ) ? (int) $metadata['discount_code_id'] : 0;
+			if ( $code_id <= 0 ) {
+				return null;
+			}
+
+			return array(
+				'type'               => 'promo',
+				'code'               => $discount_code,
+				'code_id'            => $code_id,
+				'discount_amount'    => $discount_amt,
+				'membership_type_id' => $type_id,
+			);
+		}
+
+		if ( 'affiliate' === $discount_type ) {
+			$referrer_member_id = isset( $metadata['referrer_member_id'] ) ? (int) $metadata['referrer_member_id'] : 0;
+			if ( $referrer_member_id <= 0 ) {
+				return null;
+			}
+
+			return array(
+				'type'               => 'affiliate',
+				'code'               => $discount_code,
+				'referrer_member_id' => $referrer_member_id,
+				'discount_amount'    => $discount_amt,
+				'membership_type_id' => $type_id,
+			);
+		}
+
+		return null;
 	}
 
 	/**

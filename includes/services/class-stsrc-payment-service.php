@@ -120,10 +120,85 @@ class STSRC_Payment_Service {
 	 * Create Stripe Checkout Session.
 	 *
 	 * @since    1.0.0
-	 * @param    array    $data    Array with checkout session data
-	 * @return   string|false       Checkout session URL or false on failure
+	 * @param    array      $data          Array with checkout session data.
+	 * @param    array|null $discount_data Optional discount payload for registration checkout.
+	 * @return   string|array|false        Checkout session URL, free-registration payload, or false on failure.
 	 */
-	public function create_checkout_session( array $data ): string|false {
+	public function create_checkout_session( array $data, ?array $discount_data = null ): string|array|false {
+		if ( ! empty( $discount_data ) ) {
+			$base_amount       = max( 0.00, (float) ( $discount_data['base_amount'] ?? ( $data['metadata']['payment_amount'] ?? $data['amount'] ?? 0 ) ) );
+			$discount_amount   = max( 0.00, (float) ( $discount_data['discount_amount'] ?? 0 ) );
+			$discounted_total  = max( 0.00, round( $base_amount - $discount_amount, 2 ) );
+			$payment_method    = sanitize_text_field( (string) ( $discount_data['payment_method'] ?? ( $data['metadata']['payment_method'] ?? 'card' ) ) );
+			$processing_fee    = $this->calculate_processing_fee( $discounted_total, $payment_method );
+			$grand_total       = round( $discounted_total + $processing_fee, 2 );
+			$product_name      = sanitize_text_field( (string) ( $data['product_name'] ?? 'Membership' ) );
+			$discount_code     = sanitize_text_field( (string) ( $discount_data['code'] ?? '' ) );
+			$membership_line   = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => $product_name,
+					),
+					'unit_amount'  => (int) round( $base_amount * 100 ),
+				),
+				'quantity'   => 1,
+			);
+			$discount_line     = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => sprintf( 'Discount: %s', $discount_code !== '' ? $discount_code : __( 'Applied Discount', 'smoketree-plugin' ) ),
+					),
+					'unit_amount'  => -absint( round( $discount_amount * 100 ) ),
+				),
+				'quantity'   => 1,
+			);
+			$line_items        = array( $membership_line, $discount_line );
+
+			if ( $processing_fee > 0 ) {
+				$line_items[] = array(
+					'price_data' => array(
+						'currency'     => 'usd',
+						'product_data' => array(
+							'name' => 'Processing Fee',
+						),
+						'unit_amount'  => (int) round( $processing_fee * 100 ),
+					),
+					'quantity'   => 1,
+				);
+			}
+
+			$data['line_items'] = $line_items;
+			$data['amount']     = $grand_total;
+			$data['metadata']   = array_merge(
+				$data['metadata'] ?? array(),
+				array(
+					'discount_code'   => $discount_code,
+					'discount_type'   => sanitize_text_field( (string) ( $discount_data['type'] ?? '' ) ),
+					'discount_amount' => $discount_amount,
+					'payment_amount'  => $discounted_total,
+					'processing_fee'  => $processing_fee,
+				)
+			);
+
+			if ( isset( $discount_data['code_id'] ) ) {
+				$data['metadata']['discount_code_id'] = (int) $discount_data['code_id'];
+			}
+			if ( isset( $discount_data['referrer_member_id'] ) ) {
+				$data['metadata']['referrer_member_id'] = (int) $discount_data['referrer_member_id'];
+			}
+
+			if ( $discounted_total <= 0.00 ) {
+				return array(
+					'status'           => 'free',
+					'member_id'        => (int) ( $data['metadata']['member_id'] ?? 0 ),
+					'discounted_total' => 0.00,
+					'discount_amount'  => $discount_amount,
+				);
+			}
+		}
+
 		$details = $this->create_checkout_session_with_details( $data );
 
 		if ( false === $details ) {
@@ -135,6 +210,37 @@ class STSRC_Payment_Service {
 		}
 
 		return (string) $details['url'];
+	}
+
+	/**
+	 * Calculate Stripe processing fee by payment method.
+	 *
+	 * @since    1.4.0
+	 * @param    float  $amount         Subtotal amount before fee.
+	 * @param    string $payment_method Stripe payment method type.
+	 * @return   float
+	 */
+	private function calculate_processing_fee( float $amount, string $payment_method ): float {
+		if ( $amount <= 0 ) {
+			return 0.00;
+		}
+
+		$rates = array(
+			'card'            => array( 'percent' => 0.029, 'flat' => 0.30, 'cap' => null ),
+			'us_bank_account' => array( 'percent' => 0.008, 'flat' => 0.00, 'cap' => 5.00 ),
+		);
+		$rate  = $rates[ $payment_method ] ?? null;
+
+		if ( null === $rate ) {
+			return 0.00;
+		}
+
+		$fee = $amount * (float) $rate['percent'] + (float) $rate['flat'];
+		if ( null !== $rate['cap'] && $fee > (float) $rate['cap'] ) {
+			$fee = (float) $rate['cap'];
+		}
+
+		return round( $fee, 2 );
 	}
 
 	/**

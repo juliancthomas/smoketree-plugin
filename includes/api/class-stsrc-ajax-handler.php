@@ -227,6 +227,12 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
+		$discount_payload = $this->validate_registration_discount_payload( $post_data, $data );
+		if ( is_wp_error( $discount_payload ) ) {
+			wp_send_json_error( array( 'message' => $discount_payload->get_error_message() ) );
+			return;
+		}
+
 		// Check for duplicate email or cancelled account
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
@@ -387,7 +393,7 @@ class STSRC_Ajax_Handler {
 
 		if ( in_array( $payment_type, array( 'card', 'bank_account' ), true ) ) {
 			// Stripe payment flow - redirect to checkout
-			$result = $this->process_stripe_payment( $data, $member_id );
+			$result = $this->process_stripe_payment( $data, $member_id, is_array( $discount_payload ) ? $discount_payload : null );
 			if ( is_wp_error( $result ) ) {
 				STSRC_Logger::error(
 					'Stripe checkout session creation failed during registration.',
@@ -403,6 +409,45 @@ class STSRC_Ajax_Handler {
 				return;
 			}
 
+			if ( is_array( $result ) && 'free' === ( $result['status'] ?? '' ) ) {
+				$finalized = $this->finalize_free_registration(
+					$data,
+					$member_id,
+					is_array( $discount_payload ) ? $discount_payload : array()
+				);
+				if ( is_wp_error( $finalized ) ) {
+					$this->rollback_registration( $rollback_context );
+					wp_send_json_error( array( 'message' => $finalized->get_error_message() ) );
+					return;
+				}
+
+				if ( is_array( $discount_payload ) ) {
+					$this->record_discount_usage_for_member( $member_id, $discount_payload );
+				}
+
+				$member_record = STSRC_Member_DB::get_member( $member_id );
+				if ( $member_record && ! empty( $member_record['user_id'] ) ) {
+					wp_set_current_user( (int) $member_record['user_id'] );
+					wp_set_auth_cookie( (int) $member_record['user_id'], true );
+				}
+
+				$redirect_url = add_query_arg(
+					array(
+						'registration' => 'success',
+						'payment_type' => sanitize_text_field( (string) ( $data['payment_type'] ?? 'card' ) ),
+					),
+					home_url( '/member-portal/' )
+				);
+
+				wp_send_json_success(
+					array(
+						'message'      => 'Registration complete! Redirecting to your member portal...',
+						'redirect_url' => $redirect_url,
+					)
+				);
+				return;
+			}
+
 			wp_send_json_success(
 				array(
 					'message'      => 'Redirecting to payment...',
@@ -411,7 +456,7 @@ class STSRC_Ajax_Handler {
 			);
 		} else {
 			// Manual payment flow (Zelle, Check, Pay Later)
-			$result = $this->process_manual_payment( $data, $member_id );
+			$result = $this->process_manual_payment( $data, $member_id, is_array( $discount_payload ) ? $discount_payload : null );
 			if ( is_wp_error( $result ) ) {
 				STSRC_Logger::error(
 					'Manual registration payment handling failed.',
@@ -425,6 +470,10 @@ class STSRC_Ajax_Handler {
 				$this->rollback_registration( $rollback_context );
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 				return;
+			}
+
+			if ( is_array( $discount_payload ) ) {
+				$this->record_discount_usage_for_member( $member_id, $discount_payload );
 			}
 
 			// Auto-login the newly registered user so the portal redirect works.
@@ -617,6 +666,156 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Revalidate submitted discount data server-side.
+	 *
+	 * @since    1.4.0
+	 * @param    array $post_data Raw request payload.
+	 * @param    array $data      Validated registration data.
+	 * @return   array|WP_Error|null
+	 */
+	private function validate_registration_discount_payload( array $post_data, array $data ): array|WP_Error|null {
+		$discount_type = sanitize_key( (string) ( $post_data['applied_discount_type'] ?? '' ) );
+		if ( '' === $discount_type ) {
+			return null;
+		}
+
+		$discount_code = strtoupper( sanitize_text_field( (string) ( $post_data['applied_discount_code'] ?? '' ) ) );
+		if ( '' === $discount_code ) {
+			return new WP_Error( 'invalid_discount_code', __( 'The selected discount could not be validated. Please reapply and try again.', 'smoketree-plugin' ) );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$membership_type_id = (int) ( $data['membership_type_id'] ?? 0 );
+		$membership_type    = STSRC_Membership_DB::get_membership_type( $membership_type_id );
+		if ( ! $membership_type ) {
+			return new WP_Error( 'invalid_membership', __( 'Invalid membership type selected.', 'smoketree-plugin' ) );
+		}
+
+		$base_amount = (float) ( $membership_type['price'] ?? 0.00 );
+
+		if ( 'promo' === $discount_type ) {
+			$validated = STSRC_Discount_Service::validate_promo_code( $discount_code, $membership_type_id );
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+
+			return array(
+				'type'               => 'promo',
+				'code'               => (string) ( $validated['code'] ?? $discount_code ),
+				'code_id'            => (int) ( $validated['code_id'] ?? 0 ),
+				'membership_type_id' => $membership_type_id,
+				'discount_type'      => (string) ( $validated['discount_type'] ?? 'flat' ),
+				'discount_value'     => (float) ( $validated['discount_value'] ?? 0.00 ),
+				'discount_amount'    => (float) ( $validated['computed_amount'] ?? 0.00 ),
+				'discounted_total'   => (float) ( $validated['final_amount'] ?? $base_amount ),
+				'base_amount'        => $base_amount,
+			);
+		}
+
+		if ( 'affiliate' === $discount_type ) {
+			$validated = STSRC_Discount_Service::validate_affiliate_code( $discount_code );
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+
+			$discount_amount = (float) ( $validated['discount_amount'] ?? 0.00 );
+			$final_amount    = STSRC_Discount_Service::compute_discounted_total( $base_amount, 'flat', $discount_amount );
+
+			return array(
+				'type'               => 'affiliate',
+				'code'               => (string) ( $validated['code'] ?? $discount_code ),
+				'referrer_member_id' => (int) ( $validated['referrer_member_id'] ?? 0 ),
+				'referrer_name'      => (string) ( $validated['referrer_name'] ?? '' ),
+				'membership_type_id' => $membership_type_id,
+				'discount_type'      => 'flat',
+				'discount_value'     => $discount_amount,
+				'discount_amount'    => $discount_amount,
+				'discounted_total'   => $final_amount,
+				'base_amount'        => $base_amount,
+			);
+		}
+
+		return new WP_Error( 'invalid_discount_type', __( 'Invalid discount type submitted.', 'smoketree-plugin' ) );
+	}
+
+	/**
+	 * Persist discount usage when a registration finalizes immediately.
+	 *
+	 * @since    1.4.0
+	 * @param    int   $member_id         Member ID.
+	 * @param    array $discount_payload  Validated payload.
+	 * @return   void
+	 */
+	private function record_discount_usage_for_member( int $member_id, array $discount_payload ): void {
+		if ( empty( $discount_payload ) ) {
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
+		STSRC_Discount_Service::record_discount_usage( $member_id, $discount_payload );
+	}
+
+	/**
+	 * Finalize zero-dollar discounted registrations without Stripe.
+	 *
+	 * @since    1.4.0
+	 * @param    array $data             Registration data.
+	 * @param    int   $member_id        Member ID.
+	 * @param    array $discount_payload Validated discount payload.
+	 * @return   bool|WP_Error
+	 */
+	private function finalize_free_registration( array $data, int $member_id, array $discount_payload ): bool|WP_Error {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-member-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$membership_type = STSRC_Membership_DB::get_membership_type( (int) ( $data['membership_type_id'] ?? 0 ) );
+		if ( ! $membership_type ) {
+			return new WP_Error( 'invalid_membership', __( 'Invalid membership type selected.', 'smoketree-plugin' ) );
+		}
+
+		$payment_type = 'affiliate' === ( $discount_payload['type'] ?? '' ) ? 'referral_free' : 'promo_free';
+		$base_amount  = (float) ( $membership_type['price'] ?? 0.00 );
+		$member_saved = STSRC_Member_DB::update_member(
+			$member_id,
+			array(
+				'status'                    => 'pending',
+				'payment_type'              => $payment_type,
+				'balance_owed'              => 0.00,
+				'original_membership_price' => $base_amount,
+			)
+		);
+
+		if ( ! $member_saved ) {
+			return new WP_Error( 'member_update_failed', __( 'Failed to finalize discounted registration.', 'smoketree-plugin' ) );
+		}
+
+		$transaction_id = STSRC_Transaction_DB::create_transaction(
+			$member_id,
+			array(
+				'transaction_type' => 'initial',
+				'payment_method'   => 'initial',
+				'amount'           => 0.00,
+				'balance_after'    => 0.00,
+				'description'      => __( 'Registration completed with a full discount (no Stripe checkout required).', 'smoketree-plugin' ),
+			)
+		);
+		if ( false === $transaction_id ) {
+			return new WP_Error( 'transaction_failed', __( 'Failed to record the discounted registration transaction.', 'smoketree-plugin' ) );
+		}
+
+		$member_service = new STSRC_Member_Service();
+		if ( ! $member_service->activate_member( $member_id ) ) {
+			return new WP_Error( 'activation_failed', __( 'Account created but activation failed. Please contact support.', 'smoketree-plugin' ) );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Process Stripe payment for registration.
 	 *
 	 * @since    1.0.0
@@ -624,7 +823,7 @@ class STSRC_Ajax_Handler {
 	 * @param    int      $member_id  Member ID (required - account created before payment)
 	 * @return   string|WP_Error      Checkout URL or WP_Error on failure
 	 */
-	private function process_stripe_payment( array $data, int $member_id ): string|WP_Error {
+	private function process_stripe_payment( array $data, int $member_id, ?array $discount_payload = null ): string|array|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-payment-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'api/class-stsrc-balance-ajax.php';
@@ -689,6 +888,7 @@ class STSRC_Ajax_Handler {
 		$checkout_url = $payment_service->create_checkout_session(
 			array(
 				'amount'               => $membership_price + $processing_fee,
+				'product_name'         => $membership_type['name'] . ' Membership',
 				'line_items'           => $line_items,
 				'payment_method_types' => array( $stripe_method_type ),
 				'customer_email'       => $data['email'],
@@ -704,8 +904,13 @@ class STSRC_Ajax_Handler {
 					'processing_fee'     => $processing_fee,
 					'payment_method'     => $stripe_method_type,
 				),
-			)
+			),
+			$discount_payload
 		);
+
+		if ( is_array( $checkout_url ) && 'free' === ( $checkout_url['status'] ?? '' ) ) {
+			return $checkout_url;
+		}
 
 		if ( ! $checkout_url ) {
 			STSRC_Logger::error(
@@ -731,7 +936,7 @@ class STSRC_Ajax_Handler {
 	 * @param    int      $member_id  Member ID (account already created)
 	 * @return   bool|WP_Error        True on success, WP_Error on failure
 	 */
-	private function process_manual_payment( array $data, int $member_id ): bool|WP_Error {
+	private function process_manual_payment( array $data, int $member_id, ?array $discount_payload = null ): bool|WP_Error {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
@@ -742,7 +947,10 @@ class STSRC_Ajax_Handler {
 		if ( ! $membership_type ) {
 			return new WP_Error( 'invalid_membership', 'Invalid membership type selected.' );
 		}
-		$amount_due = (float) ( $membership_type['price'] ?? 0 );
+		$base_amount = (float) ( $membership_type['price'] ?? 0 );
+		$amount_due  = isset( $discount_payload['discounted_total'] )
+			? max( 0.00, (float) $discount_payload['discounted_total'] )
+			: $base_amount;
 
 		// For non-Stripe registrations, set initial balance fields and ensure pending status.
 		$member_updated = STSRC_Member_DB::update_member(
@@ -750,7 +958,7 @@ class STSRC_Ajax_Handler {
 			array(
 				'status'                    => 'pending',
 				'balance_owed'              => $amount_due,
-				'original_membership_price' => $amount_due,
+				'original_membership_price' => $base_amount,
 			)
 		);
 
