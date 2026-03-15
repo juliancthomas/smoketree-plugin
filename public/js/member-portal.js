@@ -84,7 +84,7 @@
 			transition: {
 				animation: 'slideHorizontal',
 				speed: '400',
-				easing: 'ease'
+				easing: ''
 			},
 			toolbar: {
 				position: 'bottom',
