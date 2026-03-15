@@ -40,6 +40,7 @@ class STSRC_Database {
 		// Load transaction DB class for table creation
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-renewal-db.php';
 
 		// Table: wp_stsrc_members
 		$table_members = $wpdb->prefix . 'stsrc_members';
@@ -230,6 +231,9 @@ class STSRC_Database {
 		// Enhance members table with balance tracking columns (v1.1.0+)
 		STSRC_Member_DB::enhance_table_for_balance_tracking();
 
+		// Create member renewals ledger table.
+		STSRC_Renewal_DB::create_table();
+
 		// Drop legacy guest_pass_balance column (v1.2.0+) — balance is now computed from stsrc_guest_passes.
 		self::drop_guest_pass_balance_column();
 
@@ -361,6 +365,7 @@ class STSRC_Database {
 		$table_email_logs     = $wpdb->prefix . 'stsrc_email_logs';
 		$table_payment_logs   = $wpdb->prefix . 'stsrc_payment_logs';
 		$table_transactions   = $wpdb->prefix . 'stsrc_transactions';
+		$table_renewals       = $wpdb->prefix . 'stsrc_member_renewals';
 
 		// Check and add foreign keys if they don't exist
 		$constraints = array(
@@ -406,6 +411,13 @@ class STSRC_Database {
 					ADD CONSTRAINT fk_transactions_member_id 
 					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
 			),
+			array(
+				'table' => $table_renewals,
+				'name'  => 'fk_renewals_member_id',
+				'sql'   => "ALTER TABLE {$table_renewals}
+					ADD CONSTRAINT fk_renewals_member_id
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
 		);
 
 		foreach ( $constraints as $constraint ) {
@@ -441,6 +453,7 @@ class STSRC_Database {
 		global $wpdb;
 
 		$tables = array(
+			$wpdb->prefix . 'stsrc_member_renewals',
 			$wpdb->prefix . 'stsrc_transactions',
 			$wpdb->prefix . 'stsrc_payment_logs',
 			$wpdb->prefix . 'stsrc_access_codes',

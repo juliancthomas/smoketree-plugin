@@ -46,6 +46,8 @@ remove_role( 'stsrc_member' );
 $option_keys = array(
 	'stsrc_registration_enabled',
 	'stsrc_payment_plan_enabled',
+	'stsrc_renewal_enabled',
+	'stsrc_renewal_db_version',
 	'stsrc_stripe_publishable_key',
 	'stsrc_stripe_secret_key',
 	'stsrc_stripe_test_mode',

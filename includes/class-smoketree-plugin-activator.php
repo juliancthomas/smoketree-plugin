@@ -102,6 +102,27 @@ class Smoketree_Plugin_Activator {
 		if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
 			update_option( 'stsrc_db_version', $plugin_version );
 		}
+
+		self::upgrade_renewal_database();
+	}
+
+	/**
+	 * Ensure renewal ledger schema is installed/upgraded safely.
+	 *
+	 * @since    1.3.0
+	 * @return   void
+	 */
+	private static function upgrade_renewal_database(): void {
+		$renewal_db_version = get_option( 'stsrc_renewal_db_version', '0.0.0' );
+
+		if ( version_compare( $renewal_db_version, '1.0.0', '>=' ) ) {
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-renewal-db.php';
+		STSRC_Renewal_DB::create_table();
+
+		update_option( 'stsrc_renewal_db_version', '1.0.0' );
 	}
 
 	/**
@@ -137,6 +158,10 @@ class Smoketree_Plugin_Activator {
 
 		if ( ! get_option( 'stsrc_payment_plan_enabled' ) ) {
 			add_option( 'stsrc_payment_plan_enabled', '0' );
+		}
+
+		if ( false === get_option( 'stsrc_renewal_enabled', false ) ) {
+			add_option( 'stsrc_renewal_enabled', '0' );
 		}
 	}
 
