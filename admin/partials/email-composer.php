@@ -106,9 +106,25 @@ $templates = $data['templates'] ?? array();
 				</table>
 			</div>
 
-			<!-- Member Filters -->
-			<div class="stsrc-form-section">
-				<h2><?php echo esc_html__( 'Recipient Filters', 'smoketree-plugin' ); ?></h2>
+		<!-- Quick Send -->
+		<div class="stsrc-form-section">
+			<h2><?php echo esc_html__( 'Quick Send', 'smoketree-plugin' ); ?></h2>
+			<p class="description"><?php echo esc_html__( 'Enter email addresses to send to directly. These recipients will receive the email in addition to any filtered members below.', 'smoketree-plugin' ); ?></p>
+			<table class="form-table">
+				<tr>
+					<th><label for="manual_emails"><?php echo esc_html__( 'Email Addresses', 'smoketree-plugin' ); ?></label></th>
+					<td>
+						<textarea name="manual_emails" id="manual_emails" rows="3" class="large-text" placeholder="<?php echo esc_attr__( 'e.g. john@example.com, jane@example.com', 'smoketree-plugin' ); ?>"></textarea>
+						<p class="description"><?php echo esc_html__( 'Comma-separated email addresses. Note: placeholders like {first_name} will not be replaced for these recipients.', 'smoketree-plugin' ); ?></p>
+						<div id="stsrc-manual-emails-errors" style="display: none; color: #d63638; margin-top: 6px;"></div>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Member Filters -->
+		<div class="stsrc-form-section">
+			<h2><?php echo esc_html__( 'Recipient Filters', 'smoketree-plugin' ); ?></h2>
 				<p class="description"><?php echo esc_html__( 'Select filters to target specific members. Leave all filters empty to send to all members.', 'smoketree-plugin' ); ?></p>
 				<table class="form-table">
 					<tr>
@@ -198,7 +214,7 @@ $templates = $data['templates'] ?? array();
 			<button type="button" id="send-test-email-btn" class="button">
 				<?php echo esc_html__( 'Send Test Email', 'smoketree-plugin' ); ?>
 			</button>
-			<input type="submit" name="submit" id="submit" class="button button-primary" value="<?php echo esc_attr__( 'Send to All Recipients', 'smoketree-plugin' ); ?>">
+			<input type="submit" name="submit" id="submit" class="button button-primary" value="<?php echo esc_attr__( 'Send Email', 'smoketree-plugin' ); ?>">
 		</p>
 	</form>
 </div>

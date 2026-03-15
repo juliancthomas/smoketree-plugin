@@ -2339,6 +2339,36 @@ class STSRC_Ajax_Handler {
 			$filters['date_to'] = sanitize_text_field( $_POST['date_to'] );
 		}
 
+		// Parse manual email addresses from Quick Send.
+		$manual_emails   = array();
+		$invalid_emails  = array();
+		$raw_manual      = sanitize_text_field( $_POST['manual_emails'] ?? '' );
+		if ( ! empty( $raw_manual ) ) {
+			$entries = array_map( 'trim', explode( ',', $raw_manual ) );
+			foreach ( $entries as $entry ) {
+				if ( empty( $entry ) ) {
+					continue;
+				}
+				if ( is_email( $entry ) ) {
+					$manual_emails[] = sanitize_email( $entry );
+				} else {
+					$invalid_emails[] = $entry;
+				}
+			}
+			if ( ! empty( $invalid_emails ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							'Invalid email address%s: %s',
+							count( $invalid_emails ) > 1 ? 'es' : '',
+							implode( ', ', $invalid_emails )
+						),
+					)
+				);
+				return;
+			}
+		}
+
 		// Get recipients
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 		$members = STSRC_Member_DB::get_members( $filters );
@@ -2382,16 +2412,17 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		if ( empty( $members ) ) {
-			wp_send_json_error( array( 'message' => 'No members found matching the criteria.' ) );
+		if ( empty( $members ) && empty( $manual_emails ) ) {
+			wp_send_json_error( array( 'message' => 'No recipients found. Add email addresses or adjust your filters.' ) );
 			return;
 		}
 
-		// Prepare recipient list
+		// Prepare recipient list: member IDs + raw manual emails.
 		$recipients = array();
 		foreach ( $members as $member ) {
 			$recipients[] = (int) $member['member_id'];
 		}
+		$recipients = array_merge( $recipients, $manual_emails );
 
 		// Handle attachments
 		$attachments = array();

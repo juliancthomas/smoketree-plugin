@@ -459,6 +459,9 @@
 				return;
 			}
 
+			var manualEmails = self.parseManualEmails();
+			var hasManualEmails = manualEmails.length > 0;
+
 			// If the recipient list hasn't been loaded yet, auto-load it first.
 			if (!self.recipientListLoaded) {
 				self.loadRecipientPreview(function() {
@@ -468,12 +471,21 @@
 			}
 
 			const selectedCount = parseInt($('#stsrc-selected-count').text(), 10) || 0;
-			if (selectedCount === 0) {
-				STSRCAdmin.showNotice('No recipients selected. Please select at least one recipient.', 'warning');
+			var totalRecipients = selectedCount + manualEmails.length;
+
+			if (totalRecipients === 0) {
+				STSRCAdmin.showNotice('No recipients. Enter email addresses in Quick Send or select filtered members.', 'warning');
 				return;
 			}
 
-			if (!confirm('Are you sure you want to send this email to ' + selectedCount + ' ' + (selectedCount === 1 ? 'recipient' : 'recipients') + '?')) {
+			var confirmParts = [];
+			if (manualEmails.length > 0) {
+				confirmParts.push(manualEmails.length + ' manual ' + (manualEmails.length === 1 ? 'address' : 'addresses'));
+			}
+			if (selectedCount > 0) {
+				confirmParts.push(selectedCount + ' filtered ' + (selectedCount === 1 ? 'member' : 'members'));
+			}
+			if (!confirm('Send this email to ' + confirmParts.join(' and ') + ' (' + totalRecipients + ' total)?')) {
 				return;
 			}
 
@@ -662,6 +674,41 @@
 	},
 
 	/**
+	 * Parse the manual_emails textarea into an array of trimmed, non-empty values.
+	 */
+	parseManualEmails: function() {
+		var raw = $.trim($('#manual_emails').val());
+		if (!raw) {
+			return [];
+		}
+		return raw.split(',').map(function(e) { return $.trim(e); }).filter(Boolean);
+	},
+
+	/**
+	 * Validate manual email addresses. Returns true when valid (or empty).
+	 */
+	validateManualEmails: function() {
+		var emails = this.parseManualEmails();
+		var $errors = $('#stsrc-manual-emails-errors');
+		var invalid = [];
+		var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+		emails.forEach(function(email) {
+			if (!emailRegex.test(email)) {
+				invalid.push(email);
+			}
+		});
+
+		if (invalid.length) {
+			$errors.html('Invalid email address' + (invalid.length > 1 ? 'es' : '') + ': <strong>' + invalid.map(function(e) { return $('<span>').text(e).html(); }).join(', ') + '</strong>').show();
+			return false;
+		}
+
+		$errors.hide().empty();
+		return true;
+	},
+
+	/**
 	 * Validate email composer before send.
 	 */
 	validateEmailComposer: function() {
@@ -673,13 +720,10 @@
 			}
 
 		var template = $('#template').val();
-		// Sync Quill content to hidden input before reading (belt-and-suspenders
-		// in case a browser skips the text-change event on programmatic edits).
 		if (typeof window.stsrcQuill !== 'undefined') {
 			$('#message').val(window.stsrcQuill.root.innerHTML);
 		}
 		var message = $.trim($('#message').val());
-		// Quill's empty-editor sentinel value
 		if (message === '<p><br></p>') {
 			message = '';
 		}
@@ -688,6 +732,10 @@
 				STSRCAdmin.showNotice('Either a message or a template is required.', 'error');
 				return false;
 			}
+
+		if (!this.validateManualEmails()) {
+			return false;
+		}
 
 			return true;
 		},
