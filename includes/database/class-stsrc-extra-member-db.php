@@ -23,6 +23,7 @@
  * @author     Smoketree Swim and Recreation Club
  */
 class STSRC_Extra_Member_DB {
+	public const MAX_HOUSEHOLD_EXTRAS = 3;
 
 	/**
 	 * Add an extra member to a member account.
@@ -386,6 +387,96 @@ class STSRC_Extra_Member_DB {
 		);
 
 		return (int) $count;
+	}
+
+	/**
+	 * Validate selected extra-member count for Household memberships.
+	 *
+	 * @param int $extra_member_count Number of extras.
+	 * @return bool
+	 */
+	public static function is_valid_household_extra_count( int $extra_member_count ): bool {
+		return $extra_member_count >= 0 && $extra_member_count <= self::MAX_HOUSEHOLD_EXTRAS;
+	}
+
+	/**
+	 * Get active extra member IDs for a member.
+	 *
+	 * @param int $member_id Member ID.
+	 * @return int[]
+	 */
+	public static function get_active_ids_by_member( int $member_id ): array {
+		$rows = self::get_by_member_id( $member_id, false );
+
+		return array_values(
+			array_map(
+				'absint',
+				array_column( $rows, 'extra_member_id' )
+			)
+		);
+	}
+
+	/**
+	 * Check that all provided extra member IDs belong to the member.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param int[] $extra_member_ids Extra member IDs.
+	 * @return bool
+	 */
+	public static function member_owns_ids( int $member_id, array $extra_member_ids ): bool {
+		$extra_member_ids = array_values( array_unique( array_map( 'absint', $extra_member_ids ) ) );
+		$extra_member_ids = array_filter( $extra_member_ids );
+
+		if ( empty( $extra_member_ids ) ) {
+			return true;
+		}
+
+		$active_ids = self::get_active_ids_by_member( $member_id );
+
+		foreach ( $extra_member_ids as $extra_member_id ) {
+			if ( ! in_array( $extra_member_id, $active_ids, true ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Soft-delete a subset of active extra members for a member.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param int[] $extra_member_ids Extra member IDs.
+	 * @return int Number of rows updated.
+	 */
+	public static function soft_delete_member_ids( int $member_id, array $extra_member_ids ): int {
+		global $wpdb;
+
+		if ( ! self::has_status_column() ) {
+			return 0;
+		}
+
+		$extra_member_ids = array_values( array_unique( array_map( 'absint', $extra_member_ids ) ) );
+		$extra_member_ids = array_filter( $extra_member_ids );
+
+		if ( empty( $extra_member_ids ) ) {
+			return 0;
+		}
+
+		$table_name    = $wpdb->prefix . 'stsrc_extra_members';
+		$placeholders  = implode( ', ', array_fill( 0, count( $extra_member_ids ), '%d' ) );
+		$query         = "UPDATE {$table_name}
+			SET status = 'deleted', updated_at = %s
+			WHERE member_id = %d
+			AND status = 'active'
+			AND extra_member_id IN ({$placeholders})";
+		$query_values  = array_merge(
+			array( current_time( 'mysql' ), $member_id ),
+			$extra_member_ids
+		);
+		$updated       = $wpdb->query( $wpdb->prepare( $query, $query_values ) );
+
+		return false === $updated ? 0 : (int) $updated;
 	}
 
 	/**
