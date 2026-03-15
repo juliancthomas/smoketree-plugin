@@ -22,6 +22,9 @@ $current_price   = (float) ( $membership_type['price'] ?? 0.00 );
 $balance_owed    = (float) ( $member['balance_owed'] ?? 0.00 );
 $renewal_nonce   = wp_create_nonce( 'stsrc_renewal_nonce' );
 
+$use_acf           = function_exists( 'get_field' );
+$auto_renewal_text = $use_acf ? get_field( 'stsrc_auto_renewal_text', 'option' ) : get_option( 'stsrc_auto_renewal_text', '' );
+
 $payment_instructions = array();
 $instruction_fields   = array(
 	'zelle'        => 'zelle_instructions',
@@ -120,6 +123,22 @@ if ( function_exists( 'get_field' ) ) {
 						<?php endif; ?>
 					</label>
 				<?php endforeach; ?>
+			</div>
+			<!-- Auto-Renewal Agreement (visible only for Stripe-compatible payment methods) -->
+			<div class="stsrc-renewal-auto-renewal" id="stsrc-renewal-auto-renewal">
+				<h3><?php echo esc_html__( 'Auto-Renewal for Next Season', 'smoketree-plugin' ); ?></h3>
+
+				<?php if ( ! empty( $auto_renewal_text ) ) : ?>
+					<div class="stsrc-legal-text" tabindex="0"><?php echo wp_kses_post( $auto_renewal_text ); ?></div>
+				<?php endif; ?>
+
+				<label class="stsrc-checkbox-label">
+					<input type="checkbox" name="auto_renewal_optin" id="stsrc-renewal-auto-renewal-optin" value="1">
+					<span><?php echo esc_html__( 'Yes, automatically renew my membership next season using my saved payment method.', 'smoketree-plugin' ); ?></span>
+				</label>
+				<p class="stsrc-description">
+					<?php echo esc_html__( 'You can change this at any time from your Member Portal.', 'smoketree-plugin' ); ?>
+				</p>
 			</div>
 		</div>
 

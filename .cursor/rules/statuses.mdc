@@ -8,7 +8,8 @@ Members have one of four statuses. Each status represents a distinct stage in th
 ### `active`
 The member has a current, paid membership for the active season. They have full access to member features (portal, guest passes, affiliate referrals, etc.). A member becomes `active` when:
 - Their initial registration payment succeeds (Stripe webhook confirmation)
-- Their renewal payment succeeds
+- Their renewal payment succeeds (manual renewal: `inactive` → `pending` → `active`)
+- Auto-renewal charges succeed (Stripe off-session: `inactive` → `active` directly, no `pending` step because the charge confirms instantly)
 - An admin manually sets them to active (bulk or individual)
 
 ### `pending`
@@ -28,7 +29,7 @@ The member had a membership in a previous season but has not renewed for the cur
 - A deleted member's account is restored
 - An admin reactivates a cancelled member (un-cancels without a payment flow)
 
-`inactive` members can see and use the renewal section in the member portal. They must complete a renewal flow (`inactive` → `pending` → `active`) to regain full access. They cannot use affiliate features or auto-activate from balance changes.
+`inactive` members can see and use the renewal section in the member portal. They must complete a renewal flow (`inactive` → `pending` → `active`) to regain full access, or be auto-renewed if they opted in and paid via Stripe (`inactive` → `active`). They cannot use affiliate features or auto-activate from balance changes.
 
 ### `cancelled`
 The membership has been terminated (soft delete). The member record is retained but they have no access. A member becomes `cancelled` when:

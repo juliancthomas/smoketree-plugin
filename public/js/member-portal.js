@@ -163,6 +163,21 @@
 		$form.on('change', 'input[name="payment_method"]', updatePaymentInstructions);
 		updatePaymentInstructions();
 
+		var $autoRenewalSection = $('#stsrc-renewal-auto-renewal');
+		var $autoRenewalCheckbox = $('#stsrc-renewal-auto-renewal-optin');
+		var stripePaymentMethods = ['card', 'ach'];
+		function updateAutoRenewalVisibility() {
+			var method = getPaymentMethod();
+			if (stripePaymentMethods.indexOf(method) !== -1) {
+				$autoRenewalSection.slideDown(200);
+			} else {
+				$autoRenewalSection.slideUp(200);
+				$autoRenewalCheckbox.prop('checked', false);
+			}
+		}
+		$form.on('change', 'input[name="payment_method"]', updateAutoRenewalVisibility);
+		updateAutoRenewalVisibility();
+
 		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
 		$form.closest('.stsrc-renewal-section').prepend($errorBanner);
 
@@ -208,7 +223,8 @@
 					target_membership_type_id: membershipTypeId,
 					payment_method: paymentMethod,
 					season_key: seasonKey,
-					member_id: memberId
+					member_id: memberId,
+					auto_renewal_optin: $autoRenewalCheckbox.is(':checked') ? '1' : '0'
 				}
 			}).done(function(response) {
 				if (response && response.success && response.data) {

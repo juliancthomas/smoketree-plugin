@@ -51,14 +51,14 @@ class STSRC_Renewal_Pricing_Service {
 		$total                = round( $subtotal + $processing_fee, 2 );
 
 		return array(
-			'membership_base'        => round( $membership_base_price, 2 ),
-			'extra_member_count'     => $extra_member_count,
-			'extra_members_amount'   => $extra_members_amount,
-			'previous_balance_amount' => round( $existing_balance, 2 ),
-			'subtotal'               => $subtotal,
-			'processing_fee'         => $processing_fee,
-			'total'                  => $total,
-			'payment_method'         => $payment_method,
+			'membership_base'         => self::money( $membership_base_price ),
+			'extra_member_count'      => $extra_member_count,
+			'extra_members_amount'    => self::money( $extra_members_amount ),
+			'previous_balance_amount' => self::money( $existing_balance ),
+			'subtotal'                => self::money( $subtotal ),
+			'processing_fee'          => self::money( $processing_fee ),
+			'total'                   => self::money( $total ),
+			'payment_method'          => $payment_method,
 		);
 	}
 
@@ -81,6 +81,17 @@ class STSRC_Renewal_Pricing_Service {
 			'ach' => min( round( $subtotal * 0.008, 2 ), 5.00 ),
 			default => 0.00,
 		};
+	}
+
+	/**
+	 * Round a monetary value and force it to a float representation that
+	 * serializes cleanly in JSON (avoids IEEE 754 precision artifacts).
+	 *
+	 * @param float $amount Raw amount.
+	 * @return float
+	 */
+	private static function money( float $amount ): float {
+		return (float) number_format( round( $amount, 2 ), 2, '.', '' );
 	}
 
 	/**

@@ -407,14 +407,22 @@ $balance_sort_url = add_query_arg(
 	<div class="stsrc-season-reset-box">
 		<h2><?php echo esc_html__( 'Season Reset', 'smoketree-plugin' ); ?></h2>
 		<p class="description">
-			<?php echo esc_html__( 'Use this tool at the start of a new season to move every active member to the inactive status. You can optionally clear auto-renewal preferences and reset guest pass balances.', 'smoketree-plugin' ); ?>
+			<?php echo esc_html__( 'Run this once at the start of a new season. It changes every active member\'s status to inactive so they must renew to regain access. Members who opted in to auto-renewal (Stripe only) will be charged automatically by the scheduled cron job and moved back to active.', 'smoketree-plugin' ); ?>
 		</p>
+		<p class="description">
+			<strong><?php echo esc_html__( 'What this does:', 'smoketree-plugin' ); ?></strong>
+		</p>
+		<ol class="description" style="margin: 4px 0 12px 1.5em; list-style: decimal;">
+			<li><?php echo esc_html__( 'Sets all active members to inactive.', 'smoketree-plugin' ); ?></li>
+			<li><?php echo esc_html__( 'Members must go through the renewal flow in the portal to become active again.', 'smoketree-plugin' ); ?></li>
+			<li><?php echo esc_html__( 'Stripe members with auto-renewal enabled will be charged automatically and reactivated.', 'smoketree-plugin' ); ?></li>
+		</ol>
 
 		<form method="post"
 			action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
 			class="stsrc-ajax-form stsrc-season-reset-form"
 			data-reload="true"
-			data-confirm="<?php echo esc_attr__( 'This will mark all active members as inactive. Continue?', 'smoketree-plugin' ); ?>">
+			data-confirm="<?php echo esc_attr__( 'This will mark all active members as inactive. Members with auto-renewal (Stripe) will be charged and reactivated by the next cron run. Continue?', 'smoketree-plugin' ); ?>">
 			<input type="hidden" name="action" value="stsrc_bulk_update_members">
 			<input type="hidden" name="nonce" value="<?php echo esc_attr( $admin_nonce ); ?>">
 			<input type="hidden" name="target" value="season_reset">
@@ -422,8 +430,8 @@ $balance_sort_url = add_query_arg(
 			<input type="hidden" name="new_status" value="inactive">
 
 			<label class="stsrc-inline-checkbox">
-				<input type="checkbox" name="clear_auto_renewal" value="1" checked>
-				<span><?php echo esc_html__( 'Clear auto-renewal opt-in for all members', 'smoketree-plugin' ); ?></span>
+				<input type="checkbox" name="clear_auto_renewal" value="1">
+				<span><?php echo esc_html__( 'Clear auto-renewal opt-in for all members (uncheck to preserve existing preferences)', 'smoketree-plugin' ); ?></span>
 			</label>
 
 			<label class="stsrc-inline-checkbox">

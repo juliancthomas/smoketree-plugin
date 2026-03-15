@@ -74,15 +74,15 @@ class STSRC_Auto_Renewal_Service {
 	/**
 	 * Get eligible members for renewal/notification.
 	 *
-	 * For now this targets members who are:
-	 * - active
-	 * - auto_renewal_enabled = 1
+	 * Targets members who are:
+	 * - inactive (after season reset) with auto_renewal_enabled = 1
 	 * - payment_type is card or bank_account (Stripe-capable)
+	 * - have a saved Stripe customer ID
 	 *
 	 * @since  1.0.0
 	 * @param  array $args Optional query args.
 	 *                     Supported keys:
-	 *                     - status (string) default 'active'
+	 *                     - status (string) default 'inactive'
 	 *                     - include_payment_types (string[]) default ['card','bank_account']
 	 *                     - require_stripe_customer (bool) default true
 	 * @return array        Array of member rows (associative arrays).
@@ -92,7 +92,7 @@ class STSRC_Auto_Renewal_Service {
 
 		$table_name = $wpdb->prefix . 'stsrc_members';
 
-		$status               = sanitize_text_field( $args['status'] ?? 'active' );
+		$status               = sanitize_text_field( $args['status'] ?? 'inactive' );
 		$include_payment_types = $args['include_payment_types'] ?? array( 'card', 'bank_account' );
 		$require_customer      = (bool) ( $args['require_stripe_customer'] ?? true );
 
@@ -330,10 +330,12 @@ class STSRC_Auto_Renewal_Service {
 	/**
 	 * Process season renewals (attempt Stripe off-session charges).
 	 *
+	 * Runs AFTER season reset: targets inactive members who opted in to auto-renewal.
+	 * On success the member moves directly from inactive → active (off-session charges
+	 * confirm instantly, so the pending intermediate state does not apply).
+	 *
 	 * IMPORTANT: Stripe off-session requires a saved default payment method on the customer.
 	 * If unavailable, we log and skip the member.
-	 *
-	 * This method is built to be callable by a future WP-Cron handler (Step 36).
 	 *
 	 * @since  1.0.0
 	 * @param  bool $force_process If true, processes regardless of current date.
@@ -571,8 +573,8 @@ class STSRC_Auto_Renewal_Service {
 	/**
 	 * Bulk update member status (season reset helper).
 	 *
-	 * Example use (future admin UI):
-	 * - Start new season: mark all active -> cancelled, optionally clear auto-renewal flags and/or reset guest passes.
+	 * Example use (admin season-reset tool):
+	 * - Start new season: mark all active -> inactive, optionally clear auto-renewal flags and/or reset guest passes.
 	 *
 	 * @since  1.0.0
 	 * @param  string $from_status Current status to match (e.g., 'active').

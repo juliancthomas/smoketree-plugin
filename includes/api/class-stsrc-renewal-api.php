@@ -104,8 +104,9 @@ class STSRC_Renewal_API {
 			return;
 		}
 
-		$payment_method = $this->normalize_payment_method( (string) ( $post_data['payment_method'] ?? 'card' ) );
-		$season_key     = sanitize_text_field( $post_data['season_key'] ?? '' );
+		$payment_method     = $this->normalize_payment_method( (string) ( $post_data['payment_method'] ?? 'card' ) );
+		$auto_renewal_optin = ! empty( $post_data['auto_renewal_optin'] ) && '1' === $post_data['auto_renewal_optin'];
+		$season_key         = sanitize_text_field( $post_data['season_key'] ?? '' );
 		if ( '' !== $season_key && ! preg_match( '/^[a-z0-9_-]{2,16}$/i', $season_key ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid season key.', 'smoketree-plugin' ) ), 400 );
 			return;
@@ -144,6 +145,10 @@ class STSRC_Renewal_API {
 			);
 			return;
 		}
+
+		$stripe_methods = array( 'card', 'bank_account' );
+		$enable_auto    = $auto_renewal_optin && in_array( $payment_method, $stripe_methods, true ) ? 1 : 0;
+		STSRC_Member_DB::update_member( (int) $member['member_id'], array( 'auto_renewal_enabled' => $enable_auto ) );
 
 		wp_send_json_success(
 			array(
@@ -369,7 +374,7 @@ class STSRC_Renewal_API {
 	 */
 	private function normalize_payment_method( string $method ): string {
 		$method  = sanitize_key( $method );
-		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'zelle', 'check' );
+		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'payment_plan', 'zelle', 'check' );
 
 		return in_array( $method, $allowed, true ) ? $method : 'card';
 	}

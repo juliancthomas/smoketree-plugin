@@ -159,9 +159,13 @@ $is_demo = $is_edit && 1 === (int) ( $member['is_demo'] ?? 0 );
 								<input type="checkbox" name="auto_renewal_enabled" id="auto_renewal_enabled" value="1" <?php checked( ! empty( $member['auto_renewal_enabled'] ) ); ?>>
 								<?php echo esc_html__( 'Enable automatic renewal', 'smoketree-plugin' ); ?>
 							</label>
-							<?php if ( empty( $member['stripe_customer_id'] ) ) : ?>
+							<?php
+							$stripe_payment_types = array( 'card', 'bank_account' );
+							$member_payment_type  = $member['payment_type'] ?? '';
+							if ( empty( $member['stripe_customer_id'] ) || ! in_array( $member_payment_type, $stripe_payment_types, true ) ) :
+							?>
 								<p class="description" style="color: #d63638;">
-									<?php echo esc_html__( 'This member has no saved payment method. Auto-renewal charges will fail without one.', 'smoketree-plugin' ); ?>
+									<?php echo esc_html__( 'Auto-renewal only works for members who paid via credit card or bank account (Stripe) and have a saved payment method.', 'smoketree-plugin' ); ?>
 								</p>
 							<?php endif; ?>
 						</td>
