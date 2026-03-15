@@ -65,14 +65,17 @@
 
 		var $familyGroup = $('#stsrc-renewal-family-group');
 		var $extrasGroup = $('#stsrc-renewal-extras-group');
-		var $newExtraCountEl = $('#stsrc-new-extra-count');
-		var $extraMinus = $('#stsrc-extra-minus');
-		var $extraPlus = $('#stsrc-extra-plus');
 		var $familyHint = $('#stsrc-family-hint');
+		var $newFamilyContainer = $('#stsrc-new-family-members');
+		var $newExtrasContainer = $('#stsrc-new-extra-members');
+		var $addFamilyBtn = $('#stsrc-add-family-btn');
+		var $addExtraBtn = $('#stsrc-add-extra-btn');
 		var extraPrice = parseFloat($wizard.data('extra-price') || 50);
 		var maxExtras = parseInt($wizard.data('max-extras') || 3, 10);
+		var maxFamily = parseInt($wizard.data('max-family') || 4, 10);
 		var balanceOwed = parseFloat($wizard.data('balance') || 0);
-		var newExtraCount = 0;
+		var familyRowIndex = 0;
+		var extraRowIndex = 0;
 
 		var skipMembersStep = false;
 
@@ -171,16 +174,40 @@
 
 		function validateMembersStep() {
 			var typeName = getSelectedTypeName();
-			var required = typeName === 'household' ? 2 : (typeName === 'duo' ? 1 : 0);
-			if (required === 0) {
+			if (typeName !== 'household' && typeName !== 'duo') {
 				return true;
 			}
-			var retained = getRetainedFamilyIds().length;
-			if (retained < required) {
+			var totalFamily = getRetainedFamilyIds().length + getNewFamilyMembers().length;
+			if (typeName === 'duo' && totalFamily !== 1) {
 				updateFamilyHint();
 				return false;
 			}
+			if (typeName === 'household' && (totalFamily < 2 || totalFamily > maxFamily)) {
+				updateFamilyHint();
+				return false;
+			}
+			if (!validateNewMemberFields($newFamilyContainer)) {
+				return false;
+			}
+			if (typeName === 'household' && !validateNewMemberFields($newExtrasContainer)) {
+				return false;
+			}
 			return true;
+		}
+
+		function validateNewMemberFields($container) {
+			var valid = true;
+			$container.find('.stsrc-new-member-row').each(function() {
+				var $row = $(this);
+				var first = $.trim($row.find('.stsrc-new-member-first').val());
+				var last = $.trim($row.find('.stsrc-new-member-last').val());
+				$row.find('.stsrc-new-member-first').toggleClass('stsrc-field-error', !first);
+				$row.find('.stsrc-new-member-last').toggleClass('stsrc-field-error', !last);
+				if (!first || !last) {
+					valid = false;
+				}
+			});
+			return valid;
 		}
 
 		// --- Helpers ---
@@ -218,15 +245,53 @@
 
 			if (typeName === 'household' || typeName === 'duo') {
 				payload.retain_family_member_ids = getRetainedFamilyIds();
-				payload.new_family_member_count = 0;
+				var newFamily = getNewFamilyMembers();
+				payload.new_family_member_count = newFamily.length;
+				payload.new_family_members = newFamily;
 			}
 
 			if (typeName === 'household') {
 				payload.retain_extra_member_ids = getRetainedExtraIds();
-				payload.new_extra_member_count = newExtraCount;
+				var newExtras = getNewExtraMembers();
+				payload.new_extra_member_count = newExtras.length;
+				payload.new_extra_members = newExtras;
 			}
 
 			return payload;
+		}
+
+		function getNewFamilyMembers() {
+			var members = [];
+			$newFamilyContainer.find('.stsrc-new-member-row').each(function() {
+				var $row = $(this);
+				var first = $.trim($row.find('.stsrc-new-member-first').val());
+				var last = $.trim($row.find('.stsrc-new-member-last').val());
+				if (first && last) {
+					members.push({
+						first_name: first,
+						last_name: last,
+						email: $.trim($row.find('.stsrc-new-member-email').val())
+					});
+				}
+			});
+			return members;
+		}
+
+		function getNewExtraMembers() {
+			var members = [];
+			$newExtrasContainer.find('.stsrc-new-member-row').each(function() {
+				var $row = $(this);
+				var first = $.trim($row.find('.stsrc-new-member-first').val());
+				var last = $.trim($row.find('.stsrc-new-member-last').val());
+				if (first && last) {
+					members.push({
+						first_name: first,
+						last_name: last,
+						email: $.trim($row.find('.stsrc-new-member-email').val())
+					});
+				}
+			});
+			return members;
 		}
 
 		function getExtrasMemberAmount() {
@@ -235,13 +300,13 @@
 				return 0;
 			}
 			var retainedCount = getRetainedExtraIds().length;
-			return (retainedCount + newExtraCount) * extraPrice;
+			var newCount = getNewExtraMembers().length;
+			return (retainedCount + newCount) * extraPrice;
 		}
 
 		function updateMemberSections() {
 			var typeName = getSelectedTypeName();
-			var hasFamily = $familyGroup.length > 0;
-			var showFamily = (typeName === 'household' || typeName === 'duo') && hasFamily;
+			var showFamily = typeName === 'household' || typeName === 'duo';
 			var showExtras = typeName === 'household';
 
 			if (showFamily) {
@@ -254,34 +319,61 @@
 				$extrasGroup.show();
 			} else {
 				$extrasGroup.hide();
-				newExtraCount = 0;
-				$newExtraCountEl.text('0');
+				$newExtrasContainer.empty();
 			}
 
 			updateFamilyHint();
-			updateStepperLimits();
+			updateAddButtons();
 		}
 
 		function updateFamilyHint() {
 			var typeName = getSelectedTypeName();
-			var required = typeName === 'household' ? 2 : (typeName === 'duo' ? 1 : 0);
-			if (required === 0 || !$familyHint.length) {
-				$familyHint.hide();
+			if (!$familyHint.length) {
 				return;
 			}
-			var retained = getRetainedFamilyIds().length;
-			if (retained < required) {
-				$familyHint.text('At least ' + required + ' family member' + (required > 1 ? 's' : '') + ' required for this plan.').show();
+			var totalFamily = getRetainedFamilyIds().length + countNewFamilyRows();
+			if (typeName === 'duo') {
+				if (totalFamily < 1) {
+					$familyHint.text('Exactly 1 family member is required for the Duo plan.').show();
+				} else if (totalFamily > 1) {
+					$familyHint.text('Only 1 family member is allowed for the Duo plan. Please remove extras.').show();
+				} else {
+					$familyHint.hide();
+				}
+			} else if (typeName === 'household') {
+				if (totalFamily < 2) {
+					$familyHint.text('At least 2 family members required for the Household plan.').show();
+				} else if (totalFamily > maxFamily) {
+					$familyHint.text('Maximum of ' + maxFamily + ' family members allowed for the Household plan.').show();
+				} else {
+					$familyHint.hide();
+				}
 			} else {
 				$familyHint.hide();
 			}
 		}
 
-		function updateStepperLimits() {
-			var retainedCount = getRetainedExtraIds().length;
-			var totalExtras = retainedCount + newExtraCount;
-			$extraMinus.prop('disabled', newExtraCount <= 0);
-			$extraPlus.prop('disabled', totalExtras >= maxExtras);
+		function countNewFamilyRows() {
+			return $newFamilyContainer.find('.stsrc-new-member-row').length;
+		}
+
+		function countNewExtraRows() {
+			return $newExtrasContainer.find('.stsrc-new-member-row').length;
+		}
+
+		function updateAddButtons() {
+			var typeName = getSelectedTypeName();
+			var totalFamily = getRetainedFamilyIds().length + countNewFamilyRows();
+			if (typeName === 'duo') {
+				$addFamilyBtn.prop('disabled', totalFamily >= 1);
+			} else if (typeName === 'household') {
+				$addFamilyBtn.prop('disabled', totalFamily >= maxFamily);
+			} else {
+				$addFamilyBtn.prop('disabled', true);
+			}
+
+			var totalExtras = getRetainedExtraIds().length + countNewExtraRows();
+			$addExtraBtn.prop('disabled', totalExtras >= maxExtras);
 		}
 
 		function formatCurrency(value) {
@@ -390,14 +482,14 @@
 			var $membersRow = $('#stsrc-review-members-row');
 			if (typeName === 'household' || typeName === 'duo') {
 				var parts = [];
-				var familyCount = getRetainedFamilyIds().length;
+				var familyCount = getRetainedFamilyIds().length + getNewFamilyMembers().length;
 				if (familyCount > 0) {
 					parts.push(familyCount + ' family member' + (familyCount !== 1 ? 's' : ''));
 				}
 				if (typeName === 'household') {
-					var extraCount = getRetainedExtraIds().length + newExtraCount;
+					var extraCount = getRetainedExtraIds().length + getNewExtraMembers().length;
 					if (extraCount > 0) {
-						parts.push(extraCount + ' extra member' + (extraCount !== 1 ? 's' : ''));
+						parts.push(extraCount + ' extra member' + (extraCount !== 1 ? 's' : '') + ' (+' + formatCurrency(extraCount * extraPrice) + ')');
 					}
 				}
 				$('#stsrc-review-members').text(parts.length ? parts.join(', ') : 'None');
@@ -452,26 +544,57 @@
 		}
 		$form.on('change', 'input[name="payment_method"]', updateAutoRenewalVisibility);
 
-		// --- Extra member stepper ---
-		$extraMinus.on('click', function() {
-			if (newExtraCount > 0) {
-				newExtraCount--;
-				$newExtraCountEl.text(newExtraCount);
-				updateStepperLimits();
+		// --- Add / remove member rows ---
+		function buildNewMemberRow(index, prefix) {
+			return '<div class="stsrc-new-member-row" data-index="' + index + '">' +
+				'<div class="stsrc-new-member-row__field">' +
+					'<label>First Name *</label>' +
+					'<input type="text" class="stsrc-new-member-first" name="' + prefix + '[' + index + '][first_name]" required>' +
+				'</div>' +
+				'<div class="stsrc-new-member-row__field">' +
+					'<label>Last Name *</label>' +
+					'<input type="text" class="stsrc-new-member-last" name="' + prefix + '[' + index + '][last_name]" required>' +
+				'</div>' +
+				'<div class="stsrc-new-member-row__field">' +
+					'<label>Email</label>' +
+					'<input type="email" class="stsrc-new-member-email" name="' + prefix + '[' + index + '][email]">' +
+				'</div>' +
+				'<button type="button" class="stsrc-new-member-row__remove" aria-label="Remove">&times;</button>' +
+			'</div>';
+		}
+
+		$addFamilyBtn.on('click', function() {
+			var typeName = getSelectedTypeName();
+			var totalFamily = getRetainedFamilyIds().length + countNewFamilyRows();
+			var limit = typeName === 'duo' ? 1 : maxFamily;
+			if (totalFamily >= limit) {
+				return;
 			}
+			$newFamilyContainer.append(buildNewMemberRow(familyRowIndex++, 'new_family_members'));
+			updateAddButtons();
+			updateFamilyHint();
 		});
 
-		$extraPlus.on('click', function() {
-			var retainedCount = getRetainedExtraIds().length;
-			if (retainedCount + newExtraCount < maxExtras) {
-				newExtraCount++;
-				$newExtraCountEl.text(newExtraCount);
-				updateStepperLimits();
+		$addExtraBtn.on('click', function() {
+			var totalExtras = getRetainedExtraIds().length + countNewExtraRows();
+			if (totalExtras >= maxExtras) {
+				return;
 			}
+			$newExtrasContainer.append(buildNewMemberRow(extraRowIndex++, 'new_extra_members'));
+			updateAddButtons();
 		});
 
-		$form.on('change', 'input[name="retain_family_member_ids[]"]', updateFamilyHint);
-		$form.on('change', 'input[name="retain_extra_member_ids[]"]', updateStepperLimits);
+		$form.on('click', '.stsrc-new-member-row__remove', function() {
+			$(this).closest('.stsrc-new-member-row').remove();
+			updateAddButtons();
+			updateFamilyHint();
+		});
+
+		$form.on('change', 'input[name="retain_family_member_ids[]"]', function() {
+			updateFamilyHint();
+			updateAddButtons();
+		});
+		$form.on('change', 'input[name="retain_extra_member_ids[]"]', updateAddButtons);
 
 		// --- Error handling ---
 		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
@@ -544,6 +667,8 @@
 		$form.on('change', 'input[name="target_membership_type_id"]', function() {
 			$membershipRows.removeClass('is-current');
 			$(this).closest('.stsrc-renewal-card').addClass('is-current');
+			updateAddButtons();
+			updateFamilyHint();
 		});
 	}
 

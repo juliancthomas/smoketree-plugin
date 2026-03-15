@@ -358,12 +358,50 @@ class STSRC_Renewal_API {
 		$retain_family = $post_data['retain_family_member_ids'] ?? array();
 		$retain_extra  = $post_data['retain_extra_member_ids'] ?? array();
 
+		$new_family = $this->sanitize_new_members_array( $post_data['new_family_members'] ?? array() );
+		$new_extras = $this->sanitize_new_members_array( $post_data['new_extra_members'] ?? array() );
+
 		return array(
 			'retain_family_member_ids' => is_array( $retain_family ) ? array_map( 'absint', $retain_family ) : array(),
 			'retain_extra_member_ids'  => is_array( $retain_extra ) ? array_map( 'absint', $retain_extra ) : array(),
-			'new_family_member_count'  => min( 20, absint( $post_data['new_family_member_count'] ?? 0 ) ),
-			'new_extra_member_count'   => min( 20, absint( $post_data['new_extra_member_count'] ?? 0 ) ),
+			'new_family_member_count'  => count( $new_family ),
+			'new_extra_member_count'   => count( $new_extras ),
+			'new_family_members'       => $new_family,
+			'new_extra_members'        => $new_extras,
 		);
+	}
+
+	/**
+	 * Sanitize an array of new member entries from POST data.
+	 *
+	 * @param mixed $raw Raw POST value (expected array of arrays with first_name, last_name, email).
+	 * @return array<int,array{first_name:string,last_name:string,email:string}>
+	 */
+	private function sanitize_new_members_array( $raw ): array {
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+		foreach ( $raw as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			$first_name = sanitize_text_field( trim( (string) ( $entry['first_name'] ?? '' ) ) );
+			$last_name  = sanitize_text_field( trim( (string) ( $entry['last_name'] ?? '' ) ) );
+			$email      = sanitize_email( trim( (string) ( $entry['email'] ?? '' ) ) );
+
+			if ( '' === $first_name || '' === $last_name ) {
+				continue;
+			}
+			$sanitized[] = array(
+				'first_name' => $first_name,
+				'last_name'  => $last_name,
+				'email'      => $email,
+			);
+		}
+
+		return array_slice( $sanitized, 0, 20 );
 	}
 
 	/**

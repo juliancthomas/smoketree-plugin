@@ -68,6 +68,7 @@ if ( function_exists( 'get_field' ) ) {
 		<div id="stsrc-renewal-wizard"
 			data-extra-price="50.00"
 			data-max-extras="<?php echo esc_attr( (string) STSRC_Extra_Member_DB::MAX_HOUSEHOLD_EXTRAS ); ?>"
+			data-max-family="4"
 			data-balance="<?php echo esc_attr( number_format( $balance_owed, 2, '.', '' ) ); ?>">
 
 			<ul class="nav">
@@ -150,13 +151,13 @@ if ( function_exists( 'get_field' ) ) {
 				<!-- Step 2: Manage Members (auto-skipped for Individual) -->
 				<div id="stsrc-step-members" class="tab-pane" role="tabpanel">
 					<h3><?php echo esc_html__( 'Manage Your Members', 'smoketree-plugin' ); ?></h3>
-					<p class="stsrc-description"><?php echo esc_html__( 'Choose which members to include in your renewal and add new extras.', 'smoketree-plugin' ); ?></p>
+					<p class="stsrc-description"><?php echo esc_html__( 'Manage the members included in your renewal.', 'smoketree-plugin' ); ?></p>
 
-					<?php if ( ! empty( $family_members ) ) : ?>
-					<div class="stsrc-renewal-members__group" id="stsrc-renewal-family-group">
+					<div class="stsrc-renewal-members__group" id="stsrc-renewal-family-group" style="display:none;">
 						<h4><?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?></h4>
+						<?php if ( ! empty( $family_members ) ) : ?>
 						<p class="stsrc-description"><?php echo esc_html__( 'Select which family members to include in your renewal.', 'smoketree-plugin' ); ?></p>
-						<div class="stsrc-renewal-members__list">
+						<div class="stsrc-renewal-members__list" id="stsrc-existing-family-list">
 							<?php foreach ( $family_members as $fm ) : ?>
 							<label class="stsrc-renewal-member-check">
 								<input type="checkbox"
@@ -172,9 +173,14 @@ if ( function_exists( 'get_field' ) ) {
 							</label>
 							<?php endforeach; ?>
 						</div>
+						<?php endif; ?>
+
+						<div class="stsrc-renewal-new-members" id="stsrc-new-family-members"></div>
+						<button type="button" class="stsrc-add-member-btn" id="stsrc-add-family-btn">
+							+ <?php echo esc_html__( 'Add Family Member', 'smoketree-plugin' ); ?>
+						</button>
 						<p class="stsrc-renewal-members__hint" id="stsrc-family-hint" style="display:none;"></p>
 					</div>
-					<?php endif; ?>
 
 					<div class="stsrc-renewal-members__group" id="stsrc-renewal-extras-group" style="display:none;">
 						<h4>
@@ -184,7 +190,7 @@ if ( function_exists( 'get_field' ) ) {
 
 						<?php if ( ! empty( $extra_members ) ) : ?>
 						<p class="stsrc-description"><?php echo esc_html__( 'Select which extra members to keep.', 'smoketree-plugin' ); ?></p>
-						<div class="stsrc-renewal-members__list">
+						<div class="stsrc-renewal-members__list" id="stsrc-existing-extras-list">
 							<?php foreach ( $extra_members as $em ) : ?>
 							<label class="stsrc-renewal-member-check">
 								<input type="checkbox"
@@ -202,14 +208,10 @@ if ( function_exists( 'get_field' ) ) {
 						</div>
 						<?php endif; ?>
 
-						<div class="stsrc-renewal-extras-stepper">
-							<span class="stsrc-renewal-extras-stepper__label"><?php echo esc_html__( 'Add new extra members:', 'smoketree-plugin' ); ?></span>
-							<div class="stsrc-renewal-extras-stepper__controls">
-								<button type="button" class="stsrc-stepper-btn" id="stsrc-extra-minus" aria-label="<?php echo esc_attr__( 'Remove one', 'smoketree-plugin' ); ?>" disabled>&#8722;</button>
-								<span class="stsrc-stepper-value" id="stsrc-new-extra-count">0</span>
-								<button type="button" class="stsrc-stepper-btn" id="stsrc-extra-plus" aria-label="<?php echo esc_attr__( 'Add one', 'smoketree-plugin' ); ?>">+</button>
-							</div>
-						</div>
+						<div class="stsrc-renewal-new-members" id="stsrc-new-extra-members"></div>
+						<button type="button" class="stsrc-add-member-btn" id="stsrc-add-extra-btn">
+							+ <?php echo esc_html__( 'Add Extra Member', 'smoketree-plugin' ); ?>
+						</button>
 					</div>
 				</div>
 

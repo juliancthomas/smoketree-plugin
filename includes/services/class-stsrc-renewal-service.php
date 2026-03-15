@@ -26,10 +26,11 @@ require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-logger.php';
  * Renewal service class.
  */
 class STSRC_Renewal_Service {
-	private const TYPE_HOUSEHOLD = 'household';
-	private const TYPE_DUO       = 'duo';
-	private const TYPE_SINGLE    = 'single';
-	private const TYPE_CIVIC     = 'civic';
+	private const TYPE_HOUSEHOLD    = 'household';
+	private const TYPE_DUO         = 'duo';
+	private const TYPE_SINGLE      = 'single';
+	private const TYPE_CIVIC       = 'civic';
+	private const MAX_FAMILY_HOUSEHOLD = 4;
 
 	/**
 	 * Quote pricing for a requested transition and payment method.
@@ -179,7 +180,24 @@ class STSRC_Renewal_Service {
 		$pricing             = $context['pricing'] ?? array();
 		$transition          = $pricing['transition'] ?? array();
 		$quote               = $pricing['quote'] ?? array();
-		$snapshot_json       = wp_json_encode(
+		$actions             = $transition['actions'] ?? array();
+
+		$created_ids = $this->create_new_members_on_submit( $member_id, $actions );
+		if ( ! empty( $created_ids['family_ids'] ) ) {
+			$actions['retain_family_ids'] = array_values( array_unique(
+				array_merge( $actions['retain_family_ids'] ?? array(), $created_ids['family_ids'] )
+			) );
+			$actions['created_family_ids'] = $created_ids['family_ids'];
+		}
+		if ( ! empty( $created_ids['extra_ids'] ) ) {
+			$actions['retain_extra_ids'] = array_values( array_unique(
+				array_merge( $actions['retain_extra_ids'] ?? array(), $created_ids['extra_ids'] )
+			) );
+			$actions['created_extra_ids'] = $created_ids['extra_ids'];
+		}
+		$transition['actions'] = $actions;
+
+		$snapshot_json = wp_json_encode(
 			array(
 				'season_key'      => $season_key_resolved,
 				'payment_method'  => sanitize_key( $payment_method ),
@@ -585,8 +603,8 @@ class STSRC_Renewal_Service {
 		$active_family_ids = STSRC_Family_Member_DB::get_active_ids_by_member( $member_id );
 		$active_extra_ids  = STSRC_Extra_Member_DB::get_active_ids_by_member( $member_id );
 
-		$payload_has_family = ! empty( $payload['retain_family_member_ids'] ) || ! empty( $payload['new_family_member_count'] );
-		$payload_has_extra  = ! empty( $payload['retain_extra_member_ids'] ) || ! empty( $payload['new_extra_member_count'] );
+		$payload_has_family = ! empty( $payload['retain_family_member_ids'] ) || ! empty( $payload['new_family_member_count'] ) || ! empty( $payload['new_family_members'] );
+		$payload_has_extra  = ! empty( $payload['retain_extra_member_ids'] ) || ! empty( $payload['new_extra_member_count'] ) || ! empty( $payload['new_extra_members'] );
 		$is_simple_renewal  = ! $payload_has_family && ! $payload_has_extra;
 
 		$retain_family_ids = $payload_has_family
@@ -595,8 +613,6 @@ class STSRC_Renewal_Service {
 		$retain_extra_ids  = $payload_has_extra
 			? $this->normalize_ids( $payload['retain_extra_member_ids'] ?? array() )
 			: $active_extra_ids;
-		$new_family_count  = max( 0, absint( $payload['new_family_member_count'] ?? 0 ) );
-		$new_extra_count   = max( 0, absint( $payload['new_extra_member_count'] ?? 0 ) );
 		$errors            = array();
 		$warnings          = array();
 
@@ -608,6 +624,32 @@ class STSRC_Renewal_Service {
 			$errors[] = 'invalid_retained_extra_members';
 		}
 
+		$new_family_members = $payload['new_family_members'] ?? array();
+		$new_extra_members  = $payload['new_extra_members'] ?? array();
+
+		if ( ! is_array( $new_family_members ) ) {
+			$new_family_members = array();
+		}
+		if ( ! is_array( $new_extra_members ) ) {
+			$new_extra_members = array();
+		}
+
+		$new_family_count = count( $new_family_members );
+		$new_extra_count  = count( $new_extra_members );
+
+		foreach ( $new_family_members as $nfm ) {
+			if ( empty( $nfm['first_name'] ) || empty( $nfm['last_name'] ) ) {
+				$errors[] = 'new_family_member_missing_name';
+				break;
+			}
+		}
+		foreach ( $new_extra_members as $nem ) {
+			if ( empty( $nem['first_name'] ) || empty( $nem['last_name'] ) ) {
+				$errors[] = 'new_extra_member_missing_name';
+				break;
+			}
+		}
+
 		$required_family_count = $this->get_required_family_count_by_type( $target_type_name );
 		$resulting_family_count = count( $retain_family_ids ) + $new_family_count;
 
@@ -615,8 +657,16 @@ class STSRC_Renewal_Service {
 			$errors[] = 'insufficient_family_members';
 		}
 
-		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $current_type_name && self::TYPE_DUO === $target_type_name && 1 !== count( $retain_family_ids ) ) {
-			$errors[] = 'household_to_duo_requires_one_retained_family_member';
+		if ( ! $is_simple_renewal && self::TYPE_DUO === $target_type_name && $resulting_family_count > 1 ) {
+			$errors[] = 'duo_allows_exactly_one_family_member';
+		}
+
+		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $target_type_name && $resulting_family_count > self::MAX_FAMILY_HOUSEHOLD ) {
+			$errors[] = 'household_family_member_limit_exceeded';
+		}
+
+		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $current_type_name && self::TYPE_DUO === $target_type_name && $resulting_family_count !== 1 ) {
+			$errors[] = 'household_to_duo_requires_exactly_one_family_member';
 		}
 
 		if (
@@ -633,8 +683,9 @@ class STSRC_Renewal_Service {
 			if ( $resulting_extra_count > 0 ) {
 				$warnings[] = 'extra_members_will_be_removed_for_non_household_membership';
 			}
-			$retain_extra_ids = array();
-			$new_extra_count  = 0;
+			$retain_extra_ids  = array();
+			$new_extra_count   = 0;
+			$new_extra_members = array();
 		}
 
 		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $target_type_name && ! STSRC_Extra_Member_DB::is_valid_household_extra_count( $resulting_extra_count ) ) {
@@ -660,6 +711,8 @@ class STSRC_Renewal_Service {
 				'soft_delete_extra_ids'    => $soft_delete_extra_ids,
 				'new_family_member_count'  => $new_family_count,
 				'new_extra_member_count'   => $new_extra_count,
+				'new_family_members'       => $new_family_members,
+				'new_extra_members'        => $new_extra_members,
 			),
 		);
 	}
@@ -863,6 +916,63 @@ class STSRC_Renewal_Service {
 			self::TYPE_DUO => 1,
 			default => 0,
 		};
+	}
+
+	/**
+	 * Create new family and extra member records at intent submission time.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param array $actions   Validated transition actions.
+	 * @return array{family_ids:int[],extra_ids:int[]}
+	 */
+	private function create_new_members_on_submit( int $member_id, array $actions ): array {
+		$family_ids = array();
+		$extra_ids  = array();
+
+		$new_family = $actions['new_family_members'] ?? array();
+		if ( is_array( $new_family ) ) {
+			foreach ( $new_family as $fm_data ) {
+				if ( empty( $fm_data['first_name'] ) || empty( $fm_data['last_name'] ) ) {
+					continue;
+				}
+				$id = STSRC_Family_Member_DB::add_family_member(
+					$member_id,
+					array(
+						'first_name' => sanitize_text_field( (string) $fm_data['first_name'] ),
+						'last_name'  => sanitize_text_field( (string) $fm_data['last_name'] ),
+						'email'      => sanitize_email( (string) ( $fm_data['email'] ?? '' ) ),
+					)
+				);
+				if ( false !== $id ) {
+					$family_ids[] = (int) $id;
+				}
+			}
+		}
+
+		$new_extras = $actions['new_extra_members'] ?? array();
+		if ( is_array( $new_extras ) ) {
+			foreach ( $new_extras as $em_data ) {
+				if ( empty( $em_data['first_name'] ) || empty( $em_data['last_name'] ) ) {
+					continue;
+				}
+				$id = STSRC_Extra_Member_DB::add_extra_member(
+					$member_id,
+					array(
+						'first_name' => sanitize_text_field( (string) $em_data['first_name'] ),
+						'last_name'  => sanitize_text_field( (string) $em_data['last_name'] ),
+						'email'      => sanitize_email( (string) ( $em_data['email'] ?? '' ) ),
+					)
+				);
+				if ( false !== $id ) {
+					$extra_ids[] = (int) $id;
+				}
+			}
+		}
+
+		return array(
+			'family_ids' => $family_ids,
+			'extra_ids'  => $extra_ids,
+		);
 	}
 }
 
