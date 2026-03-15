@@ -145,6 +145,9 @@ class STSRC_Renewal_API {
 				'season_key' => $result['season_key'] ?? '',
 				'quote'      => $result['quote'] ?? array(),
 				'redirect_url' => $result['redirect_url'] ?? '',
+				'message'    => STSRC_Renewal_DB::STATUS_PENDING_PAYMENT === ( $result['status'] ?? '' )
+					? __( 'Renewal submitted. Your membership remains pending until offline payment is confirmed.', 'smoketree-plugin' )
+					: __( 'Renewal checkout session created successfully.', 'smoketree-plugin' ),
 			)
 		);
 	}

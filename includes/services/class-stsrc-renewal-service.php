@@ -246,6 +246,12 @@ class STSRC_Renewal_Service {
 		} else {
 			STSRC_Renewal_DB::mark_pending_payment( $renewal_id );
 			$status = STSRC_Renewal_DB::STATUS_PENDING_PAYMENT;
+
+			STSRC_Member_DB::mark_pending_renewal_payment(
+				$member_id,
+				(float) ( $quote['total'] ?? 0.00 ),
+				sanitize_key( $payment_method )
+			);
 		}
 
 		return array(

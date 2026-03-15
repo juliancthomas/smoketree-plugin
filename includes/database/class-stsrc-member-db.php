@@ -366,6 +366,25 @@ class STSRC_Member_DB {
 	}
 
 	/**
+	 * Mark member account as pending renewal payment and set updated balance.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param float $pending_balance New pending balance.
+	 * @param string $final_payment_method Final payment method.
+	 * @return bool
+	 */
+	public static function mark_pending_renewal_payment( int $member_id, float $pending_balance, string $final_payment_method ): bool {
+		return self::update_member(
+			$member_id,
+			array(
+				'balance_owed'         => max( 0.00, round( $pending_balance, 2 ) ),
+				'status'               => 'pending',
+				'final_payment_method' => sanitize_text_field( $final_payment_method ),
+			)
+		);
+	}
+
+	/**
 	 * Get members with balance matching criteria.
 	 *
 	 * @since    1.1.0
