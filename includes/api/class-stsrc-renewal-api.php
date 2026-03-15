@@ -144,6 +144,7 @@ class STSRC_Renewal_API {
 				'renewal_id' => (int) ( $result['renewal_id'] ?? 0 ),
 				'season_key' => $result['season_key'] ?? '',
 				'quote'      => $result['quote'] ?? array(),
+				'redirect_url' => $result['redirect_url'] ?? '',
 			)
 		);
 	}

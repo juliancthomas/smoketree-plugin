@@ -18,6 +18,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-fami
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'helpers/class-stsrc-renewal-helpers.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-renewal-pricing-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-payment-service.php';
 
 /**
  * Renewal service class.
@@ -207,8 +208,42 @@ class STSRC_Renewal_Service {
 
 		$is_stripe_method = in_array( sanitize_key( $payment_method ), array( 'card', 'ach', 'bank_account', 'us_bank_account' ), true );
 		$status           = STSRC_Renewal_DB::STATUS_INITIATED;
+		$checkout         = null;
 
-		if ( ! $is_stripe_method ) {
+		if ( $is_stripe_method ) {
+			$payment_service = new STSRC_Payment_Service();
+			$target_type     = STSRC_Membership_DB::get_membership_type( $target_membership_type_id );
+			$checkout        = $payment_service->create_renewal_checkout_session(
+				$renewal_id,
+				$member_id,
+				$season_key_resolved,
+				(string) ( $target_type['name'] ?? 'Membership' ),
+				$quote,
+				sanitize_key( $payment_method )
+			);
+
+			if ( false === $checkout ) {
+				STSRC_Renewal_DB::transition_status(
+					$renewal_id,
+					array( STSRC_Renewal_DB::STATUS_INITIATED ),
+					STSRC_Renewal_DB::STATUS_FAILED,
+					array( 'notes' => 'Stripe checkout session creation failed.' )
+				);
+
+				return array(
+					'status'  => 'error',
+					'reason'  => 'stripe_checkout_create_failed',
+					'context' => $context,
+				);
+			}
+
+			STSRC_Renewal_DB::update_renewal(
+				$renewal_id,
+				array(
+					'stripe_checkout_session_id' => $checkout['id'] ?? '',
+				)
+			);
+		} else {
 			STSRC_Renewal_DB::mark_pending_payment( $renewal_id );
 			$status = STSRC_Renewal_DB::STATUS_PENDING_PAYMENT;
 		}
@@ -219,6 +254,7 @@ class STSRC_Renewal_Service {
 			'season_key'  => $season_key_resolved,
 			'quote'       => $quote,
 			'transition'  => $transition,
+			'redirect_url' => ( $checkout['url'] ?? null ),
 		);
 	}
 

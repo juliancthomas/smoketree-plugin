@@ -124,6 +124,26 @@ class STSRC_Payment_Service {
 	 * @return   string|false       Checkout session URL or false on failure
 	 */
 	public function create_checkout_session( array $data ): string|false {
+		$details = $this->create_checkout_session_with_details( $data );
+
+		if ( false === $details ) {
+			return false;
+		}
+
+		if ( empty( $details['url'] ) ) {
+			return false;
+		}
+
+		return (string) $details['url'];
+	}
+
+	/**
+	 * Create Stripe checkout session and return URL + session ID.
+	 *
+	 * @param array $data Checkout data.
+	 * @return array{url:string,id:string}|false
+	 */
+	private function create_checkout_session_with_details( array $data ): array|false {
 		$this->init_stripe();
 
 		if ( ! class_exists( '\Stripe\Checkout\Session' ) ) {
@@ -199,7 +219,10 @@ class STSRC_Payment_Service {
 
 		try {
 			$session = \Stripe\Checkout\Session::create( $session_params );
-			return $session->url;
+			return array(
+				'url' => (string) $session->url,
+				'id'  => (string) $session->id,
+			);
 		} catch ( \Exception $e ) {
 			STSRC_Logger::exception(
 				$e,
@@ -212,6 +235,83 @@ class STSRC_Payment_Service {
 			);
 			return false;
 		}
+	}
+
+	/**
+	 * Create Stripe checkout session for renewal payment.
+	 *
+	 * @param int    $renewal_id Renewal ledger ID.
+	 * @param int    $member_id Member ID.
+	 * @param string $season_key Season key.
+	 * @param string $membership_name Target membership name.
+	 * @param array  $quote Calculated quote.
+	 * @param string $payment_method card|ach.
+	 * @return array{url:string,id:string}|false
+	 */
+	public function create_renewal_checkout_session(
+		int $renewal_id,
+		int $member_id,
+		string $season_key,
+		string $membership_name,
+		array $quote,
+		string $payment_method
+	): array|false {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member( $member_id );
+
+		if ( empty( $member ) ) {
+			return false;
+		}
+
+		$payment_method_type = in_array( $payment_method, array( 'ach', 'bank_account', 'us_bank_account' ), true )
+			? 'us_bank_account'
+			: 'card';
+		$subtotal_cents      = (int) round( (float) ( $quote['subtotal'] ?? 0 ) * 100 );
+		$fee_cents           = (int) round( (float) ( $quote['processing_fee'] ?? 0 ) * 100 );
+		$line_items          = array(
+			array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => sprintf( 'Membership Renewal - %s (%s)', $membership_name, $season_key ),
+					),
+					'unit_amount'  => $subtotal_cents,
+				),
+				'quantity'   => 1,
+			),
+		);
+
+		if ( $fee_cents > 0 ) {
+			$line_items[] = array(
+				'price_data' => array(
+					'currency'     => 'usd',
+					'product_data' => array(
+						'name' => 'Processing Fee',
+					),
+					'unit_amount'  => $fee_cents,
+				),
+				'quantity'   => 1,
+			);
+		}
+
+		return $this->create_checkout_session_with_details(
+			array(
+				'amount'               => (float) ( $quote['total'] ?? 0 ),
+				'line_items'           => $line_items,
+				'payment_method_types' => array( $payment_method_type ),
+				'customer_id'          => $member['stripe_customer_id'] ?? null,
+				'customer_email'       => $member['email'] ?? '',
+				'customer_name'        => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+				'success_url'          => home_url( '/member-portal?payment=success&context=renewal&session_id={CHECKOUT_SESSION_ID}' ),
+				'cancel_url'           => home_url( '/member-portal?payment=cancelled&context=renewal' ),
+				'metadata'             => array(
+					'payment_context' => 'renewal',
+					'renewal_id'      => (string) $renewal_id,
+					'member_id'       => (string) $member_id,
+					'season_key'      => $season_key,
+				),
+			)
+		);
 	}
 
 	/**
