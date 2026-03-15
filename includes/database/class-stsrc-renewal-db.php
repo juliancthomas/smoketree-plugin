@@ -221,6 +221,66 @@ class STSRC_Renewal_DB {
 	}
 
 	/**
+	 * Create an initiated renewal intent row.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param string $season_key Season key.
+	 * @param int    $old_membership_type_id Current membership type ID.
+	 * @param int    $new_membership_type_id Target membership type ID.
+	 * @param string $payment_method Payment method.
+	 * @param array  $quote Calculated quote.
+	 * @param string $snapshot_json Transition snapshot JSON.
+	 * @return int|false
+	 */
+	public static function create_intent_record(
+		int $member_id,
+		string $season_key,
+		int $old_membership_type_id,
+		int $new_membership_type_id,
+		string $payment_method,
+		array $quote,
+		string $snapshot_json
+	): int|false {
+		return self::create_renewal(
+			array(
+				'member_id'              => $member_id,
+				'season_key'             => $season_key,
+				'old_membership_type_id' => $old_membership_type_id,
+				'new_membership_type_id' => $new_membership_type_id,
+				'payment_method'         => $payment_method,
+				'subtotal_amount'        => (float) ( $quote['subtotal'] ?? 0.00 ),
+				'processing_fee_amount'  => (float) ( $quote['processing_fee'] ?? 0.00 ),
+				'total_amount'           => (float) ( $quote['total'] ?? 0.00 ),
+				'previous_balance_amount' => (float) ( $quote['previous_balance_amount'] ?? 0.00 ),
+				'status'                 => self::STATUS_INITIATED,
+				'transition_snapshot_json' => $snapshot_json,
+			)
+		);
+	}
+
+	/**
+	 * Mark an initiated renewal as pending offline payment.
+	 *
+	 * @param int         $renewal_id Renewal ID.
+	 * @param string|null $notes Optional notes.
+	 * @return bool
+	 */
+	public static function mark_pending_payment( int $renewal_id, ?string $notes = null ): bool {
+		$extra_data = array();
+
+		if ( null !== $notes && '' !== trim( $notes ) ) {
+			$extra_data['notes'] = sanitize_text_field( $notes );
+		}
+
+		return self::transition_status(
+			$renewal_id,
+			array( self::STATUS_INITIATED ),
+			self::STATUS_PENDING_PAYMENT,
+			$extra_data
+		);
+	}
+
+	/**
 	 * Get statuses that block duplicate renewals in a season.
 	 *
 	 * @return string[]

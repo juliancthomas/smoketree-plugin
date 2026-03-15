@@ -131,6 +131,98 @@ class STSRC_Renewal_Service {
 	}
 
 	/**
+	 * Persist a renewal intent snapshot before payment processing.
+	 *
+	 * @param int         $member_id Member ID.
+	 * @param int         $target_membership_type_id Target membership type ID.
+	 * @param string      $payment_method Selected payment method.
+	 * @param array       $payload Transition payload.
+	 * @param string|null $season_key Optional season key.
+	 * @return array<string,mixed>
+	 */
+	public function create_intent(
+		int $member_id,
+		int $target_membership_type_id,
+		string $payment_method,
+		array $payload = array(),
+		?string $season_key = null
+	): array {
+		$context = $this->build_submit_context(
+			$member_id,
+			$target_membership_type_id,
+			$payment_method,
+			$payload,
+			$season_key
+		);
+
+		if ( empty( $context['can_submit'] ) ) {
+			return array(
+				'status' => 'rejected',
+				'reason' => $context['reason'] ?? 'cannot_submit',
+				'context' => $context,
+			);
+		}
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( empty( $member ) ) {
+			return array(
+				'status'  => 'error',
+				'reason'  => 'member_not_found',
+				'context' => $context,
+			);
+		}
+
+		$season_key_resolved = (string) ( $context['eligibility']['season_key'] ?? $this->resolve_season_key( $season_key ) );
+		$pricing             = $context['pricing'] ?? array();
+		$transition          = $pricing['transition'] ?? array();
+		$quote               = $pricing['quote'] ?? array();
+		$snapshot_json       = wp_json_encode(
+			array(
+				'season_key'      => $season_key_resolved,
+				'payment_method'  => sanitize_key( $payment_method ),
+				'payload'         => $payload,
+				'transition'      => $transition,
+				'quote'           => $quote,
+				'created_at'      => current_time( 'mysql' ),
+			)
+		);
+
+		$renewal_id = STSRC_Renewal_DB::create_intent_record(
+			$member_id,
+			$season_key_resolved,
+			(int) ( $member['membership_type_id'] ?? 0 ),
+			$target_membership_type_id,
+			sanitize_key( $payment_method ),
+			$quote,
+			(string) $snapshot_json
+		);
+
+		if ( false === $renewal_id ) {
+			return array(
+				'status'  => 'error',
+				'reason'  => 'intent_create_failed',
+				'context' => $context,
+			);
+		}
+
+		$is_stripe_method = in_array( sanitize_key( $payment_method ), array( 'card', 'ach', 'bank_account', 'us_bank_account' ), true );
+		$status           = STSRC_Renewal_DB::STATUS_INITIATED;
+
+		if ( ! $is_stripe_method ) {
+			STSRC_Renewal_DB::mark_pending_payment( $renewal_id );
+			$status = STSRC_Renewal_DB::STATUS_PENDING_PAYMENT;
+		}
+
+		return array(
+			'status'      => $status,
+			'renewal_id'  => $renewal_id,
+			'season_key'  => $season_key_resolved,
+			'quote'       => $quote,
+			'transition'  => $transition,
+		);
+	}
+
+	/**
 	 * Get eligibility and idempotency details for a member renewal attempt.
 	 *
 	 * @param int         $member_id Member ID.
