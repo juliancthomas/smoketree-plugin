@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Renewal database operations class.
  */
 class STSRC_Renewal_DB {
+	public const STATUS_INITIATED       = 'initiated';
+	public const STATUS_PENDING_PAYMENT = 'pending_payment';
+	public const STATUS_COMPLETED       = 'completed';
+	public const STATUS_FAILED          = 'failed';
+	public const STATUS_CANCELLED       = 'cancelled';
 
 	/**
 	 * Get the renewals table name.
@@ -213,6 +218,108 @@ class STSRC_Renewal_DB {
 		);
 
 		return false !== $result;
+	}
+
+	/**
+	 * Get statuses that block duplicate renewals in a season.
+	 *
+	 * @return string[]
+	 */
+	public static function get_blocking_statuses(): array {
+		return array(
+			self::STATUS_INITIATED,
+			self::STATUS_PENDING_PAYMENT,
+			self::STATUS_COMPLETED,
+		);
+	}
+
+	/**
+	 * Find an idempotency-blocking renewal for a member and season.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param string $season_key Season key.
+	 * @return array|null
+	 */
+	public static function find_idempotent_renewal( int $member_id, string $season_key ): ?array {
+		return self::get_latest_by_member_and_season(
+			$member_id,
+			$season_key,
+			self::get_blocking_statuses()
+		);
+	}
+
+	/**
+	 * Compute season-level renewal eligibility.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param string $season_key Season key.
+	 * @return array{eligible:bool,reason:string,existing_renewal:?array}
+	 */
+	public static function get_eligibility( int $member_id, string $season_key ): array {
+		$existing = self::find_idempotent_renewal( $member_id, $season_key );
+
+		if ( empty( $existing ) ) {
+			return array(
+				'eligible'         => true,
+				'reason'           => 'eligible',
+				'existing_renewal' => null,
+			);
+		}
+
+		$status = (string) ( $existing['status'] ?? '' );
+		$reason = self::STATUS_COMPLETED === $status
+			? 'already_completed'
+			: 'already_in_progress';
+
+		return array(
+			'eligible'         => false,
+			'reason'           => $reason,
+			'existing_renewal' => $existing,
+		);
+	}
+
+	/**
+	 * Transition a renewal status if current status is allowed.
+	 *
+	 * @param int      $renewal_id Renewal ID.
+	 * @param string[] $from_statuses Allowed current statuses.
+	 * @param string   $to_status Destination status.
+	 * @param array    $extra_data Additional columns to update.
+	 * @return bool
+	 */
+	public static function transition_status( int $renewal_id, array $from_statuses, string $to_status, array $extra_data = array() ): bool {
+		global $wpdb;
+
+		if ( empty( $from_statuses ) ) {
+			return false;
+		}
+
+		$table_name   = self::get_table_name();
+		$now          = current_time( 'mysql' );
+		$set_clauses  = array( 'status = %s', 'updated_at = %s' );
+		$set_values   = array( $to_status, $now );
+		$where_values = array( $renewal_id );
+
+		if ( self::STATUS_COMPLETED === $to_status && empty( $extra_data['completed_at'] ) ) {
+			$set_clauses[] = 'completed_at = %s';
+			$set_values[]  = $now;
+		}
+
+		foreach ( $extra_data as $column => $value ) {
+			if ( in_array( $column, array( 'status', 'updated_at' ), true ) ) {
+				continue;
+			}
+
+			$set_clauses[] = "{$column} = %s";
+			$set_values[]  = is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+		}
+
+		$in_placeholders = implode( ', ', array_fill( 0, count( $from_statuses ), '%s' ) );
+		$sql             = "UPDATE {$table_name} SET " . implode( ', ', $set_clauses ) . " WHERE renewal_id = %d AND status IN ({$in_placeholders})";
+		$values          = array_merge( $set_values, $where_values, array_values( $from_statuses ) );
+		$updated         = $wpdb->query( $wpdb->prepare( $sql, $values ) );
+
+		return is_numeric( $updated ) && (int) $updated > 0;
 	}
 }
 
