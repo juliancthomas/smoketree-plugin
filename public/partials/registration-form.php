@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<span class="stsrc-progress-bar__label" id="stsrc-progress-label">0% complete</span>
 </div>
 
+<div id="stsrc-referral-banner" class="stsrc-referral-banner" style="display:none;"></div>
+
 <form id="stsrc-registration-form" class="stsrc-registration-form" method="post">
 	<input type="hidden" name="action" value="stsrc_register_member">
 	<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'stsrc_registration_nonce' ) ); ?>">
@@ -328,6 +330,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php echo esc_html__( 'You may opt out of auto-renewal at any time from your Member Portal after registration. If you do not opt out, your membership status will become inactive when the next renewal period begins.', 'smoketree-plugin' ); ?>
 			</p>
 		</div>
+	</div>
+
+	<!-- Discounts -->
+	<div class="stsrc-form-section" id="stsrc-discounts-section">
+		<h2><?php echo esc_html__( 'Discounts', 'smoketree-plugin' ); ?></h2>
+		<div class="stsrc-discount-field" id="promo-code-group">
+			<label for="stsrc_promo_code"><?php echo esc_html__( 'Promo Code', 'smoketree-plugin' ); ?></label>
+			<div class="stsrc-discount-field__controls">
+				<input type="text" name="promo_code" id="stsrc_promo_code" placeholder="<?php echo esc_attr__( 'Enter promo code', 'smoketree-plugin' ); ?>">
+				<button type="button" class="stsrc-button stsrc-button-secondary" id="apply-promo-btn"><?php echo esc_html__( 'Apply', 'smoketree-plugin' ); ?></button>
+			</div>
+			<div class="stsrc-discount-feedback" id="promo-feedback"></div>
+		</div>
+
+		<div class="stsrc-discount-field" id="affiliate-code-group">
+			<label for="stsrc_affiliate_code"><?php echo esc_html__( 'Referral Code', 'smoketree-plugin' ); ?></label>
+			<div class="stsrc-discount-field__controls">
+				<input type="text" name="affiliate_code" id="stsrc_affiliate_code" placeholder="<?php echo esc_attr__( 'Enter referral code', 'smoketree-plugin' ); ?>">
+				<button type="button" class="stsrc-button stsrc-button-secondary" id="apply-affiliate-btn"><?php echo esc_html__( 'Apply', 'smoketree-plugin' ); ?></button>
+			</div>
+			<div class="stsrc-discount-feedback" id="affiliate-feedback"></div>
+		</div>
+
+		<input type="hidden" name="applied_discount_type" id="applied_discount_type" value="">
+		<input type="hidden" name="applied_discount_code" id="applied_discount_code" value="">
+		<input type="hidden" name="applied_discount_amount" id="applied_discount_amount" value="">
+		<input type="hidden" name="applied_discount_computed" id="applied_discount_computed" value="">
 	</div>
 
 	<!-- Order Summary -->
