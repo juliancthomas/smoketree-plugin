@@ -431,7 +431,7 @@ class STSRC_Email_Service {
 			'failure_reason'   => $failure_reason,
 			'current_balance'  => '$' . number_format( $current_balance, 2 ),
 			'portal_url'       => home_url( '/member-portal' ),
-			'secretary_email'  => sanitize_email( (string) get_option( 'stsrc_secretary_email', '' ) ),
+			'secretary_email'  => implode( ', ', array_filter( array_map( 'sanitize_email', array_map( 'trim', explode( ',', (string) get_option( 'stsrc_secretary_email', '' ) ) ) ) ) ),
 		);
 
 		return $this->send_email(
@@ -727,12 +727,17 @@ class STSRC_Email_Service {
 	 * @return   array<string> Sanitized unique email addresses.
 	 */
 	private function get_admin_notification_recipients(): array {
+		$secretary_emails = array_filter(
+			array_map( 'sanitize_email', array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) ) )
+		);
 		$emails = array_filter(
-			array(
-				sanitize_email( (string) get_field( 'stsrc_president_email', 'option' ) ),
-				sanitize_email( (string) get_field( 'stsrc_vice_president_email', 'option' ) ),
-				sanitize_email( (string) get_field( 'stsrc_treasurer_email', 'option' ) ),
-				sanitize_email( (string) get_field( 'stsrc_secretary_email', 'option' ) ),
+			array_merge(
+				array(
+					sanitize_email( (string) get_field( 'stsrc_president_email', 'option' ) ),
+					sanitize_email( (string) get_field( 'stsrc_vice_president_email', 'option' ) ),
+					sanitize_email( (string) get_field( 'stsrc_treasurer_email', 'option' ) ),
+				),
+				$secretary_emails
 			)
 		);
 

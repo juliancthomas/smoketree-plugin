@@ -799,8 +799,8 @@ class STSRC_Ajax_Handler {
 		$president_email = get_field( 'stsrc_president_email', 'option' );
 		$vice_president_email = get_field( 'stsrc_vice_president_email', 'option' );
 		$treasurer_email = get_field( 'stsrc_treasurer_email', 'option' );
-		$secretary_email = get_field( 'stsrc_secretary_email', 'option' );
-		$admin_emails = array_filter( array( $president_email, $vice_president_email, $treasurer_email, $secretary_email ) );
+		$secretary_emails = array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) );
+		$admin_emails = array_filter( array_merge( array( $president_email, $vice_president_email, $treasurer_email ), $secretary_emails ) );
 
 		foreach ( $admin_emails as $admin_email_address ) {
 			$email_service->send_email(
@@ -1992,8 +1992,8 @@ class STSRC_Ajax_Handler {
 			$president_email = get_field( 'stsrc_president_email', 'option' );
 			$vice_president_email = get_field( 'stsrc_vice_president_email', 'option' );
 			$treasurer_email = get_field( 'stsrc_treasurer_email', 'option' );
-			$secretary_email = get_field( 'stsrc_secretary_email', 'option' );
-			$admin_emails = array_filter( array( $president_email, $vice_president_email, $treasurer_email, $secretary_email ) );
+			$secretary_emails = array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) );
+			$admin_emails = array_filter( array_merge( array( $president_email, $vice_president_email, $treasurer_email ), $secretary_emails ) );
 
 			foreach ( $admin_emails as $admin_email_address ) {
 				$email_service->send_email(
@@ -2919,10 +2919,15 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_payment_plan_enabled', '0' );
 		}
 		if ( isset( $post_data['secretary_email'] ) ) {
-			$raw_secretary_email = is_array( $post_data['secretary_email'] ) ? '' : $post_data['secretary_email'];
-			$email                = sanitize_email( $raw_secretary_email );
-			if ( '' === $raw_secretary_email || ! empty( $email ) ) {
-				update_option( 'stsrc_secretary_email', $email );
+			$raw_secretary_email = is_array( $post_data['secretary_email'] ) ? '' : trim( $post_data['secretary_email'] );
+			if ( '' === $raw_secretary_email ) {
+				update_option( 'stsrc_secretary_email', '' );
+			} else {
+				$parts     = array_map( 'trim', explode( ',', $raw_secretary_email ) );
+				$sanitized = array_filter( array_map( 'sanitize_email', $parts ) );
+				if ( ! empty( $sanitized ) ) {
+					update_option( 'stsrc_secretary_email', implode( ', ', $sanitized ) );
+				}
 			}
 		}
 		if ( isset( $post_data['contact_email'] ) ) {
