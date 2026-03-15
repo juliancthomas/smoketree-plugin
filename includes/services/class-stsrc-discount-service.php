@@ -439,7 +439,7 @@ class STSRC_Discount_Service {
 			$treasurer_email,
 			sprintf(
 				/* translators: %s: referrer name */
-				__( 'Referral Credit Due - %s', 'smoketree-plugin' ),
+				__( 'Referral Credit Due — %s', 'smoketree-plugin' ),
 				trim( (string) $referrer['first_name'] . ' ' . (string) $referrer['last_name'] )
 			)
 		);
