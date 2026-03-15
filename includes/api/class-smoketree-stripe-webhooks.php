@@ -197,6 +197,11 @@ class Smoketree_Stripe_Webhooks {
 		$metadata = $session['metadata'] ?? array();
 		$member_id = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
 		$payment_type = $metadata['payment_type'] ?? '';
+		$payment_context = $metadata['payment_context'] ?? '';
+
+		if ( 'renewal' === $payment_context ) {
+			return self::handle_renewal_checkout_completed( $session, (string) ( $event['id'] ?? '' ) );
+		}
 
 		if ( $member_id > 0 && 'registration' === $payment_type ) {
 			// New flow: Update existing member account
@@ -215,6 +220,27 @@ class Smoketree_Stripe_Webhooks {
 
 		// Legacy: Process new member registration (backward compatibility)
 		return self::handle_legacy_registration_payment( $session, $event, $registration_data );
+	}
+
+	/**
+	 * Handle renewal checkout completion events.
+	 *
+	 * @param array  $session  Stripe checkout session payload.
+	 * @param string $event_id Stripe event ID.
+	 * @return bool
+	 */
+	private static function handle_renewal_checkout_completed( array $session, string $event_id ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-renewal-service.php';
+
+		$renewal_service = new STSRC_Renewal_Service();
+		$result          = $renewal_service->finalize_stripe_renewal( $session, $event_id );
+
+		if ( ! empty( $result['applied'] ) ) {
+			return true;
+		}
+
+		// Treat replayed completion as a no-op success.
+		return in_array( $result['reason'] ?? '', array( 'already_completed', 'no_update_applied' ), true );
 	}
 
 	/**

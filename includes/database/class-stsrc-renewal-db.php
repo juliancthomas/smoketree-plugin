@@ -193,6 +193,32 @@ class STSRC_Renewal_DB {
 	}
 
 	/**
+	 * Get renewal by Stripe checkout session ID.
+	 *
+	 * @param string $session_id Stripe checkout session ID.
+	 * @return array|null
+	 */
+	public static function get_by_checkout_session_id( string $session_id ): ?array {
+		global $wpdb;
+
+		$session_id = sanitize_text_field( $session_id );
+		if ( '' === $session_id ) {
+			return null;
+		}
+
+		$table_name = self::get_table_name();
+		$row        = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE stripe_checkout_session_id = %s LIMIT 1",
+				$session_id
+			),
+			ARRAY_A
+		);
+
+		return is_array( $row ) ? $row : null;
+	}
+
+	/**
 	 * Update renewal record.
 	 *
 	 * @param int   $renewal_id Renewal ID.

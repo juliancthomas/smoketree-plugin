@@ -259,6 +259,82 @@ class STSRC_Renewal_Service {
 	}
 
 	/**
+	 * Finalize Stripe checkout completion for renewal context.
+	 *
+	 * @param array  $session Checkout session payload from Stripe event.
+	 * @param string $event_id Stripe event ID.
+	 * @return array{applied:bool,reason:string,renewal_id?:int}
+	 */
+	public function finalize_stripe_renewal( array $session, string $event_id ): array {
+		$session_id = sanitize_text_field( (string) ( $session['id'] ?? '' ) );
+		$metadata   = $session['metadata'] ?? array();
+		$renewal_id = absint( $metadata['renewal_id'] ?? 0 );
+
+		if ( $renewal_id <= 0 && '' === $session_id ) {
+			return array( 'applied' => false, 'reason' => 'missing_identifiers' );
+		}
+
+		$renewal = $renewal_id > 0
+			? STSRC_Renewal_DB::get_renewal( $renewal_id )
+			: STSRC_Renewal_DB::get_by_checkout_session_id( $session_id );
+
+		if ( empty( $renewal ) ) {
+			return array( 'applied' => false, 'reason' => 'renewal_not_found' );
+		}
+
+		$renewal_id = (int) ( $renewal['renewal_id'] ?? 0 );
+		$status     = (string) ( $renewal['status'] ?? '' );
+
+		if ( STSRC_Renewal_DB::STATUS_COMPLETED === $status ) {
+			return array( 'applied' => false, 'reason' => 'already_completed', 'renewal_id' => $renewal_id );
+		}
+
+		$allowed_from = array(
+			STSRC_Renewal_DB::STATUS_INITIATED,
+			STSRC_Renewal_DB::STATUS_PENDING_PAYMENT,
+		);
+
+		if ( ! in_array( $status, $allowed_from, true ) ) {
+			return array( 'applied' => false, 'reason' => 'invalid_status_transition', 'renewal_id' => $renewal_id );
+		}
+
+		$payment_intent_id = sanitize_text_field( (string) ( $session['payment_intent'] ?? '' ) );
+		$expected_member   = absint( $metadata['member_id'] ?? 0 );
+		$expected_season   = sanitize_text_field( (string) ( $metadata['season_key'] ?? '' ) );
+
+		if ( $expected_member > 0 && $expected_member !== (int) ( $renewal['member_id'] ?? 0 ) ) {
+			return array( 'applied' => false, 'reason' => 'member_mismatch', 'renewal_id' => $renewal_id );
+		}
+
+		if ( '' !== $expected_season && $expected_season !== (string) ( $renewal['season_key'] ?? '' ) ) {
+			return array( 'applied' => false, 'reason' => 'season_mismatch', 'renewal_id' => $renewal_id );
+		}
+
+		if ( '' !== $session_id && $session_id !== (string) ( $renewal['stripe_checkout_session_id'] ?? '' ) ) {
+			STSRC_Renewal_DB::update_renewal(
+				$renewal_id,
+				array( 'stripe_checkout_session_id' => $session_id )
+			);
+		}
+
+		$applied = STSRC_Renewal_DB::transition_status(
+			$renewal_id,
+			$allowed_from,
+			STSRC_Renewal_DB::STATUS_COMPLETED,
+			array(
+				'stripe_payment_intent_id' => $payment_intent_id,
+				'notes'                    => sprintf( 'Completed by Stripe webhook event %s', sanitize_text_field( $event_id ) ),
+			)
+		);
+
+		if ( ! $applied ) {
+			return array( 'applied' => false, 'reason' => 'no_update_applied', 'renewal_id' => $renewal_id );
+		}
+
+		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
+	}
+
+	/**
 	 * Get eligibility and idempotency details for a member renewal attempt.
 	 *
 	 * @param int         $member_id Member ID.
