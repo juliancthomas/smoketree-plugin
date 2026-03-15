@@ -161,9 +161,9 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		if ( ! $this->enforce_rate_limit( 'registration', 3, HOUR_IN_SECONDS, __( 'Too many registration attempts. Please try again later.', 'smoketree-plugin' ) ) ) {
-			return;
-		}
+		// if ( ! $this->enforce_rate_limit( 'registration', 3, HOUR_IN_SECONDS, __( 'Too many registration attempts. Please try again later.', 'smoketree-plugin' ) ) ) {
+		// 	return;
+		// }
 
 		// Check if registration is enabled
 		$registration_enabled = get_option( 'stsrc_registration_enabled', '1' );
@@ -3937,19 +3937,17 @@ class STSRC_Ajax_Handler {
 			wp_die( 'Account restored, but we could not start password reset. Please use Forgot Password.' );
 		}
 
-		$reset_key = get_password_reset_key( $user );
-		if ( is_wp_error( $reset_key ) ) {
-			wp_safe_redirect( wp_lostpassword_url() );
-			exit;
-		}
+		$reset_token = wp_generate_password( 32, false );
+		$expiration  = time() + HOUR_IN_SECONDS;
+		update_user_meta( $user->ID, 'stsrc_password_reset_token', $reset_token );
+		update_user_meta( $user->ID, 'stsrc_password_reset_expiration', $expiration );
 
 		$reset_url = add_query_arg(
 			array(
-				'action' => 'stsrc_reset_password',
-				'key'    => $reset_key,
-				'login'  => rawurlencode( $user->user_login ),
+				'token' => $reset_token,
+				'email' => rawurlencode( $user->user_email ),
 			),
-			home_url( '/member-portal/' )
+			home_url( '/reset-password/' )
 		);
 
 		STSRC_Logger::info(
