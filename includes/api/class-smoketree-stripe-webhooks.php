@@ -36,15 +36,6 @@ class Smoketree_Stripe_Webhooks {
 		$payload = $request->get_body();
 		$sig_header = (string) $request->get_header( 'stripe-signature' );
 
-		// Verify webhook signature
-		if ( ! self::verify_signature( $payload, $sig_header ) ) {
-			error_log( 'Stripe webhook signature verification failed' );
-			return new WP_REST_Response(
-				array( 'error' => 'Invalid signature' ),
-				400
-			);
-		}
-
 		// Parse event
 		$event = json_decode( $payload, true );
 		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $event ) ) {
@@ -61,6 +52,23 @@ class Smoketree_Stripe_Webhooks {
 			);
 		}
 
+		$is_live_event  = ! isset( $event['livemode'] ) || (bool) $event['livemode'];
+		$live_secret    = self::get_live_webhook_secret();
+		$test_secret    = self::get_test_webhook_secret();
+		if ( ! empty( $live_secret ) && ! empty( $test_secret ) && hash_equals( $live_secret, $test_secret ) ) {
+			error_log( 'Stripe webhook configuration warning: live and test webhook secrets are identical.' );
+		}
+		$webhook_secret = $is_live_event ? $live_secret : $test_secret;
+
+		// Verify webhook signature
+		if ( ! self::verify_signature( $payload, $sig_header, $webhook_secret ) ) {
+			error_log( 'Stripe webhook signature verification failed' );
+			return new WP_REST_Response(
+				array( 'error' => 'Invalid signature' ),
+				400
+			);
+		}
+
 		// Check idempotency (prevent duplicate processing)
 		if ( self::is_event_processed( $event['id'] ) ) {
 			return new WP_REST_Response(
@@ -70,7 +78,7 @@ class Smoketree_Stripe_Webhooks {
 		}
 
 		// Route to appropriate handler
-		$result = self::route_event( $event );
+		$result = self::route_event( $event, $is_live_event );
 
 		// Mark event as processed
 		if ( $result ) {
@@ -89,20 +97,19 @@ class Smoketree_Stripe_Webhooks {
 	 * @since    1.0.0
 	 * @return   string    Webhook secret or empty string
 	 */
-	private static function get_webhook_secret(): string {
-		// Try ACF first, then fallback to get_option
+	private static function get_live_webhook_secret(): string {
 		$secret = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_webhook_secret', '' );
-		
-		// Check for test mode (handle bool, int, and string values)
-		$test_mode = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_mode', 'option' ) : get_option( 'stsrc_stripe_test_mode', '0' );
-		$is_test_mode = ( true === $test_mode || 1 === $test_mode || '1' === $test_mode );
-		
-		if ( $is_test_mode ) {
-			$test_secret = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_test_webhook_secret', '' );
-			if ( ! empty( $test_secret ) ) {
-				$secret = $test_secret;
-			}
-		}
+		return (string) $secret;
+	}
+
+	/**
+	 * Get the Stripe test webhook secret.
+	 *
+	 * @since    1.5.0
+	 * @return   string
+	 */
+	private static function get_test_webhook_secret(): string {
+		$secret = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_webhook_secret', 'option' ) : get_option( 'stsrc_stripe_test_webhook_secret', '' );
 		return (string) $secret;
 	}
 
@@ -114,13 +121,11 @@ class Smoketree_Stripe_Webhooks {
 	 * @param    string    $sig_header   Stripe signature header
 	 * @return   bool                    True if valid, false otherwise
 	 */
-	private static function verify_signature( string $payload, string $sig_header ): bool {
+	private static function verify_signature( string $payload, string $sig_header, string $webhook_secret ): bool {
 		if ( empty( $sig_header ) ) {
 			return false;
 		}
 
-		// Get webhook secret based on test mode
-		$webhook_secret = self::get_webhook_secret();
 		if ( empty( $webhook_secret ) ) {
 			error_log( 'Stripe webhook rejected: webhook secret is not configured.' );
 			return false;
@@ -155,12 +160,12 @@ class Smoketree_Stripe_Webhooks {
 	 * @param    array    $event    Stripe event data
 	 * @return   bool               True on success, false on failure
 	 */
-	private static function route_event( array $event ): bool {
+	private static function route_event( array $event, bool $is_live_event = true ): bool {
 		$event_type = $event['type'] ?? '';
 
 		switch ( $event_type ) {
 			case 'checkout.session.completed':
-				return self::handle_checkout_session_completed( $event );
+				return self::handle_checkout_session_completed( $event, $is_live_event );
 
 			case 'payment_intent.succeeded':
 				return self::handle_payment_intent_succeeded( $event );
@@ -182,7 +187,7 @@ class Smoketree_Stripe_Webhooks {
 	 * @param    array    $event    Stripe event data
 	 * @return   bool               True on success, false on failure
 	 */
-	private static function handle_checkout_session_completed( array $event ): bool {
+	private static function handle_checkout_session_completed( array $event, bool $is_live_event = true ): bool {
 		$session = $event['data']['object'] ?? null;
 		if ( ! $session ) {
 			return false;
@@ -198,6 +203,39 @@ class Smoketree_Stripe_Webhooks {
 		$member_id = isset( $metadata['member_id'] ) ? intval( $metadata['member_id'] ) : 0;
 		$payment_type = $metadata['payment_type'] ?? '';
 		$payment_context = $metadata['payment_context'] ?? '';
+		$is_demo_metadata = isset( $metadata['is_demo'] ) && '1' === (string) $metadata['is_demo'];
+
+		if ( $is_demo_metadata || ! $is_live_event ) {
+			if ( $member_id <= 0 ) {
+				error_log( 'Webhook skipped: demo/test checkout session missing member_id.' );
+				return true;
+			}
+
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+			$member = STSRC_Member_DB::get_member( $member_id );
+			$member_is_demo = ! empty( $member ) && 1 === (int) ( $member['is_demo'] ?? 0 );
+
+			if ( ! $member_is_demo ) {
+				error_log(
+					sprintf(
+						'Webhook skipped: received %s checkout event for non-demo member ID %d.',
+						$is_live_event ? 'demo-flagged live-mode' : 'test-mode',
+						$member_id
+					)
+				);
+				return true;
+			}
+		}
+
+		if ( ! $is_live_event && ! $is_demo_metadata ) {
+			error_log(
+				sprintf(
+					'Webhook skipped: test-mode event %s missing demo metadata.',
+					(string) ( $event['id'] ?? '' )
+				)
+			);
+			return true;
+		}
 
 		if ( 'renewal' === $payment_context ) {
 			return self::handle_renewal_checkout_completed( $session, (string) ( $event['id'] ?? '' ) );
