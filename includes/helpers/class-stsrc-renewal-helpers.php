@@ -95,7 +95,7 @@ class STSRC_Renewal_Helpers {
 			return false;
 		}
 
-		return ! in_array( $status, array( 'cancelled', 'inactive' ), true );
+		return 'cancelled' !== $status;
 	}
 }
 

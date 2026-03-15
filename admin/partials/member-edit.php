@@ -502,7 +502,7 @@ jQuery(document).ready(function($) {
 	$('#reactivate-member-btn').on('click', function(e) {
 		e.preventDefault();
 		
-		if (!confirm('Are you sure you want to reactivate this member? Their status will be set to pending.')) {
+		if (!confirm('Are you sure you want to reactivate this member? Their status will be set to inactive and they will need to complete renewal.')) {
 			return;
 		}
 		

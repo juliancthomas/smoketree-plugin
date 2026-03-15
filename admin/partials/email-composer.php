@@ -146,6 +146,7 @@ $templates = $data['templates'] ?? array();
 							<select name="status" id="status">
 								<option value=""><?php echo esc_html__( 'All Statuses', 'smoketree-plugin' ); ?></option>
 								<option value="active"><?php echo esc_html__( 'Active', 'smoketree-plugin' ); ?></option>
+								<option value="inactive"><?php echo esc_html__( 'Inactive', 'smoketree-plugin' ); ?></option>
 								<option value="pending"><?php echo esc_html__( 'Pending', 'smoketree-plugin' ); ?></option>
 								<option value="cancelled"><?php echo esc_html__( 'Cancelled', 'smoketree-plugin' ); ?></option>
 							</select>

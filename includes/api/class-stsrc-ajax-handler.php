@@ -4746,10 +4746,10 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		// Reactivate by setting status to pending
+		// Reactivate by setting status to inactive (member must complete renewal to become active)
 		$result = STSRC_Member_DB::update_member(
 			$member_id,
-			array( 'status' => 'pending' )
+			array( 'status' => 'inactive' )
 		);
 
 		if ( ! $result ) {
@@ -4768,7 +4768,7 @@ class STSRC_Ajax_Handler {
 
 		wp_send_json_success(
 			array(
-				'message' => 'Member reactivated successfully. Status set to pending.',
+				'message' => 'Member reactivated successfully. Status set to inactive — member must complete renewal to become active.',
 			)
 		);
 	}

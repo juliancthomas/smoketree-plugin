@@ -148,6 +148,57 @@
 			$(this).addClass('is-current');
 		});
 
+		$continueBtn.on('click', function() {
+			if ($continueBtn.prop('disabled')) {
+				return;
+			}
+
+			var membershipTypeId = $form.find('input[name="target_membership_type_id"]:checked').val();
+			var paymentMethod = getPaymentMethod();
+			var memberId = $form.find('input[name="member_id"]').val();
+			var seasonKey = $form.find('input[name="season_key"]').val();
+			var nonce = $form.find('input[name="nonce"]').val();
+			var submitAction = renewalConfig && renewalConfig.actions ? renewalConfig.actions.submit : 'stsrc_renewal_submit';
+
+			if (!membershipTypeId) {
+				return;
+			}
+
+			$continueBtn.prop('disabled', true).text('Processing…');
+
+			$.ajax({
+				url: ajaxUrl,
+				type: 'POST',
+				data: {
+					action: submitAction,
+					nonce: nonce,
+					target_membership_type_id: membershipTypeId,
+					payment_method: paymentMethod,
+					season_key: seasonKey,
+					member_id: memberId
+				}
+			}).done(function(response) {
+				if (response && response.success && response.data) {
+					if (response.data.redirect_url) {
+						window.location.href = response.data.redirect_url;
+						return;
+					}
+					if (response.data.message) {
+						$form.html('<div class="stsrc-renewal-success"><p>' + $('<span/>').text(response.data.message).html() + '</p></div>');
+						return;
+					}
+				}
+				$continueBtn.prop('disabled', false).text('Continue to Renewal Payment');
+			}).fail(function(xhr) {
+				var msg = 'Something went wrong. Please try again.';
+				if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+					msg = xhr.responseJSON.data.message;
+				}
+				alert(msg);
+				$continueBtn.prop('disabled', false).text('Continue to Renewal Payment');
+			});
+		});
+
 		$form.on('change', 'input[name="target_membership_type_id"], input[name="payment_method"]', requestQuote);
 		requestQuote();
 	}
