@@ -343,6 +343,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_trigger_renewal_processing', $ajax_handler, 'trigger_renewal_processing' );
 		$this->loader->add_action( 'wp_ajax_stsrc_adjust_balance', $balance_ajax, 'handle_admin_adjust_balance' );
 		$this->loader->add_action( 'wp_ajax_stsrc_record_payment', $balance_ajax, 'handle_admin_record_payment' );
+		$this->loader->add_action( 'wp_ajax_stsrc_renewal_confirm_offline_payment', $renewal_api, 'confirm_offline_payment' );
 
 		// Password reset endpoints (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_forgot_password', $ajax_handler, 'forgot_password' );

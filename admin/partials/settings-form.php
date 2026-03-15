@@ -177,8 +177,8 @@ $acf_available = $data['acf_available'] ?? false;
 					<tr>
 						<th><label for="secretary_email"><?php echo esc_html__( 'Secretary Email', 'smoketree-plugin' ); ?></label></th>
 						<td>
-							<input type="email" name="secretary_email" id="secretary_email" value="<?php echo esc_attr( $settings['secretary_email'] ?? '' ); ?>" class="regular-text">
-							<p class="description"><?php echo esc_html__( 'Email address for secretary notifications (new registrations, etc.)', 'smoketree-plugin' ); ?></p>
+							<input type="text" name="secretary_email" id="secretary_email" value="<?php echo esc_attr( $settings['secretary_email'] ?? '' ); ?>" class="regular-text">
+							<p class="description"><?php echo esc_html__( 'Secretary notification emails (comma-separated for multiple addresses).', 'smoketree-plugin' ); ?></p>
 						</td>
 					</tr>
 					<tr>

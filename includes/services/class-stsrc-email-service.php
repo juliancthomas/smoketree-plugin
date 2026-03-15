@@ -727,15 +727,13 @@ class STSRC_Email_Service {
 	 * @return   array<string> Sanitized unique email addresses.
 	 */
 	private function get_admin_notification_recipients(): array {
-		$secretary_emails = array_filter(
-			array_map( 'sanitize_email', array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) ) )
-		);
+		$secretary_emails = $this->parse_csv_emails( (string) $this->get_option_or_field( 'stsrc_secretary_email' ) );
 		$emails = array_filter(
 			array_merge(
 				array(
-					sanitize_email( (string) get_field( 'stsrc_president_email', 'option' ) ),
-					sanitize_email( (string) get_field( 'stsrc_vice_president_email', 'option' ) ),
-					sanitize_email( (string) get_field( 'stsrc_treasurer_email', 'option' ) ),
+					sanitize_email( (string) $this->get_option_or_field( 'stsrc_president_email' ) ),
+					sanitize_email( (string) $this->get_option_or_field( 'stsrc_vice_president_email' ) ),
+					sanitize_email( (string) $this->get_option_or_field( 'stsrc_treasurer_email' ) ),
 				),
 				$secretary_emails
 			)
@@ -752,6 +750,64 @@ class STSRC_Email_Service {
 		$emails = array_values( array_unique( $emails ) );
 
 		return $emails;
+	}
+
+	/**
+	 * Send admin renewal notification email to all configured recipients.
+	 *
+	 * @param array $renewal Renewal row.
+	 * @param array $member Member row.
+	 * @return bool
+	 */
+	public function send_admin_renewal_notice( array $renewal, array $member ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$type_id         = (int) ( $renewal['new_membership_type_id'] ?? 0 );
+		$membership_type = STSRC_Membership_DB::get_membership_type( $type_id );
+		$method          = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		$method_label_map = array(
+			'card'            => __( 'Credit/Debit Card', 'smoketree-plugin' ),
+			'ach'             => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'bank_account'    => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'us_bank_account' => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'zelle'           => __( 'Zelle', 'smoketree-plugin' ),
+			'check'           => __( 'Check', 'smoketree-plugin' ),
+		);
+		$member_id = (int) ( $renewal['member_id'] ?? 0 );
+		$data      = array(
+			'member_name'        => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+			'member_email'       => (string) ( $member['email'] ?? '' ),
+			'season_key'         => (string) ( $renewal['season_key'] ?? '' ),
+			'membership_type_name' => (string) ( $membership_type['name'] ?? '' ),
+			'payment_method_label' => $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ),
+			'total_amount'       => (float) ( $renewal['total_amount'] ?? 0 ),
+			'member_admin_url'   => add_query_arg(
+				array(
+					'action'    => 'edit',
+					'member_id' => $member_id,
+				),
+				admin_url( 'admin.php?page=stsrc-members' )
+			),
+		);
+		$subject   = sprintf(
+			/* translators: %s: member full name */
+			__( 'Renewal Completed - %s', 'smoketree-plugin' ),
+			$data['member_name']
+		);
+		$recipients = $this->get_admin_notification_recipients();
+		if ( empty( $recipients ) ) {
+			return false;
+		}
+
+		$sent_any = false;
+		foreach ( $recipients as $recipient ) {
+			$result = $this->send_email( 'email/notify-admin-renewal.php', $data, $recipient, $subject );
+			if ( $result ) {
+				$sent_any = true;
+			}
+		}
+
+		return $sent_any;
 	}
 
 	/**
@@ -806,6 +862,41 @@ class STSRC_Email_Service {
 		);
 
 		return $this->send_email( $template, $data, $to_email, $subject );
+	}
+
+	/**
+	 * Read an option from ACF first, then fallback to wp_options.
+	 *
+	 * @param string $key Option key.
+	 * @return mixed
+	 */
+	private function get_option_or_field( string $key ) {
+		if ( function_exists( 'get_field' ) ) {
+			$value = get_field( $key, 'option' );
+			if ( null !== $value && '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return get_option( $key, '' );
+	}
+
+	/**
+	 * Parse comma-separated emails into unique valid list.
+	 *
+	 * @param string $value CSV email string.
+	 * @return array<string>
+	 */
+	private function parse_csv_emails( string $value ): array {
+		$emails = array_filter(
+			array_map(
+				'sanitize_email',
+				array_map( 'trim', explode( ',', $value ) )
+			),
+			'is_email'
+		);
+
+		return array_values( array_unique( $emails ) );
 	}
 }
 

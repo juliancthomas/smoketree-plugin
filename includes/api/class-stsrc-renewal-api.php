@@ -153,6 +153,47 @@ class STSRC_Renewal_API {
 	}
 
 	/**
+	 * Confirm a pending offline renewal payment from admin.
+	 *
+	 * @return void
+	 */
+	public function confirm_offline_payment(): void {
+		if ( ! $this->validate_admin_request() ) {
+			return;
+		}
+
+		$post_data   = wp_unslash( $_POST );
+		$renewal_id  = absint( $post_data['renewal_id'] ?? 0 );
+		$notes       = sanitize_textarea_field( $post_data['notes'] ?? '' );
+		$admin_user  = get_current_user_id();
+
+		if ( $renewal_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid renewal ID.', 'smoketree-plugin' ) ), 400 );
+			return;
+		}
+
+		$service = new STSRC_Renewal_Service();
+		$result  = $service->confirm_offline_payment( $renewal_id, $admin_user, $notes );
+		if ( empty( $result['applied'] ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Unable to confirm offline renewal payment.', 'smoketree-plugin' ),
+					'reason'  => $result['reason'] ?? 'error',
+				),
+				409
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'message'    => __( 'Offline renewal payment confirmed and membership activated.', 'smoketree-plugin' ),
+				'renewal_id' => (int) ( $result['renewal_id'] ?? 0 ),
+			)
+		);
+	}
+
+	/**
 	 * Validate request context and resolve authenticated member.
 	 *
 	 * @return array|null
@@ -185,6 +226,27 @@ class STSRC_Renewal_API {
 		}
 
 		return $member;
+	}
+
+	/**
+	 * Validate admin capability and nonce for admin-only renewal actions.
+	 *
+	 * @return bool
+	 */
+	private function validate_admin_request(): bool {
+		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Admin access required.', 'smoketree-plugin' ) ), 403 );
+			return false;
+		}
+
+		$post_data = wp_unslash( $_POST );
+		$nonce     = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'smoketree-plugin' ) ), 403 );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

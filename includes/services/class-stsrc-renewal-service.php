@@ -323,37 +323,86 @@ class STSRC_Renewal_Service {
 			);
 		}
 
-		global $wpdb;
-		$wpdb->query( 'START TRANSACTION' );
-
-		$member_updated = $this->apply_member_completion_updates( $renewal );
-		if ( ! $member_updated ) {
-			$wpdb->query( 'ROLLBACK' );
-			return array( 'applied' => false, 'reason' => 'member_update_failed', 'renewal_id' => $renewal_id );
-		}
-
-		$household_updated = $this->apply_household_completion_updates( $renewal );
-		if ( ! $household_updated ) {
-			$wpdb->query( 'ROLLBACK' );
-			return array( 'applied' => false, 'reason' => 'household_update_failed', 'renewal_id' => $renewal_id );
-		}
-
-		$applied = STSRC_Renewal_DB::transition_status(
-			$renewal_id,
+		$completion = $this->complete_renewal_transaction(
+			$renewal,
 			$allowed_from,
-			STSRC_Renewal_DB::STATUS_COMPLETED,
 			array(
 				'stripe_payment_intent_id' => $payment_intent_id,
 				'notes'                    => sprintf( 'Completed by Stripe webhook event %s', sanitize_text_field( $event_id ) ),
 			)
 		);
-
-		if ( ! $applied ) {
-			$wpdb->query( 'ROLLBACK' );
-			return array( 'applied' => false, 'reason' => 'no_update_applied', 'renewal_id' => $renewal_id );
+		if ( empty( $completion['applied'] ) ) {
+			return array(
+				'applied'    => false,
+				'reason'     => (string) ( $completion['reason'] ?? 'no_update_applied' ),
+				'renewal_id' => $renewal_id,
+			);
 		}
 
-		$wpdb->query( 'COMMIT' );
+		$member = STSRC_Member_DB::get_member( (int) ( $renewal['member_id'] ?? 0 ) );
+		if ( ! empty( $member ) ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_member_renewal_confirmation( (int) ( $renewal['member_id'] ?? 0 ), $renewal, $member );
+			$email_service->send_admin_renewal_notice( $renewal, $member );
+		}
+
+		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
+	}
+
+	/**
+	 * Confirm an offline renewal payment (check/zelle) from admin.
+	 *
+	 * @param int    $renewal_id Renewal ID.
+	 * @param int    $admin_user_id Admin user ID confirming payment.
+	 * @param string $notes Optional admin notes.
+	 * @return array{applied:bool,reason:string,renewal_id?:int}
+	 */
+	public function confirm_offline_payment( int $renewal_id, int $admin_user_id, string $notes = '' ): array {
+		$renewal = STSRC_Renewal_DB::get_renewal( $renewal_id );
+		if ( empty( $renewal ) ) {
+			return array( 'applied' => false, 'reason' => 'renewal_not_found' );
+		}
+
+		$status         = (string) ( $renewal['status'] ?? '' );
+		$payment_method = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		if ( STSRC_Renewal_DB::STATUS_PENDING_PAYMENT !== $status ) {
+			return array( 'applied' => false, 'reason' => 'invalid_status_transition', 'renewal_id' => $renewal_id );
+		}
+
+		if ( ! in_array( $payment_method, array( 'zelle', 'check' ), true ) ) {
+			return array( 'applied' => false, 'reason' => 'invalid_payment_method', 'renewal_id' => $renewal_id );
+		}
+
+		$note_parts = array(
+			sprintf( 'Offline payment confirmed by admin user %d', $admin_user_id ),
+		);
+		if ( '' !== trim( $notes ) ) {
+			$note_parts[] = sanitize_text_field( $notes );
+		}
+
+		$completion = $this->complete_renewal_transaction(
+			$renewal,
+			array( STSRC_Renewal_DB::STATUS_PENDING_PAYMENT ),
+			array(
+				'notes' => implode( ' - ', $note_parts ),
+			)
+		);
+		if ( empty( $completion['applied'] ) ) {
+			return array(
+				'applied'    => false,
+				'reason'     => (string) ( $completion['reason'] ?? 'no_update_applied' ),
+				'renewal_id' => $renewal_id,
+			);
+		}
+
+		$member = STSRC_Member_DB::get_member( (int) ( $renewal['member_id'] ?? 0 ) );
+		if ( ! empty( $member ) ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_member_renewal_confirmation( (int) ( $renewal['member_id'] ?? 0 ), $renewal, $member );
+			$email_service->send_admin_renewal_notice( $renewal, $member );
+		}
 
 		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
 	}
@@ -637,6 +686,50 @@ class STSRC_Renewal_Service {
 		$extra_ok  = STSRC_Extra_Member_DB::apply_renewal_selection( $member_id, $retain_extra );
 
 		return $family_ok && $extra_ok;
+	}
+
+	/**
+	 * Execute renewal completion updates in a DB transaction.
+	 *
+	 * @param array    $renewal Renewal row.
+	 * @param string[] $allowed_from Allowed from statuses.
+	 * @param array    $transition_data Additional transition columns.
+	 * @return array{applied:bool,reason:string}
+	 */
+	private function complete_renewal_transaction( array $renewal, array $allowed_from, array $transition_data ): array {
+		$renewal_id = (int) ( $renewal['renewal_id'] ?? 0 );
+		if ( $renewal_id <= 0 ) {
+			return array( 'applied' => false, 'reason' => 'invalid_renewal_id' );
+		}
+
+		global $wpdb;
+		$wpdb->query( 'START TRANSACTION' );
+
+		$member_updated = $this->apply_member_completion_updates( $renewal );
+		if ( ! $member_updated ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'applied' => false, 'reason' => 'member_update_failed' );
+		}
+
+		$household_updated = $this->apply_household_completion_updates( $renewal );
+		if ( ! $household_updated ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'applied' => false, 'reason' => 'household_update_failed' );
+		}
+
+		$applied = STSRC_Renewal_DB::transition_status(
+			$renewal_id,
+			$allowed_from,
+			STSRC_Renewal_DB::STATUS_COMPLETED,
+			$transition_data
+		);
+		if ( ! $applied ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'applied' => false, 'reason' => 'no_update_applied' );
+		}
+
+		$wpdb->query( 'COMMIT' );
+		return array( 'applied' => true, 'reason' => 'completed' );
 	}
 
 	/**

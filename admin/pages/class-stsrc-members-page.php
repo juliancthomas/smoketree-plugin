@@ -194,6 +194,8 @@ class STSRC_Members_Page {
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-membership-db.php';
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-family-member-db.php';
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-extra-member-db.php';
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-renewal-db.php';
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/helpers/class-stsrc-renewal-helpers.php';
 
 		$member = null;
 		if ( $member_id > 0 ) {
@@ -227,12 +229,22 @@ class STSRC_Members_Page {
 			);
 		}
 
+		$pending_renewal = null;
+		if ( $member && STSRC_Renewal_Helpers::is_renewal_enabled() ) {
+			$pending_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
+				$member_id,
+				STSRC_Renewal_Helpers::get_season_key(),
+				array( STSRC_Renewal_DB::STATUS_PENDING_PAYMENT )
+			);
+		}
+
 		$data = array(
 			'member'          => $member,
 			'membership_types' => $membership_types,
 			'family_members'  => $family_members,
 			'extra_members'   => $extra_members,
 			'delete_meta'     => $delete_meta,
+			'pending_renewal' => $pending_renewal,
 		);
 
 		// Include edit template
