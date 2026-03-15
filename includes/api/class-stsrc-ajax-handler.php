@@ -2918,6 +2918,11 @@ class STSRC_Ajax_Handler {
 		} else {
 			update_option( 'stsrc_payment_plan_enabled', '0' );
 		}
+		if ( isset( $post_data['renewal_enabled'] ) ) {
+			update_option( 'stsrc_renewal_enabled', '1' );
+		} else {
+			update_option( 'stsrc_renewal_enabled', '0' );
+		}
 		if ( isset( $post_data['secretary_email'] ) ) {
 			$raw_secretary_email = is_array( $post_data['secretary_email'] ) ? '' : trim( $post_data['secretary_email'] );
 			if ( '' === $raw_secretary_email ) {
@@ -2998,6 +3003,7 @@ class STSRC_Ajax_Handler {
 			if ( isset( $post_data['stripe_secret_key'] ) ) {
 				update_field( 'stsrc_stripe_secret_key', sanitize_text_field( $post_data['stripe_secret_key'] ), 'option' );
 			}
+			update_field( 'stsrc_renewal_enabled', isset( $post_data['renewal_enabled'] ) ? 1 : 0, 'option' );
 			// Payment settings (v1.1.0+)
 			if ( isset( $post_data['minimum_balance_payment'] ) ) {
 				$minimum_payment = floatval( $post_data['minimum_balance_payment'] );

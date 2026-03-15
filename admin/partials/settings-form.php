@@ -165,6 +165,15 @@ $acf_available = $data['acf_available'] ?? false;
 								</label>
 							</td>
 						</tr>
+						<tr>
+							<th><label for="renewal_enabled"><?php echo esc_html__( 'Member Renewal Enabled', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<label>
+									<input type="checkbox" name="renewal_enabled" id="renewal_enabled" value="1" <?php checked( $settings['renewal_enabled'] ?? '0', '1' ); ?>>
+									<?php echo esc_html__( 'Enable member self-service renewal in the portal', 'smoketree-plugin' ); ?>
+								</label>
+							</td>
+						</tr>
 					<tr>
 						<th><label for="secretary_email"><?php echo esc_html__( 'Secretary Email', 'smoketree-plugin' ); ?></label></th>
 						<td>

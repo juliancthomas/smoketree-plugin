@@ -107,6 +107,8 @@ $data = array(
 	'guest_pass_balance' => $guest_pass_balance,
 	'access_codes'    => $access_codes,
 );
+$renewal_context = STSRC_Member_Portal::get_renewal_context( $member );
+$data['renewal_context'] = $renewal_context;
 
 $request_params        = wp_unslash( $_GET );
 $payment_status        = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
@@ -143,6 +145,16 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<!-- Outstanding Balance Card -->
 		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/pay-balance-modal.php'; ?>
+
+		<!-- Renewal Section -->
+		<?php if ( ! empty( $renewal_context['show_section'] ) ) : ?>
+			<?php
+			$renewal_partial = plugin_dir_path( __FILE__ ) . '../partials/renewal-section.php';
+			if ( file_exists( $renewal_partial ) ) {
+				include $renewal_partial;
+			}
+			?>
+		<?php endif; ?>
 
 		<!-- Member Profile Section -->
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/member-profile.php'; ?>

@@ -162,6 +162,7 @@ class STSRC_Settings_Page {
 		// General Settings
 		$settings['registration_enabled'] = function_exists( 'get_field' ) ? get_field( 'stsrc_registration_enabled', 'option' ) : get_option( 'stsrc_registration_enabled', '1' );
 		$settings['payment_plan_enabled'] = function_exists( 'get_field' ) ? get_field( 'stsrc_payment_plan_enabled', 'option' ) : get_option( 'stsrc_payment_plan_enabled', '0' );
+		$settings['renewal_enabled'] = function_exists( 'get_field' ) ? get_field( 'stsrc_renewal_enabled', 'option' ) : get_option( 'stsrc_renewal_enabled', '0' );
 		$settings['secretary_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_secretary_email', 'option' ) : get_option( 'stsrc_secretary_email', '' );
 		$settings['contact_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 		$settings['season_renewal_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_season_renewal_date', 'option' ) : get_option( 'stsrc_season_renewal_date', '' );

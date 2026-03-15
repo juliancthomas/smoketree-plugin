@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/services/class-stsrc-balance-service.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/helpers/class-stsrc-renewal-helpers.php';
 
 /**
  * Member portal helper class.
@@ -22,6 +23,47 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/services/class-s
  * @subpackage Smoketree_Plugin/public
  */
 class STSRC_Member_Portal {
+
+	/**
+	 * Build renewal-gate context for member portal rendering.
+	 *
+	 * @param array $member Member record.
+	 * @return array{
+	 *   enabled:bool,
+	 *   eligible:bool,
+	 *   show_section:bool,
+	 *   season_key:string
+	 * }
+	 */
+	public static function get_renewal_context( array $member ): array {
+		$enabled = STSRC_Renewal_Helpers::is_renewal_enabled();
+		$eligible = self::can_render_renewal_section( $member );
+
+		return array(
+			'enabled'      => $enabled,
+			'eligible'     => $eligible,
+			'show_section' => $enabled && $eligible,
+			'season_key'   => STSRC_Renewal_Helpers::get_season_key(),
+		);
+	}
+
+	/**
+	 * Determine whether renewal UI should render for this member.
+	 *
+	 * @param array $member Member record.
+	 * @return bool
+	 */
+	public static function can_render_renewal_section( array $member ): bool {
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		if ( ! STSRC_Renewal_Helpers::is_renewal_enabled() ) {
+			return false;
+		}
+
+		return STSRC_Renewal_Helpers::is_member_eligible_for_current_season( $member );
+	}
 
 	/**
 	 * Render balance card for a member when balance is outstanding.
