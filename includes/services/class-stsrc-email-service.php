@@ -753,5 +753,59 @@ class STSRC_Email_Service {
 
 		return $emails;
 	}
+
+	/**
+	 * Send renewal confirmation email to member.
+	 *
+	 * @param int   $member_id Member ID.
+	 * @param array $renewal Renewal record.
+	 * @param array $member Member record.
+	 * @return bool
+	 */
+	public function send_member_renewal_confirmation( int $member_id, array $renewal, array $member ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$to_email = sanitize_email( (string) ( $member['email'] ?? '' ) );
+		if ( '' === $to_email ) {
+			return false;
+		}
+
+		$type_id          = (int) ( $renewal['new_membership_type_id'] ?? 0 );
+		$membership_type  = STSRC_Membership_DB::get_membership_type( $type_id );
+		$type_name        = (string) ( $membership_type['name'] ?? '' );
+		$method           = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		$template         = 'email/renewal-confirmation.php';
+		$subject          = __( 'Your Smoketree Renewal Confirmation', 'smoketree-plugin' );
+		$method_label_map = array(
+			'card'            => __( 'Credit/Debit Card', 'smoketree-plugin' ),
+			'ach'             => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'bank_account'    => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'us_bank_account' => __( 'Bank Account (ACH)', 'smoketree-plugin' ),
+			'zelle'           => __( 'Zelle', 'smoketree-plugin' ),
+			'check'           => __( 'Check', 'smoketree-plugin' ),
+		);
+
+		if ( 'civic' === strtolower( $type_name ) ) {
+			$template = 'email/renewal-confirmation-civic.php';
+		}
+
+		$payment_instructions = '';
+		if ( in_array( $method, array( 'zelle', 'check' ), true ) ) {
+			$payment_instructions = (string) get_option( 'stsrc_payment_instructions_' . $method, '' );
+		}
+
+		$data = array(
+			'first_name'          => (string) ( $member['first_name'] ?? '' ),
+			'last_name'           => (string) ( $member['last_name'] ?? '' ),
+			'member_id'           => $member_id,
+			'season_key'          => (string) ( $renewal['season_key'] ?? '' ),
+			'membership_type_name' => $type_name,
+			'total_amount'        => (float) ( $renewal['total_amount'] ?? 0 ),
+			'payment_method_label' => $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ),
+			'payment_instructions' => $payment_instructions,
+		);
+
+		return $this->send_email( $template, $data, $to_email, $subject );
+	}
 }
 
