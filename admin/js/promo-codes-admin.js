@@ -20,6 +20,14 @@
 		$('#stsrc_promo_code_id').val('');
 		$('#stsrc-promo-modal-title').text('Add Promo Code');
 		$('#stsrc_is_active').prop('checked', true);
+		$('.stsrc-discount-type-value').val('');
+		updateDiscountColLabel();
+	}
+
+	function updateDiscountColLabel() {
+		var type = $('input[name="discount_type"]:checked').val();
+		var label = type === 'percentage' ? 'Discount (%)' : 'Discount ($)';
+		$('#stsrc-discount-col-label').text(label);
 	}
 
 	function submitPromoForm(e) {
@@ -49,20 +57,21 @@
 		$('#stsrc_promo_code_id').val(payload.code_id || '');
 		$('#stsrc_code_name').val(payload.code_name || '');
 		$('input[name="discount_type"][value="' + (payload.discount_type || 'flat') + '"]').prop('checked', true);
-		$('#stsrc_discount_value').val(payload.discount_value || '');
+
+		$('.stsrc-discount-type-value').val('');
+		if (payload.discount_values && typeof payload.discount_values === 'object') {
+			$.each(payload.discount_values, function(typeId, value) {
+				$('.stsrc-discount-type-value[data-type-id="' + Number(typeId) + '"]').val(value || '');
+			});
+		}
+
 		if (payload.expires_at) {
 			$('#stsrc_expires_at').val(String(payload.expires_at).slice(0, 10));
 		}
 		$('#stsrc_is_one_time_use').prop('checked', Number(payload.is_one_time_use) === 1);
 		$('#stsrc_usage_limit').val(payload.usage_limit || '');
 		$('#stsrc_is_active').prop('checked', Number(payload.is_active) === 1);
-
-		$('#stsrc_allowed_type_ids option').prop('selected', false);
-		if (Array.isArray(payload.allowed_type_ids)) {
-			payload.allowed_type_ids.forEach(function(typeId) {
-				$('#stsrc_allowed_type_ids option[value="' + Number(typeId) + '"]').prop('selected', true);
-			});
-		}
+		updateDiscountColLabel();
 	}
 
 	$(document).on('click', '#stsrc-open-promo-modal', function() {
@@ -88,6 +97,8 @@
 	});
 
 	$(document).on('submit', '#stsrc-promo-code-form', submitPromoForm);
+
+	$(document).on('change', 'input[name="discount_type"]', updateDiscountColLabel);
 
 	$(document).on('click', '.stsrc-delete-promo-code', function() {
 		var codeId = $(this).data('id');
