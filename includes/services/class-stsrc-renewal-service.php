@@ -596,6 +596,7 @@ class STSRC_Renewal_Service {
 
 		$payload_has_family = ! empty( $payload['retain_family_member_ids'] ) || ! empty( $payload['new_family_member_count'] );
 		$payload_has_extra  = ! empty( $payload['retain_extra_member_ids'] ) || ! empty( $payload['new_extra_member_count'] );
+		$is_simple_renewal  = ! $payload_has_family && ! $payload_has_extra;
 
 		$retain_family_ids = $payload_has_family
 			? $this->normalize_ids( $payload['retain_family_member_ids'] ?? array() )
@@ -608,26 +609,27 @@ class STSRC_Renewal_Service {
 		$errors            = array();
 		$warnings          = array();
 
-		if ( ! STSRC_Family_Member_DB::member_owns_ids( $member_id, $retain_family_ids ) ) {
+		if ( ! $is_simple_renewal && ! STSRC_Family_Member_DB::member_owns_ids( $member_id, $retain_family_ids ) ) {
 			$errors[] = 'invalid_retained_family_members';
 		}
 
-		if ( ! STSRC_Extra_Member_DB::member_owns_ids( $member_id, $retain_extra_ids ) ) {
+		if ( ! $is_simple_renewal && ! STSRC_Extra_Member_DB::member_owns_ids( $member_id, $retain_extra_ids ) ) {
 			$errors[] = 'invalid_retained_extra_members';
 		}
 
 		$required_family_count = $this->get_required_family_count_by_type( $target_type_name );
 		$resulting_family_count = count( $retain_family_ids ) + $new_family_count;
 
-		if ( $resulting_family_count < $required_family_count ) {
+		if ( ! $is_simple_renewal && $resulting_family_count < $required_family_count ) {
 			$errors[] = 'insufficient_family_members';
 		}
 
-		if ( self::TYPE_HOUSEHOLD === $current_type_name && self::TYPE_DUO === $target_type_name && 1 !== count( $retain_family_ids ) ) {
+		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $current_type_name && self::TYPE_DUO === $target_type_name && 1 !== count( $retain_family_ids ) ) {
 			$errors[] = 'household_to_duo_requires_one_retained_family_member';
 		}
 
 		if (
+			! $is_simple_renewal &&
 			self::TYPE_HOUSEHOLD === $current_type_name &&
 			in_array( $target_type_name, array( self::TYPE_SINGLE, self::TYPE_CIVIC ), true ) &&
 			! empty( $retain_family_ids )
@@ -644,7 +646,7 @@ class STSRC_Renewal_Service {
 			$new_extra_count  = 0;
 		}
 
-		if ( self::TYPE_HOUSEHOLD === $target_type_name && ! STSRC_Extra_Member_DB::is_valid_household_extra_count( $resulting_extra_count ) ) {
+		if ( ! $is_simple_renewal && self::TYPE_HOUSEHOLD === $target_type_name && ! STSRC_Extra_Member_DB::is_valid_household_extra_count( $resulting_extra_count ) ) {
 			$errors[] = 'household_extra_member_limit_exceeded';
 		}
 
