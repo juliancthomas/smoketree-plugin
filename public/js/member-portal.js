@@ -147,8 +147,17 @@
 			}
 
 			updateToolbarVisibility(stepIdx);
+			stripDoneFromFutureSteps(stepIdx);
 			setTimeout(function() { $wizard.smartWizard('fixHeight'); }, 0);
 		});
+
+		function stripDoneFromFutureSteps(currentIdx) {
+			$wizard.find('.nav .nav-link').each(function(i) {
+				if (i > currentIdx) {
+					$(this).removeClass('done');
+				}
+			});
+		}
 
 		function updateToolbarVisibility(stepIdx) {
 			var $toolbar = $wizard.find('.toolbar-bottom');
