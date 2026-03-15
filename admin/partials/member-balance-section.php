@@ -38,7 +38,7 @@ if ( null === $balance_data ) {
 
 // Extract data
 $membership_name   = $balance_data['membership_type_name'] ?? 'Unknown';
-$original_price    = $balance_data['original_price'] ?? 0.00;
+$season_price      = $balance_data['season_price'] ?? 0.00;
 $total_paid        = $balance_data['total_paid'] ?? 0.00;
 $total_adjustments = $balance_data['total_adjustments'] ?? 0.00;
 $balance_owed      = $balance_data['balance_owed'] ?? 0.00;
@@ -82,13 +82,13 @@ $balance_color = $balance_owed > 0 ? '#f44336' : ( $balance_owed < 0 ? '#ff9800'
 				</div>
 			</div>
 
-			<!-- Original Price -->
+			<!-- Season Price -->
 			<div>
 				<div style="font-size: 12px; color: #646970; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">
-					<?php echo esc_html__( 'Original Price', 'smoketree-plugin' ); ?>
+					<?php echo esc_html__( 'Season Price', 'smoketree-plugin' ); ?>
 				</div>
 				<div style="font-size: 16px; color: #1d2327; font-weight: 500;">
-					$<?php echo esc_html( number_format( $original_price, 2 ) ); ?>
+					$<?php echo esc_html( number_format( $season_price, 2 ) ); ?>
 				</div>
 			</div>
 

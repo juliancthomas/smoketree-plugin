@@ -272,7 +272,7 @@ class STSRC_Transaction_DB {
 	/**
 	 * Get balance summary for a member.
 	 *
-	 * Returns array with original price, total paid, total adjustments, and current balance.
+	 * Returns array with season price, total paid, total adjustments, and current balance.
 	 *
 	 * @since    1.1.0
 	 * @param    int    $member_id    Member ID
@@ -291,7 +291,7 @@ class STSRC_Transaction_DB {
 		$total_adjustments = self::get_total_adjustments( $member_id );
 
 		return array(
-			'original_price'      => (float) ( $member['original_membership_price'] ?? 0.00 ),
+			'season_price'        => (float) ( $member['season_membership_price'] ?? 0.00 ),
 			'total_paid'          => $total_paid,
 			'total_adjustments'   => $total_adjustments,
 			'balance_owed'        => (float) ( $member['balance_owed'] ?? 0.00 ),
@@ -407,7 +407,7 @@ class STSRC_Transaction_DB {
 		// Get all members who don't have any transactions yet
 		$members = $wpdb->get_results(
 			"SELECT m.member_id, m.membership_type_id, m.status, m.balance_owed, 
-				m.original_membership_price, m.created_at, mt.name as membership_name
+				m.season_membership_price, m.created_at, mt.name as membership_name
 			FROM {$members_table} m
 			LEFT JOIN {$memberships_table} mt ON m.membership_type_id = mt.membership_type_id
 			LEFT JOIN {$transactions_table} t ON m.member_id = t.member_id
@@ -426,17 +426,16 @@ class STSRC_Transaction_DB {
 			$member_id        = (int) $member['member_id'];
 			$status           = $member['status'] ?? 'pending';
 			$balance_owed     = (float) ( $member['balance_owed'] ?? 0.00 );
-			$original_price   = (float) ( $member['original_membership_price'] ?? 0.00 );
+			$season_price     = (float) ( $member['season_membership_price'] ?? 0.00 );
 			$membership_name  = $member['membership_name'] ?? 'Membership';
 			$created_at       = $member['created_at'] ?? current_time( 'mysql' );
 
 			// Create appropriate transaction based on member status
 			if ( 'active' === $status ) {
-				// Active member - show they paid in full
 				$description = sprintf(
 					'Initial membership registration - %s ($%s) - Paid in full',
 					$membership_name,
-					number_format( $original_price, 2 )
+					number_format( $season_price, 2 )
 				);
 
 				$transaction_data = array(
@@ -448,11 +447,10 @@ class STSRC_Transaction_DB {
 					'created_at'       => $created_at,
 				);
 			} else {
-				// Pending/cancelled member - show outstanding balance
 				$description = sprintf(
 					'Initial membership registration - %s ($%s)',
 					$membership_name,
-					number_format( $original_price, 2 )
+					number_format( $season_price, 2 )
 				);
 
 				$transaction_data = array(

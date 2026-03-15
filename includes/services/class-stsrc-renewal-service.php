@@ -16,6 +16,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-rene
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'helpers/class-stsrc-renewal-helpers.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-renewal-pricing-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-payment-service.php';
@@ -670,7 +671,7 @@ class STSRC_Renewal_Service {
 	 * @return bool
 	 */
 	private function apply_member_completion_updates( array $renewal ): bool {
-		$member_id = (int) ( $renewal['member_id'] ?? 0 );
+		$member_id   = (int) ( $renewal['member_id'] ?? 0 );
 		$new_type_id = (int) ( $renewal['new_membership_type_id'] ?? 0 );
 
 		if ( $member_id <= 0 || $new_type_id <= 0 ) {
@@ -696,17 +697,45 @@ class STSRC_Renewal_Service {
 		$expiration_ts          = strtotime( '+' . $expiration_period_days . ' days', $start_ts );
 		$expiration_date        = gmdate( 'Y-m-d', $expiration_ts ?: $start_ts );
 
-		return STSRC_Member_DB::apply_renewal_completion(
+		$season_price = (float) ( $quote['membership_base'] ?? ( $target_type['price'] ?? 0.00 ) );
+
+		$member_updated = STSRC_Member_DB::apply_renewal_completion(
 			$member_id,
 			array(
-				'membership_type_id'       => $new_type_id,
-				'expiration_date'          => $expiration_date,
-				'original_membership_price' => (float) ( $quote['membership_base'] ?? ( $target_type['price'] ?? 0.00 ) ),
-				'balance_owed'             => 0.00,
-				'status'                   => 'active',
-				'final_payment_method'     => $method,
+				'membership_type_id'      => $new_type_id,
+				'expiration_date'         => $expiration_date,
+				'season_membership_price' => $season_price,
+				'balance_owed'            => 0.00,
+				'status'                  => 'active',
+				'final_payment_method'    => $method,
 			)
 		);
+
+		if ( ! $member_updated ) {
+			return false;
+		}
+
+		$target_name  = (string) ( $target_type['name'] ?? 'Membership' );
+		$season_key   = STSRC_Renewal_Helpers::get_season_key();
+		$description  = sprintf(
+			'Renewal - %s ($%s) - Season %s',
+			$target_name,
+			number_format( $season_price, 2 ),
+			$season_key
+		);
+
+		STSRC_Transaction_DB::create_transaction(
+			$member_id,
+			array(
+				'transaction_type' => 'initial',
+				'payment_method'   => 'initial',
+				'amount'           => 0.00,
+				'balance_after'    => 0.00,
+				'description'      => $description,
+			)
+		);
+
+		return true;
 	}
 
 	/**

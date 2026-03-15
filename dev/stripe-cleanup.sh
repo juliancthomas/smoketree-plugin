@@ -32,7 +32,7 @@ echo "    • Set member ${MEMBER_ID} status → pending"
 echo "    • Delete all payment log rows for member ${MEMBER_ID} from Stripe events"
 echo "    • Delete the test extra member: ${EXTRA_FIRST} ${EXTRA_LAST}"
 echo "    • Delete all test transactions for member ${MEMBER_ID}"
-echo "    • Restore balance_owed to original_membership_price"
+echo "    • Restore balance_owed to season_membership_price"
 echo "    • Clear the Stripe idempotency cache"
 echo ""
 read -rp "  Proceed? (y/N): " confirm
@@ -47,7 +47,7 @@ if ! command -v wp &>/dev/null; then
   echo "    DELETE FROM wp_stsrc_payment_logs WHERE member_id=${MEMBER_ID} AND stripe_event_id != '';"
   echo "    DELETE FROM wp_stsrc_extra_members WHERE member_id=${MEMBER_ID} AND first_name='${EXTRA_FIRST}' AND last_name='${EXTRA_LAST}';"
   echo "    DELETE FROM wp_stsrc_transactions WHERE member_id=${MEMBER_ID};"
-  echo "    UPDATE wp_stsrc_members SET balance_owed = original_membership_price WHERE member_id=${MEMBER_ID};"
+  echo "    UPDATE wp_stsrc_members SET balance_owed = season_membership_price WHERE member_id=${MEMBER_ID};"
   echo ""
   exit 0
 fi
@@ -85,11 +85,11 @@ wp --path="${WP_PATH}" eval "
   echo 'Transactions deleted:      ' . \$deleted_txn . PHP_EOL;
 
   \$member = \$wpdb->get_row(\$wpdb->prepare(
-    \"SELECT original_membership_price FROM {\$wpdb->prefix}stsrc_members WHERE member_id = %d\",
+    \"SELECT season_membership_price FROM {\$wpdb->prefix}stsrc_members WHERE member_id = %d\",
     ${MEMBER_ID}
   ));
   if (\$member) {
-    \$original_price = (float)\$member->original_membership_price;
+    \$original_price = (float)\$member->season_membership_price;
     \$wpdb->update(
       \$wpdb->prefix . 'stsrc_members',
       ['balance_owed' => \$original_price],

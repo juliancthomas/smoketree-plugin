@@ -63,7 +63,7 @@ class STSRC_Member_DB {
 			'auto_renewal_enabled'     => '%d',
 			'expiration_date'          => '%s',
 			'balance_owed'             => '%f',
-			'original_membership_price' => '%f',
+			'season_membership_price'   => '%f',
 			'final_payment_method'     => '%s',
 			'created_at'               => '%s',
 			'updated_at'               => '%s',
@@ -179,7 +179,7 @@ class STSRC_Member_DB {
 			'auto_renewal_enabled'     => '%d',
 			'expiration_date'          => '%s',
 			'balance_owed'             => '%f',
-			'original_membership_price' => '%f',
+			'season_membership_price'   => '%f',
 			'final_payment_method'     => '%s',
 			'updated_at'               => '%s',
 		);
@@ -404,7 +404,7 @@ class STSRC_Member_DB {
 		$allowed = array(
 			'membership_type_id',
 			'expiration_date',
-			'original_membership_price',
+			'season_membership_price',
 			'balance_owed',
 			'status',
 			'final_payment_method',
@@ -455,10 +455,16 @@ class STSRC_Member_DB {
 	}
 
 	/**
-	 * Calculate member balance from transaction ledger.
+	 * Calculate member balance from the transaction ledger.
 	 *
-	 * Sums all transactions to verify the stored balance_owed matches the calculated balance.
-	 * This is used for data integrity checks.
+	 * Anchors on the most recent `initial` transaction (created at registration
+	 * or renewal) and sums all subsequent transactions.  This keeps the
+	 * calculation season-aware without requiring date-range filtering.
+	 *
+	 * Formula: balance = latest_initial.balance_after + SUM(txns after latest_initial)
+	 *
+	 * Falls back to season_membership_price + SUM(all txns) when no initial
+	 * transaction exists (legacy data).
 	 *
 	 * @since    1.1.0
 	 * @param    int    $member_id    Member ID
@@ -467,34 +473,54 @@ class STSRC_Member_DB {
 	public static function calculate_member_balance( int $member_id ): ?float {
 		global $wpdb;
 
-		$members_table      = $wpdb->prefix . 'stsrc_members';
 		$transactions_table = $wpdb->prefix . 'stsrc_transactions';
 
-		// Get member's original price
 		$member = self::get_member( $member_id );
 
 		if ( null === $member ) {
 			return null;
 		}
 
-		$original_price = (float) ( $member['original_membership_price'] ?? 0.00 );
-
-		// Sum all transaction amounts (payments are negative, fees/charges are positive)
-		// Initial transaction has amount 0
-		$total_transactions = $wpdb->get_var(
+		// Find the most recent initial transaction (set at registration or renewal).
+		$latest_initial = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT SUM(amount) FROM {$transactions_table} WHERE member_id = %d",
+				"SELECT transaction_id, balance_after, created_at
+				FROM {$transactions_table}
+				WHERE member_id = %d AND transaction_type = 'initial'
+				ORDER BY transaction_id DESC
+				LIMIT 1",
+				$member_id
+			),
+			ARRAY_A
+		);
+
+		if ( $latest_initial ) {
+			$anchor_balance = (float) $latest_initial['balance_after'];
+			$anchor_id      = (int) $latest_initial['transaction_id'];
+
+			$subsequent_sum = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(SUM(amount), 0)
+					FROM {$transactions_table}
+					WHERE member_id = %d AND transaction_id > %d",
+					$member_id,
+					$anchor_id
+				)
+			);
+
+			return round( $anchor_balance + (float) $subsequent_sum, 2 );
+		}
+
+		// Legacy fallback: no initial transaction, use season price as anchor.
+		$season_price       = (float) ( $member['season_membership_price'] ?? 0.00 );
+		$total_transactions = (float) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(SUM(amount), 0) FROM {$transactions_table} WHERE member_id = %d",
 				$member_id
 			)
 		);
 
-		$total_transactions = (float) ( $total_transactions ?? 0.00 );
-
-		// Calculated balance = original price + sum of all transactions
-		// (payments reduce balance, fees increase it)
-		$calculated_balance = $original_price + $total_transactions;
-
-		return $calculated_balance;
+		return round( $season_price + $total_transactions, 2 );
 	}
 
 	/**
@@ -598,7 +624,7 @@ class STSRC_Member_DB {
 	 * Backfill balance fields for existing members.
 	 *
 	 * For existing members:
-	 * - Set original_membership_price from their membership type
+	 * - Set season_membership_price from their membership type
 	 * - Set balance_owed to 0 for active members
 	 * - Set balance_owed to membership price for pending members
 	 *
@@ -611,12 +637,11 @@ class STSRC_Member_DB {
 		$members_table      = $wpdb->prefix . 'stsrc_members';
 		$memberships_table  = $wpdb->prefix . 'stsrc_membership_types';
 
-		// Get all members who don't have original_membership_price set (null or 0)
 		$members = $wpdb->get_results(
 			"SELECT m.member_id, m.membership_type_id, m.status, mt.price 
 			FROM {$members_table} m
 			LEFT JOIN {$memberships_table} mt ON m.membership_type_id = mt.membership_type_id
-			WHERE m.original_membership_price = 0.00 OR m.original_membership_price IS NULL",
+			WHERE m.season_membership_price = 0.00 OR m.season_membership_price IS NULL",
 			ARRAY_A
 		);
 
@@ -630,16 +655,14 @@ class STSRC_Member_DB {
 			$membership_price = (float) ( $member['price'] ?? 0.00 );
 			$status          = $member['status'] ?? 'pending';
 
-			// For active members: balance is 0 (they've paid)
-			// For pending/cancelled members: balance is the membership price
 			$balance_owed = ( 'active' === $status ) ? 0.00 : $membership_price;
 
 			$result = $wpdb->update(
 				$members_table,
 				array(
-					'original_membership_price' => $membership_price,
-					'balance_owed'             => $balance_owed,
-					'updated_at'               => current_time( 'mysql' ),
+					'season_membership_price' => $membership_price,
+					'balance_owed'            => $balance_owed,
+					'updated_at'              => current_time( 'mysql' ),
 				),
 				array( 'member_id' => $member['member_id'] ),
 				array( '%f', '%f', '%s' ),
@@ -657,7 +680,7 @@ class STSRC_Member_DB {
 	/**
 	 * Enhance members table with balance tracking columns.
 	 *
-	 * Adds new columns for balance tracking: balance_owed, original_membership_price,
+	 * Adds new columns for balance tracking: balance_owed, season_membership_price,
 	 * and final_payment_method. Uses dbDelta to safely add columns without affecting
 	 * existing data.
 	 *
@@ -672,8 +695,6 @@ class STSRC_Member_DB {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		// Get the full table structure including new columns
-		// dbDelta will only add missing columns, not modify existing ones
 		$sql = "CREATE TABLE $table_name (
 			member_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			user_id BIGINT(20) UNSIGNED DEFAULT NULL,
@@ -697,7 +718,7 @@ class STSRC_Member_DB {
 			auto_renewal_enabled TINYINT(1) NOT NULL DEFAULT 0,
 			expiration_date DATE DEFAULT NULL,
 			balance_owed DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-			original_membership_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+			season_membership_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
 			final_payment_method VARCHAR(20) DEFAULT NULL,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,

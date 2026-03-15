@@ -219,7 +219,7 @@ function createTestMember(
     `INSERT INTO wp_stsrc_members
        (user_id, membership_type_id, status, payment_type, first_name, last_name, email, phone,
         street_1, city, state, zip, country, referral_source, waiver_full_name, waiver_signed_date,
-        balance_owed, original_membership_price, created_at, updated_at, expiration_date)
+        balance_owed, season_membership_price, created_at, updated_at, expiration_date)
      VALUES
        (${userId}, ${membershipTypeId}, '${status}', 'card',
         '${info.first}', '${info.last}', '${info.email}', '(555) 555-0100',

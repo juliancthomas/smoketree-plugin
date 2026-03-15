@@ -785,7 +785,7 @@ class STSRC_Ajax_Handler {
 				'status'                    => 'pending',
 				'payment_type'              => $payment_type,
 				'balance_owed'              => 0.00,
-				'original_membership_price' => $base_amount,
+				'season_membership_price'   => $base_amount,
 			)
 		);
 
@@ -959,7 +959,7 @@ class STSRC_Ajax_Handler {
 			array(
 				'status'                    => 'pending',
 				'balance_owed'              => $amount_due,
-				'original_membership_price' => $base_amount,
+				'season_membership_price'   => $base_amount,
 			)
 		);
 

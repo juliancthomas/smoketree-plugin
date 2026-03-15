@@ -93,7 +93,7 @@ class STSRC_Member_Portal {
 			'member_id'             => $member_id,
 			'balance_owed'          => $balance_owed,
 			'membership_type_name'  => $balance_data['membership_type_name'] ?? '',
-			'original_price'        => (float) ( $balance_data['original_price'] ?? 0 ),
+			'season_price'          => (float) ( $balance_data['season_price'] ?? 0 ),
 			'total_paid'            => (float) ( $balance_data['total_paid'] ?? 0 ),
 			'total_adjustments'     => (float) ( $balance_data['total_adjustments'] ?? 0 ),
 			'remaining_balance'     => $balance_owed,

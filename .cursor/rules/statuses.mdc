@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+## Member Status Definitions
+
+Members have one of four statuses. Each status represents a distinct stage in the membership lifecycle.
+
+### `active`
+The member has a current, paid membership for the active season. They have full access to member features (portal, guest passes, affiliate referrals, etc.). A member becomes `active` when:
+- Their initial registration payment succeeds (Stripe webhook confirmation)
+- Their renewal payment succeeds
+- An admin manually sets them to active (bulk or individual)
+
+### `pending`
+The member is mid-transaction — they have initiated a payment flow that has not yet completed. This is a **temporary, transactional** state. A member becomes `pending` when:
+- They submit the registration form (before Stripe confirms payment)
+- They initiate a renewal and are awaiting Stripe payment confirmation
+- A cancelled member submits the email-based reactivation form (with new data and payment type)
+- An offline renewal is submitted and awaiting manual payment confirmation (Zelle, check)
+
+`pending` members with a $0 balance are automatically activated by the balance service.
+
+**Expected next state:** `active` (on payment success) or remains `pending` until resolved.
+
+### `inactive`
+The member had a membership in a previous season but has not renewed for the current season. This is a **seasonal/administrative** state that can persist indefinitely. A member becomes `inactive` when:
+- An admin runs a season reset (bulk transition from `active` → `inactive`)
+- A deleted member's account is restored
+- An admin reactivates a cancelled member (un-cancels without a payment flow)
+
+`inactive` members can see and use the renewal section in the member portal. They must complete a renewal flow (`inactive` → `pending` → `active`) to regain full access. They cannot use affiliate features or auto-activate from balance changes.
+
+### `cancelled`
+The membership has been terminated (soft delete). The member record is retained but they have no access. A member becomes `cancelled` when:
+- An admin deletes/cancels their membership
+- The member requests cancellation
+
+`cancelled` members are **not eligible** for renewal. They can only return via admin reactivation (→ `inactive`) or the email-based reactivation form (→ `pending`).
+
+### Status Lifecycle

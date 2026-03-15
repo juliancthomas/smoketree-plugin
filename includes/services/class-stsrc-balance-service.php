@@ -497,7 +497,7 @@ class STSRC_Balance_Service {
 		return array(
 			'member_id'            => $member_id,
 			'membership_type_name' => $membership_name,
-			'original_price'       => $summary['original_price'],
+			'season_price'         => $summary['season_price'],
 			'total_paid'           => $summary['total_paid'],
 			'total_adjustments'    => $summary['total_adjustments'],
 			'balance_owed'         => $balance_owed,

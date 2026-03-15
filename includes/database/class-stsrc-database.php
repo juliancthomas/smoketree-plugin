@@ -294,6 +294,9 @@ class STSRC_Database {
 		// Enhance members table with balance tracking columns (v1.1.0+)
 		STSRC_Member_DB::enhance_table_for_balance_tracking();
 
+		// Rename original_membership_price → season_membership_price (v1.3.0+)
+		self::rename_original_membership_price_column();
+
 		// Create member renewals ledger table.
 		STSRC_Renewal_DB::create_table();
 
@@ -406,6 +409,26 @@ class STSRC_Database {
 
 		if ( ! empty( $column_exists ) ) {
 			$wpdb->query( "ALTER TABLE {$table} DROP COLUMN guest_pass_balance" );
+		}
+	}
+
+	/**
+	 * Rename the legacy original_membership_price column to season_membership_price.
+	 *
+	 * Safe to call repeatedly — checks for old column before altering.
+	 *
+	 * @since    1.3.0
+	 * @return   void
+	 */
+	private static function rename_original_membership_price_column(): void {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'stsrc_members';
+
+		if ( self::column_exists( $table, 'original_membership_price' ) ) {
+			$wpdb->query(
+				"ALTER TABLE {$table} CHANGE `original_membership_price` `season_membership_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00"
+			);
 		}
 	}
 

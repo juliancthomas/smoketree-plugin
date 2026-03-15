@@ -17,7 +17,7 @@ $card = $balance_card_data ?? array();
 
 $balance_owed         = (float) ( $card['balance_owed'] ?? 0 );
 $membership_type_name = $card['membership_type_name'] ?? __( 'Membership', 'smoketree-plugin' );
-$original_price       = (float) ( $card['original_price'] ?? 0 );
+$season_price         = (float) ( $card['season_price'] ?? 0 );
 $total_paid           = (float) ( $card['total_paid'] ?? 0 );
 $remaining_balance    = (float) ( $card['remaining_balance'] ?? $balance_owed );
 ?>
@@ -42,8 +42,8 @@ $remaining_balance    = (float) ( $card['remaining_balance'] ?? $balance_owed );
 				<span class="stsrc-member-balance-card__value"><?php echo esc_html( $membership_type_name ); ?></span>
 			</div>
 			<div class="stsrc-member-balance-card__detail">
-				<span class="stsrc-member-balance-card__label"><?php echo esc_html__( 'Original Price', 'smoketree-plugin' ); ?></span>
-				<span class="stsrc-member-balance-card__value">$<?php echo esc_html( number_format( $original_price, 2 ) ); ?></span>
+				<span class="stsrc-member-balance-card__label"><?php echo esc_html__( 'Season Price', 'smoketree-plugin' ); ?></span>
+				<span class="stsrc-member-balance-card__value">$<?php echo esc_html( number_format( $season_price, 2 ) ); ?></span>
 			</div>
 			<div class="stsrc-member-balance-card__detail">
 				<span class="stsrc-member-balance-card__label"><?php echo esc_html__( 'Total Paid', 'smoketree-plugin' ); ?></span>

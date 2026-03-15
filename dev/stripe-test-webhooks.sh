@@ -228,8 +228,8 @@ done
 # -- Reset member status
 # UPDATE wp_stsrc_members SET status = 'pending' WHERE member_id = 13;
 
-# -- Restore balance to original membership price
-# UPDATE wp_stsrc_members SET balance_owed = original_membership_price WHERE member_id = 13;
+# -- Restore balance to season membership price
+# UPDATE wp_stsrc_members SET balance_owed = season_membership_price WHERE member_id = 13;
 
 # -- Delete Stripe payment logs
 # DELETE FROM wp_stsrc_payment_logs WHERE member_id = 13 AND stripe_event_id != '';

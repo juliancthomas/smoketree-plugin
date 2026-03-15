@@ -8,11 +8,12 @@ The Mixed Payment and Balance Tracking system allows members to start with offli
 
 - **Members table (`wp_stsrc_members`)**
   - `balance_owed` - current remaining amount (can be negative for overpayment).
-  - `original_membership_price` - registration-time membership price snapshot.
+  - `season_membership_price` - current season's membership base price (informational; updated at registration and each renewal).
   - `final_payment_method` - most recent successful payment method.
 - **Transactions table (`wp_stsrc_transactions`)**
   - Immutable ledger entries for `initial`, `payment`, `adjustment`, `fee`, and `refund`.
   - Includes `balance_after` snapshot per transaction.
+  - An `initial` transaction is created at registration and at each renewal to anchor the current season's balance period.
   - Stores Stripe IDs for reconciliation (`stripe_payment_intent_id`, `stripe_session_id`, `stripe_charge_id`).
 
 ## Business Flow Summary
@@ -20,8 +21,8 @@ The Mixed Payment and Balance Tracking system allows members to start with offli
 ### Registration (non-Stripe)
 
 1. Member registers with method such as `check` or `zelle`.
-2. System stores original price and sets `balance_owed`.
-3. Initial ledger entry is written.
+2. System stores `season_membership_price` and sets `balance_owed`.
+3. Initial ledger entry is written (`balance_after` = amount owed).
 4. Member remains `pending` until balance reaches `0` or below.
 
 ### Admin Balance Management
@@ -75,6 +76,25 @@ The Mixed Payment and Balance Tracking system allows members to start with offli
 
 - Pending members are auto-activated when `balance_owed <= 0`.
 - Admin can manually activate with outstanding balance; override is logged.
+
+## Season-Aware Balance Calculation
+
+Balance is calculated from the transaction ledger, anchored on the most recent
+`initial` transaction:
+
+```
+balance = latest_initial.balance_after + SUM(transactions after latest_initial)
+```
+
+- At **registration**, an `initial` transaction is created with `balance_after`
+  set to the amount owed (or `0.00` for Stripe registrations).
+- At **renewal completion**, a new `initial` transaction is created with
+  `balance_after = 0.00` (payment confirmed). This resets the ledger anchor so
+  prior-season transactions are excluded from the current balance.
+- `season_membership_price` is informational only (not used in the formula).
+  It records what the membership costs for the current season.
+- Legacy fallback: if no `initial` transaction exists, the formula falls back to
+  `season_membership_price + SUM(all transactions)`.
 
 ## Data Integrity Notes
 
