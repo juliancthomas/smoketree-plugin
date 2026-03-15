@@ -29,9 +29,35 @@ $type_rows = $data['type_rows'] ?? array();
 					<label><input type="radio" name="discount_type" value="flat" checked> <?php echo esc_html__( 'Flat ($)', 'smoketree-plugin' ); ?></label>
 					<label><input type="radio" name="discount_type" value="percentage"> <?php echo esc_html__( 'Percentage (%)', 'smoketree-plugin' ); ?></label>
 				</div>
-				<div>
-					<label for="stsrc_discount_value"><?php echo esc_html__( 'Discount Value', 'smoketree-plugin' ); ?></label>
-					<input type="number" id="stsrc_discount_value" name="discount_value" min="0" step="0.01" required>
+				<div class="stsrc-promo-form-grid__full">
+					<label><?php echo esc_html__( 'Discount per Membership Type', 'smoketree-plugin' ); ?></label>
+					<p class="description"><?php echo esc_html__( 'Enter a discount value for each type that should receive a discount. Leave blank to exclude a type.', 'smoketree-plugin' ); ?></p>
+					<table class="stsrc-discount-values-table widefat" id="stsrc-discount-values-table">
+						<thead>
+							<tr>
+								<th><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></th>
+								<th><?php echo esc_html__( 'Price', 'smoketree-plugin' ); ?></th>
+								<th class="stsrc-discount-values-table__value-col">
+									<span id="stsrc-discount-col-label"><?php echo esc_html__( 'Discount ($)', 'smoketree-plugin' ); ?></span>
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $type_rows as $row ) : ?>
+								<tr>
+									<td><?php echo esc_html( (string) $row['name'] ); ?></td>
+									<td>$<?php echo esc_html( number_format( (float) $row['price'], 2 ) ); ?></td>
+									<td>
+										<input type="number"
+											name="discount_values[<?php echo esc_attr( (int) $row['membership_type_id'] ); ?>]"
+											class="stsrc-discount-type-value"
+											data-type-id="<?php echo esc_attr( (int) $row['membership_type_id'] ); ?>"
+											min="0" step="0.01" placeholder="0">
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
 				<div>
 					<label for="stsrc_expires_at"><?php echo esc_html__( 'Expiration Date', 'smoketree-plugin' ); ?></label>
@@ -43,15 +69,6 @@ $type_rows = $data['type_rows'] ?? array();
 				<div>
 					<label for="stsrc_usage_limit"><?php echo esc_html__( 'Usage Limit', 'smoketree-plugin' ); ?></label>
 					<input type="number" id="stsrc_usage_limit" name="usage_limit" min="1" step="1">
-				</div>
-				<div class="stsrc-promo-form-grid__full">
-					<label for="stsrc_allowed_type_ids"><?php echo esc_html__( 'Membership Type Restriction', 'smoketree-plugin' ); ?></label>
-					<select id="stsrc_allowed_type_ids" name="allowed_type_ids[]" multiple size="4">
-						<?php foreach ( $type_rows as $row ) : ?>
-							<option value="<?php echo esc_attr( (int) $row['membership_type_id'] ); ?>"><?php echo esc_html( (string) $row['name'] ); ?></option>
-						<?php endforeach; ?>
-					</select>
-					<p class="description"><?php echo esc_html__( 'Leave unselected to allow all membership types.', 'smoketree-plugin' ); ?></p>
 				</div>
 				<div class="stsrc-promo-form-grid__full">
 					<label><input type="checkbox" id="stsrc_is_active" name="is_active" value="1" checked> <?php echo esc_html__( 'Code is active', 'smoketree-plugin' ); ?></label>
