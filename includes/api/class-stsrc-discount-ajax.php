@@ -212,28 +212,39 @@ class STSRC_Discount_Ajax {
 	 * @return   array
 	 */
 	private function sanitize_promo_payload(): array {
-		$allowed_type_ids = array();
-		if ( isset( $_POST['allowed_type_ids'] ) ) {
-			$raw_allowed = wp_unslash( $_POST['allowed_type_ids'] );
-			if ( is_array( $raw_allowed ) ) {
-				$allowed_type_ids = array_values( array_filter( array_map( 'absint', $raw_allowed ) ) );
-			} elseif ( is_string( $raw_allowed ) && '' !== $raw_allowed ) {
-				$decoded = json_decode( $raw_allowed, true );
+		$discount_values = array();
+		if ( isset( $_POST['discount_values'] ) ) {
+			$raw_values = wp_unslash( $_POST['discount_values'] );
+			if ( is_array( $raw_values ) ) {
+				foreach ( $raw_values as $type_id => $value ) {
+					$type_id = absint( $type_id );
+					$value   = (float) $value;
+					if ( $type_id > 0 && $value > 0 ) {
+						$discount_values[ $type_id ] = $value;
+					}
+				}
+			} elseif ( is_string( $raw_values ) && '' !== $raw_values ) {
+				$decoded = json_decode( $raw_values, true );
 				if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-					$allowed_type_ids = array_values( array_filter( array_map( 'absint', $decoded ) ) );
+					foreach ( $decoded as $type_id => $value ) {
+						$type_id = absint( $type_id );
+						$value   = (float) $value;
+						if ( $type_id > 0 && $value > 0 ) {
+							$discount_values[ $type_id ] = $value;
+						}
+					}
 				}
 			}
 		}
 
 		return array(
-			'code_name'        => isset( $_POST['code_name'] ) ? sanitize_text_field( wp_unslash( $_POST['code_name'] ) ) : '',
-			'discount_type'    => isset( $_POST['discount_type'] ) ? sanitize_text_field( wp_unslash( $_POST['discount_type'] ) ) : '',
-			'discount_value'   => isset( $_POST['discount_value'] ) ? (float) wp_unslash( $_POST['discount_value'] ) : 0,
-			'expires_at'       => isset( $_POST['expires_at'] ) ? sanitize_text_field( wp_unslash( $_POST['expires_at'] ) ) : null,
-			'is_one_time_use'  => isset( $_POST['is_one_time_use'] ) ? absint( wp_unslash( $_POST['is_one_time_use'] ) ) : 0,
-			'usage_limit'      => isset( $_POST['usage_limit'] ) && '' !== wp_unslash( $_POST['usage_limit'] ) ? absint( wp_unslash( $_POST['usage_limit'] ) ) : null,
-			'allowed_type_ids' => $allowed_type_ids,
-			'is_active'        => isset( $_POST['is_active'] ) ? absint( wp_unslash( $_POST['is_active'] ) ) : 0,
+			'code_name'       => isset( $_POST['code_name'] ) ? sanitize_text_field( wp_unslash( $_POST['code_name'] ) ) : '',
+			'discount_type'   => isset( $_POST['discount_type'] ) ? sanitize_text_field( wp_unslash( $_POST['discount_type'] ) ) : '',
+			'discount_values' => $discount_values,
+			'expires_at'      => isset( $_POST['expires_at'] ) ? sanitize_text_field( wp_unslash( $_POST['expires_at'] ) ) : null,
+			'is_one_time_use' => isset( $_POST['is_one_time_use'] ) ? absint( wp_unslash( $_POST['is_one_time_use'] ) ) : 0,
+			'usage_limit'     => isset( $_POST['usage_limit'] ) && '' !== wp_unslash( $_POST['usage_limit'] ) ? absint( wp_unslash( $_POST['usage_limit'] ) ) : null,
+			'is_active'       => isset( $_POST['is_active'] ) ? absint( wp_unslash( $_POST['is_active'] ) ) : 0,
 		);
 	}
 }
