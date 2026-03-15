@@ -97,6 +97,27 @@ class Smoketree_Plugin_Public {
 					'all'
 				);
 			}
+
+			if ( $this->is_registration_page() ) {
+				wp_enqueue_script(
+					$this->plugin_name . '-registration',
+					plugin_dir_url( __FILE__ ) . 'js/registration.js',
+					array( 'jquery', $this->plugin_name ),
+					$this->get_asset_version( 'js/registration.js' ),
+					true
+				);
+
+				wp_localize_script(
+					$this->plugin_name . '-registration',
+					'stsrc_registration',
+					array(
+						'ajax_url'                => admin_url( 'admin-ajax.php' ),
+						'nonce'                   => wp_create_nonce( 'stsrc_registration_nonce' ),
+						'ref_cookie_name'         => 'stsrc_ref_code',
+						'affiliate_discount_label'=> __( 'Referral Discount', 'smoketree-plugin' ),
+					)
+				);
+			}
 		}
 	}
 
@@ -180,6 +201,25 @@ class Smoketree_Plugin_Public {
 		$page_template = get_post_meta( $post->ID, '_wp_page_template', true );
 
 		return 'member-portal' === $page_slug || 'member-portal.php' === $page_template;
+	}
+
+	/**
+	 * Check if current page is the registration form.
+	 *
+	 * @since    1.4.0
+	 * @return   bool
+	 */
+	private function is_registration_page(): bool {
+		global $post;
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		$page_slug     = $post->post_name;
+		$page_template = get_post_meta( $post->ID, '_wp_page_template', true );
+
+		return 'register' === $page_slug || 'registration-form.php' === $page_template;
 	}
 
 	/**
