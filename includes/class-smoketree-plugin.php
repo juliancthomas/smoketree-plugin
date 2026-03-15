@@ -220,7 +220,79 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'after_setup_theme', $plugin_public, 'hide_admin_bar_for_members' );
 		$this->loader->add_action( 'admin_init', $plugin_public, 'block_dashboard_for_members' );
 		$this->loader->add_filter( 'retrieve_password_message', $plugin_public, 'custom_password_reset_email', 10, 4 );
+		$this->loader->add_action( 'wp_head', $this, 'output_referral_og_tags', 99 );
 
+	}
+
+	/**
+	 * Output referral-specific OpenGraph tags on registration page.
+	 *
+	 * @since    1.4.0
+	 * @return   void
+	 */
+	public function output_referral_og_tags(): void {
+		static $rendered = false;
+		if ( $rendered || is_admin() || is_feed() || is_robots() ) {
+			return;
+		}
+
+		if ( ! $this->is_registration_page_for_og() ) {
+			return;
+		}
+
+		$ref_code = isset( $_GET['ref'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_GET['ref'] ) ) ) : '';
+		if ( '' === $ref_code ) {
+			return;
+		}
+
+		$validated = STSRC_Discount_Service::validate_affiliate_code( $ref_code );
+		if ( is_wp_error( $validated ) ) {
+			return;
+		}
+
+		global $post;
+		if ( ! $post ) {
+			return;
+		}
+
+		$registration_url = get_permalink( $post->ID );
+		if ( empty( $registration_url ) ) {
+			return;
+		}
+
+		$referrer_name = sanitize_text_field( (string) ( $validated['referrer_name'] ?? '' ) );
+		if ( '' === $referrer_name ) {
+			return;
+		}
+
+		$title       = sprintf( 'Join Smoketree Club - %s sent you a discount!', $referrer_name );
+		$description = sprintf( "Use %s's referral link to get a discount on your Smoketree Club membership.", $referrer_name );
+		$og_url      = add_query_arg( 'ref', $ref_code, $registration_url );
+
+		printf( '<meta property="og:title" content="%s" />' . "\n", esc_attr( $title ) );
+		printf( '<meta property="og:description" content="%s" />' . "\n", esc_attr( $description ) );
+		printf( '<meta property="og:url" content="%s" />' . "\n", esc_url( $og_url ) );
+
+		$rendered = true;
+	}
+
+	/**
+	 * Determine whether current request is the registration page.
+	 *
+	 * @since    1.4.0
+	 * @return   bool
+	 */
+	private function is_registration_page_for_og(): bool {
+		global $post;
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		$page_slug     = $post->post_name;
+		$page_template = get_post_meta( $post->ID, '_wp_page_template', true );
+
+		return 'register' === $page_slug || 'registration-form.php' === $page_template;
 	}
 
 	/**
