@@ -20,6 +20,9 @@
  * @subpackage Smoketree_Plugin/public
  * @author     Smoketree Swim and Recreation Club
  */
+
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/helpers/class-stsrc-renewal-helpers.php';
+
 class Smoketree_Plugin_Public {
 
 	/**
@@ -247,6 +250,16 @@ class Smoketree_Plugin_Public {
 			);
 			if ( $this->is_member_portal_page() ) {
 				$localize['portalNonce'] = wp_create_nonce( 'stsrc_portal_nonce' );
+				$localize['renewal']    = array(
+					'enabled'   => STSRC_Renewal_Helpers::is_renewal_enabled(),
+					'seasonKey' => STSRC_Renewal_Helpers::get_season_key(),
+					'nonce'     => wp_create_nonce( 'stsrc_renewal_nonce' ),
+					'actions'   => array(
+						'quote'  => 'stsrc_renewal_quote',
+						'submit' => 'stsrc_renewal_submit',
+					),
+					'member'    => $portal_context,
+				);
 			}
 			wp_localize_script(
 				$this->plugin_name,
