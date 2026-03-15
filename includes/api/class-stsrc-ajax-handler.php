@@ -2948,6 +2948,14 @@ class STSRC_Ajax_Handler {
 		if ( isset( $post_data['tax_rate'] ) ) {
 			update_option( 'stsrc_tax_rate', sanitize_text_field( $post_data['tax_rate'] ) );
 		}
+		if ( isset( $post_data['affiliate_new_member_discount'] ) ) {
+			$affiliate_discount = max( 0, floatval( $post_data['affiliate_new_member_discount'] ) );
+			update_option( 'stsrc_affiliate_new_member_discount', number_format( $affiliate_discount, 2, '.', '' ) );
+		}
+		if ( isset( $post_data['affiliate_referrer_credit'] ) ) {
+			$affiliate_credit = max( 0, floatval( $post_data['affiliate_referrer_credit'] ) );
+			update_option( 'stsrc_affiliate_referrer_credit', number_format( $affiliate_credit, 2, '.', '' ) );
+		}
 
 		// Save waiver text
 		if ( isset( $post_data['waiver_text'] ) ) {
@@ -3023,6 +3031,14 @@ class STSRC_Ajax_Handler {
 				if ( '' === $raw_contact_email || ! empty( $contact_email ) ) {
 					update_field( 'stsrc_contact_email', $contact_email, 'option' );
 				}
+			}
+			if ( isset( $post_data['affiliate_new_member_discount'] ) ) {
+				$affiliate_discount = max( 0, floatval( $post_data['affiliate_new_member_discount'] ) );
+				update_field( 'stsrc_affiliate_new_member_discount', number_format( $affiliate_discount, 2, '.', '' ), 'option' );
+			}
+			if ( isset( $post_data['affiliate_referrer_credit'] ) ) {
+				$affiliate_credit = max( 0, floatval( $post_data['affiliate_referrer_credit'] ) );
+				update_field( 'stsrc_affiliate_referrer_credit', number_format( $affiliate_credit, 2, '.', '' ), 'option' );
 			}
 		}
 

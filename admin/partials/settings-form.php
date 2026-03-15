@@ -202,6 +202,20 @@ $acf_available = $data['acf_available'] ?? false;
 								<p class="description"><?php echo esc_html__( 'Tax percentage to apply to membership fees (e.g., 7.5 for 7.5%)', 'smoketree-plugin' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th><label for="affiliate_new_member_discount"><?php echo esc_html__( 'New Member Referral Discount ($)', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="number" name="affiliate_new_member_discount" id="affiliate_new_member_discount" value="<?php echo esc_attr( $settings['affiliate_new_member_discount'] ?? 500 ); ?>" class="regular-text" step="0.01" min="0">
+								<p class="description"><?php echo esc_html__( 'Dollar discount applied to a new member who uses a valid referral code.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="affiliate_referrer_credit"><?php echo esc_html__( 'Referrer Credit Amount ($)', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="number" name="affiliate_referrer_credit" id="affiliate_referrer_credit" value="<?php echo esc_attr( $settings['affiliate_referrer_credit'] ?? 50 ); ?>" class="regular-text" step="0.01" min="0">
+								<p class="description"><?php echo esc_html__( 'Dollar credit amount owed to the referring member for each successful referral.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
 					</table>
 				</div>
 

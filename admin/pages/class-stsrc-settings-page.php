@@ -167,6 +167,12 @@ class STSRC_Settings_Page {
 		$settings['contact_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 		$settings['season_renewal_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_season_renewal_date', 'option' ) : get_option( 'stsrc_season_renewal_date', '' );
 		$settings['tax_rate'] = function_exists( 'get_field' ) ? get_field( 'stsrc_tax_rate', 'option' ) : get_option( 'stsrc_tax_rate', '0' );
+		$settings['affiliate_new_member_discount'] = function_exists( 'get_field' )
+			? ( get_field( 'stsrc_affiliate_new_member_discount', 'option' ) ?: 500 )
+			: get_option( 'stsrc_affiliate_new_member_discount', 500 );
+		$settings['affiliate_referrer_credit'] = function_exists( 'get_field' )
+			? ( get_field( 'stsrc_affiliate_referrer_credit', 'option' ) ?: 50 )
+			: get_option( 'stsrc_affiliate_referrer_credit', 50 );
 
 		// Waiver Settings
 		$settings['waiver_text'] = function_exists( 'get_field' ) ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
