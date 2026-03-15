@@ -57,10 +57,9 @@ $payout      = $data['payout'] ?? '';
 				<tr>
 					<th><?php echo esc_html__( 'Code Name', 'smoketree-plugin' ); ?></th>
 					<th><?php echo esc_html__( 'Type', 'smoketree-plugin' ); ?></th>
-					<th><?php echo esc_html__( 'Value', 'smoketree-plugin' ); ?></th>
+					<th><?php echo esc_html__( 'Discounts', 'smoketree-plugin' ); ?></th>
 					<th><?php echo esc_html__( 'Uses', 'smoketree-plugin' ); ?></th>
 					<th><?php echo esc_html__( 'Expires', 'smoketree-plugin' ); ?></th>
-					<th><?php echo esc_html__( 'Membership Restriction', 'smoketree-plugin' ); ?></th>
 					<th><?php echo esc_html__( 'Status', 'smoketree-plugin' ); ?></th>
 					<th><?php echo esc_html__( 'Actions', 'smoketree-plugin' ); ?></th>
 				</tr>
@@ -68,46 +67,47 @@ $payout      = $data['payout'] ?? '';
 			<tbody>
 				<?php if ( empty( $codes ) ) : ?>
 					<tr>
-						<td colspan="8"><?php echo esc_html__( 'No promo codes found.', 'smoketree-plugin' ); ?></td>
+						<td colspan="7"><?php echo esc_html__( 'No promo codes found.', 'smoketree-plugin' ); ?></td>
 					</tr>
 				<?php else : ?>
 					<?php foreach ( $codes as $code ) : ?>
 						<?php
-						$allowed_types = array();
-						if ( ! empty( $code->allowed_type_ids ) ) {
-							$decoded = json_decode( (string) $code->allowed_type_ids, true );
-							if ( is_array( $decoded ) ) {
-								foreach ( $decoded as $type_id ) {
-									$type_id = (int) $type_id;
-									if ( isset( $type_labels[ $type_id ] ) ) {
-										$allowed_types[] = $type_labels[ $type_id ];
-									}
-								}
+						$discount_values = json_decode( (string) ( $code->discount_values ?? '{}' ), true );
+						if ( ! is_array( $discount_values ) ) {
+							$discount_values = array();
+						}
+
+						$discount_summary = array();
+						foreach ( $discount_values as $type_id => $value ) {
+							$type_id = (int) $type_id;
+							$label   = isset( $type_labels[ $type_id ] ) ? $type_labels[ $type_id ] : ( '#' . $type_id );
+							if ( 'percentage' === $code->discount_type ) {
+								$discount_summary[] = $label . ': ' . number_format_i18n( (float) $value, 2 ) . '%';
+							} else {
+								$discount_summary[] = $label . ': $' . number_format_i18n( (float) $value, 2 );
 							}
 						}
+
 						$row_payload = array(
-							'code_id'           => (int) $code->code_id,
-							'code_name'         => (string) $code->code_name,
-							'discount_type'     => (string) $code->discount_type,
-							'discount_value'    => (float) $code->discount_value,
-							'expires_at'        => (string) ( $code->expires_at ?? '' ),
-							'is_one_time_use'   => (int) $code->is_one_time_use,
-							'usage_limit'       => null !== $code->usage_limit ? (int) $code->usage_limit : null,
-							'allowed_type_ids'  => ! empty( $code->allowed_type_ids ) ? json_decode( (string) $code->allowed_type_ids, true ) : array(),
-							'is_active'         => (int) $code->is_active,
+							'code_id'         => (int) $code->code_id,
+							'code_name'       => (string) $code->code_name,
+							'discount_type'   => (string) $code->discount_type,
+							'discount_values' => $discount_values,
+							'expires_at'      => (string) ( $code->expires_at ?? '' ),
+							'is_one_time_use' => (int) $code->is_one_time_use,
+							'usage_limit'     => null !== $code->usage_limit ? (int) $code->usage_limit : null,
+							'is_active'       => (int) $code->is_active,
 						);
 						?>
 						<tr data-code-id="<?php echo esc_attr( (int) $code->code_id ); ?>">
 							<td><strong><?php echo esc_html( (string) $code->code_name ); ?></strong></td>
 							<td><?php echo esc_html( ucfirst( (string) $code->discount_type ) ); ?></td>
 							<td>
-								<?php
-								if ( 'percentage' === $code->discount_type ) {
-									echo esc_html( number_format_i18n( (float) $code->discount_value, 2 ) . '%' );
-								} else {
-									echo esc_html( '$' . number_format_i18n( (float) $code->discount_value, 2 ) );
-								}
-								?>
+								<?php if ( ! empty( $discount_summary ) ) : ?>
+									<?php echo esc_html( implode( ', ', $discount_summary ) ); ?>
+								<?php else : ?>
+									<em><?php echo esc_html__( 'None', 'smoketree-plugin' ); ?></em>
+								<?php endif; ?>
 							</td>
 							<td>
 								<?php
@@ -118,9 +118,6 @@ $payout      = $data['payout'] ?? '';
 							</td>
 							<td>
 								<?php echo ! empty( $code->expires_at ) ? esc_html( date_i18n( get_option( 'date_format' ), strtotime( (string) $code->expires_at ) ) ) : esc_html__( 'Never', 'smoketree-plugin' ); ?>
-							</td>
-							<td>
-								<?php echo ! empty( $allowed_types ) ? esc_html( implode( ', ', $allowed_types ) ) : esc_html__( 'All Types', 'smoketree-plugin' ); ?>
 							</td>
 							<td>
 								<span class="stsrc-status-badge <?php echo (int) $code->is_active ? 'is-active' : 'is-inactive'; ?>">
