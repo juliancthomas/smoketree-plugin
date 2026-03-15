@@ -904,6 +904,7 @@ class STSRC_Ajax_Handler {
 					'processing_fee'     => $processing_fee,
 					'payment_method'     => $stripe_method_type,
 				),
+				'member_id'            => $member_id,
 			),
 			$discount_payload
 		);
@@ -1956,6 +1957,7 @@ class STSRC_Ajax_Handler {
 					'payment_method' => $payment_method,
 					'extra_members'  => wp_json_encode( $members ),
 				),
+				'member'               => $member,
 			)
 		);
 
@@ -2293,6 +2295,7 @@ class STSRC_Ajax_Handler {
 					'member_id'    => (int) $member['member_id'],
 					'quantity'     => $quantity,
 				),
+				'member'         => $member,
 			)
 		);
 

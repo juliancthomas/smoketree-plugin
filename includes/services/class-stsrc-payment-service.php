@@ -32,7 +32,7 @@ class STSRC_Payment_Service {
 	 * @since    1.0.0
 	 * @return   void
 	 */
-	private function init_stripe(): void {
+	private function init_stripe( ?string $secret_key = null ): void {
 		// Load Stripe SDK if not already loaded
 		if ( ! class_exists( '\Stripe\Stripe' ) ) {
 			$stripe_path = plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/stripe/stripe-php/init.php';
@@ -42,7 +42,7 @@ class STSRC_Payment_Service {
 		}
 
 		// Set API key
-		$secret_key = $this->get_secret_key();
+		$secret_key = null !== $secret_key ? $secret_key : $this->get_secret_key();
 		if ( ! empty( $secret_key ) && class_exists( '\Stripe\Stripe' ) ) {
 			\Stripe\Stripe::setApiKey( $secret_key );
 			
@@ -84,6 +84,81 @@ class STSRC_Payment_Service {
 	}
 
 	/**
+	 * Get Stripe test secret key directly (no global-mode fallback).
+	 *
+	 * @since    1.5.0
+	 * @return   string
+	 */
+	private function get_test_secret_key(): string {
+		$key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_secret_key', 'option' ) : get_option( 'stsrc_stripe_test_secret_key', '' );
+		return (string) $key;
+	}
+
+	/**
+	 * Get Stripe test publishable key directly (no global-mode fallback).
+	 *
+	 * @since    1.5.0
+	 * @return   string
+	 */
+	private function get_test_publishable_key(): string {
+		$key = function_exists( 'get_field' ) ? get_field( 'stsrc_stripe_test_publishable_key', 'option' ) : get_option( 'stsrc_stripe_test_publishable_key', '' );
+		return (string) $key;
+	}
+
+	/**
+	 * Return true when member is flagged as demo.
+	 *
+	 * @since    1.5.0
+	 * @param    array $member Member data row.
+	 * @return   bool
+	 */
+	private function is_demo_member( array $member ): bool {
+		return 1 === (int) ( $member['is_demo'] ?? 0 );
+	}
+
+	/**
+	 * Resolve member context from checkout payload.
+	 *
+	 * @since    1.5.0
+	 * @param    array $data Checkout payload.
+	 * @return   array|null
+	 */
+	private function resolve_member_for_checkout( array $data ): ?array {
+		if ( ! empty( $data['member'] ) && is_array( $data['member'] ) ) {
+			return $data['member'];
+		}
+
+		$metadata  = is_array( $data['metadata'] ?? null ) ? $data['metadata'] : array();
+		$member_id = isset( $data['member_id'] ) ? (int) $data['member_id'] : 0;
+		if ( $member_id <= 0 && isset( $metadata['member_id'] ) ) {
+			$member_id = (int) $metadata['member_id'];
+		}
+
+		if ( $member_id <= 0 ) {
+			return null;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member( $member_id );
+		return is_array( $member ) ? $member : null;
+	}
+
+	/**
+	 * Get Stripe secret key scoped to a member.
+	 *
+	 * @since    1.5.0
+	 * @param    array $member Member data row.
+	 * @return   string
+	 */
+	public function get_secret_key_for_member( array $member ): string {
+		if ( $this->is_demo_member( $member ) ) {
+			return $this->get_test_secret_key();
+		}
+
+		return $this->get_secret_key();
+	}
+
+	/**
 	 * Get Stripe publishable key.
 	 *
 	 * @since    1.0.0
@@ -117,6 +192,21 @@ class STSRC_Payment_Service {
 	}
 
 	/**
+	 * Get Stripe publishable key scoped to a member.
+	 *
+	 * @since    1.5.0
+	 * @param    array $member Member data row.
+	 * @return   string
+	 */
+	public function get_publishable_key_for_member( array $member ): string {
+		if ( $this->is_demo_member( $member ) ) {
+			return $this->get_test_publishable_key();
+		}
+
+		return $this->get_publishable_key();
+	}
+
+	/**
 	 * Create Stripe Checkout Session.
 	 *
 	 * @since    1.0.0
@@ -125,6 +215,26 @@ class STSRC_Payment_Service {
 	 * @return   string|array|false        Checkout session URL, free-registration payload, or false on failure.
 	 */
 	public function create_checkout_session( array $data, ?array $discount_data = null ): string|array|false {
+		$member        = $this->resolve_member_for_checkout( $data );
+		$is_demo       = ! empty( $member ) && $this->is_demo_member( $member );
+		$secret_key    = ! empty( $member ) ? $this->get_secret_key_for_member( $member ) : $this->get_secret_key();
+		$metadata_base = is_array( $data['metadata'] ?? null ) ? $data['metadata'] : array();
+
+		if ( $is_demo && empty( $secret_key ) ) {
+			STSRC_Logger::error(
+				'Demo checkout blocked: Stripe test secret key is not configured.',
+				array(
+					'method'    => __METHOD__,
+					'member_id' => (int) ( $member['member_id'] ?? 0 ),
+				)
+			);
+			return false;
+		}
+
+		if ( $is_demo ) {
+			$metadata_base['is_demo'] = '1';
+		}
+
 		if ( ! empty( $discount_data ) ) {
 			$base_amount       = max( 0.00, (float) ( $discount_data['base_amount'] ?? ( $data['metadata']['payment_amount'] ?? $data['amount'] ?? 0 ) ) );
 			$discount_amount   = max( 0.00, (float) ( $discount_data['discount_amount'] ?? 0 ) );
@@ -172,7 +282,7 @@ class STSRC_Payment_Service {
 			$data['line_items'] = $line_items;
 			$data['amount']     = $grand_total;
 			$data['metadata']   = array_merge(
-				$data['metadata'] ?? array(),
+				$metadata_base,
 				array(
 					'discount_code'   => $discount_code,
 					'discount_type'   => sanitize_text_field( (string) ( $discount_data['type'] ?? '' ) ),
@@ -199,7 +309,11 @@ class STSRC_Payment_Service {
 			}
 		}
 
-		$details = $this->create_checkout_session_with_details( $data );
+		if ( empty( $discount_data ) ) {
+			$data['metadata'] = $metadata_base;
+		}
+
+		$details = $this->create_checkout_session_with_details( $data, $secret_key, $member );
 
 		if ( false === $details ) {
 			return false;
@@ -249,8 +363,8 @@ class STSRC_Payment_Service {
 	 * @param array $data Checkout data.
 	 * @return array{url:string,id:string}|false
 	 */
-	private function create_checkout_session_with_details( array $data ): array|false {
-		$this->init_stripe();
+	private function create_checkout_session_with_details( array $data, ?string $secret_key = null, ?array $member = null ): array|false {
+		$this->init_stripe( $secret_key );
 
 		if ( ! class_exists( '\Stripe\Checkout\Session' ) ) {
 			STSRC_Logger::error(
@@ -302,20 +416,40 @@ class STSRC_Payment_Service {
 
 		// Add customer if provided
 		if ( ! empty( $data['customer_id'] ) ) {
-			$session_params['customer'] = $data['customer_id'];
-		} else {
-			// Create customer if email provided
-			if ( ! empty( $data['customer_email'] ) ) {
-				$customer_id = $this->create_customer(
+			$customer_id = sanitize_text_field( (string) $data['customer_id'] );
+			try {
+				\Stripe\Customer::retrieve( $customer_id );
+				$session_params['customer'] = $customer_id;
+			} catch ( \Exception $e ) {
+				STSRC_Logger::warning(
+					'Stored Stripe customer ID was not found for current key context; creating a new customer.',
 					array(
-						'email' => $data['customer_email'],
-						'name'  => ( $data['customer_name'] ?? '' ),
+						'method'      => __METHOD__,
+						'customer_id' => $customer_id,
+						'member_id'   => (int) ( $member['member_id'] ?? 0 ),
+						'is_demo'     => ! empty( $member ) && $this->is_demo_member( $member ),
 					)
 				);
-				if ( $customer_id ) {
-					$session_params['customer'] = $customer_id;
-				}
 			}
+		} else {
+			$session_params['customer'] = null;
+		}
+
+		if ( empty( $session_params['customer'] ) && ! empty( $data['customer_email'] ) ) {
+			$customer_id = $this->create_customer(
+				array(
+					'email' => $data['customer_email'],
+					'name'  => ( $data['customer_name'] ?? '' ),
+				),
+				$secret_key
+			);
+			if ( $customer_id ) {
+				$session_params['customer'] = $customer_id;
+			}
+		}
+
+		if ( empty( $session_params['customer'] ) ) {
+			unset( $session_params['customer'] );
 		}
 
 		// Add metadata
@@ -416,7 +550,9 @@ class STSRC_Payment_Service {
 					'member_id'       => (string) $member_id,
 					'season_key'      => $season_key,
 				),
-			)
+			),
+			$this->get_secret_key_for_member( $member ),
+			$member
 		);
 	}
 
@@ -427,8 +563,8 @@ class STSRC_Payment_Service {
 	 * @param    array    $data    Array with customer data (email, name, metadata)
 	 * @return   string|false      Customer ID or false on failure
 	 */
-	public function create_customer( array $data ): string|false {
-		$this->init_stripe();
+	public function create_customer( array $data, ?string $secret_key = null ): string|false {
+		$this->init_stripe( $secret_key );
 
 		if ( ! class_exists( '\Stripe\Customer' ) ) {
 			STSRC_Logger::error(
@@ -712,6 +848,7 @@ class STSRC_Payment_Service {
 					'member_id'    => $member_id,
 					'quantity'     => $quantity,
 				),
+				'member'         => $member,
 			)
 		);
 	}
@@ -826,6 +963,7 @@ class STSRC_Payment_Service {
 					'processing_fee'   => $processing_fee,
 					'payment_method'   => $payment_method,
 				),
+				'member'               => $member,
 			)
 		);
 	}
