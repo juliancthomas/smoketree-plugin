@@ -121,10 +121,11 @@ class STSRC_Renewal_API {
 		);
 
 		if ( 'rejected' === ( $result['status'] ?? '' ) ) {
+			$reason = $result['reason'] ?? 'rejected';
 			wp_send_json_error(
 				array(
-					'message' => __( 'Renewal is not eligible for submission.', 'smoketree-plugin' ),
-					'reason'  => $result['reason'] ?? 'rejected',
+					'message' => $this->get_rejection_message( $reason ),
+					'reason'  => $reason,
 					'context' => $result['context'] ?? array(),
 				),
 				409
@@ -133,10 +134,11 @@ class STSRC_Renewal_API {
 		}
 
 		if ( 'error' === ( $result['status'] ?? '' ) ) {
+			$reason = $result['reason'] ?? 'error';
 			wp_send_json_error(
 				array(
-					'message' => __( 'Failed to create renewal intent.', 'smoketree-plugin' ),
-					'reason'  => $result['reason'] ?? 'error',
+					'message' => $this->get_error_message( $reason ),
+					'reason'  => $reason,
 				),
 				500
 			);
@@ -300,6 +302,48 @@ class STSRC_Renewal_API {
 		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'zelle', 'check' );
 
 		return in_array( $method, $allowed, true ) ? $method : 'card';
+	}
+
+	/**
+	 * Map a rejection reason code to a user-facing message.
+	 *
+	 * @param string $reason Reason code from the renewal service.
+	 * @return string
+	 */
+	private function get_rejection_message( string $reason ): string {
+		$messages = array(
+			'demo_account'         => __( 'Demo accounts cannot process renewals. Please use a real member account to renew.', 'smoketree-plugin' ),
+			'renewal_disabled'     => __( 'The renewal window is currently closed. Please check back later or contact the club for assistance.', 'smoketree-plugin' ),
+			'member_not_found'     => __( 'We could not locate your member record. Please contact the club for assistance.', 'smoketree-plugin' ),
+			'member_not_eligible'  => __( 'Your account is not currently eligible for renewal. This may be due to a cancelled membership. Please contact the club for details.', 'smoketree-plugin' ),
+			'already_completed'    => __( 'Your renewal for this season has already been completed. No further action is needed.', 'smoketree-plugin' ),
+			'already_in_progress'  => __( 'A renewal for this season is already in progress. Please check your email for payment instructions or contact the club if you need assistance.', 'smoketree-plugin' ),
+			'duplicate_submission' => __( 'A renewal submission for this season already exists. Please check your email or contact the club for status.', 'smoketree-plugin' ),
+			'invalid_quote'        => __( 'We were unable to calculate pricing for your selected plan. Please try a different membership option or contact the club.', 'smoketree-plugin' ),
+			'not_eligible'         => __( 'Your account is not eligible for renewal at this time. Please contact the club for more information.', 'smoketree-plugin' ),
+		);
+
+		return $messages[ $reason ] ?? sprintf(
+			/* translators: %s reason code */
+			__( 'Renewal could not be processed (reason: %s). Please contact the club for assistance.', 'smoketree-plugin' ),
+			sanitize_text_field( $reason )
+		);
+	}
+
+	/**
+	 * Map an error reason code to a user-facing message.
+	 *
+	 * @param string $reason Reason code from the renewal service.
+	 * @return string
+	 */
+	private function get_error_message( string $reason ): string {
+		$messages = array(
+			'member_not_found'              => __( 'We could not locate your member record. Please refresh the page and try again.', 'smoketree-plugin' ),
+			'intent_create_failed'          => __( 'We encountered a problem saving your renewal request. Please try again in a few moments.', 'smoketree-plugin' ),
+			'stripe_checkout_create_failed' => __( 'We were unable to set up the payment checkout. Please try again or select a different payment method.', 'smoketree-plugin' ),
+		);
+
+		return $messages[ $reason ] ?? __( 'Something went wrong while processing your renewal. Please try again or contact the club for assistance.', 'smoketree-plugin' );
 	}
 }
 

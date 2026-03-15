@@ -614,6 +614,43 @@
 	margin-top: 12px;
 }
 
+.stsrc-renewal-notice {
+	position: relative;
+	padding: 14px 40px 14px 16px;
+	border-radius: 6px;
+	margin-bottom: 16px;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.stsrc-renewal-notice p {
+	margin: 0;
+}
+
+.stsrc-renewal-notice--error {
+	background-color: #fef2f2;
+	border: 1px solid #fca5a5;
+	color: #991b1b;
+}
+
+.stsrc-renewal-notice__dismiss {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: none;
+	border: none;
+	font-size: 20px;
+	line-height: 1;
+	color: #991b1b;
+	cursor: pointer;
+	padding: 2px 6px;
+	opacity: 0.6;
+}
+
+.stsrc-renewal-notice__dismiss:hover {
+	opacity: 1;
+}
+
 @media (max-width: 900px) {
 	.stsrc-renewal-grid {
 		grid-template-columns: 1fr;

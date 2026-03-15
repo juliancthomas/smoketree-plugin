@@ -148,10 +148,28 @@
 			$(this).addClass('is-current');
 		});
 
+		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
+		$form.closest('.stsrc-renewal-section').prepend($errorBanner);
+
+		function showRenewalError(message) {
+			$errorBanner
+				.html('<p>' + $('<span/>').text(message).html() + '</p><button type="button" class="stsrc-renewal-notice__dismiss" aria-label="Dismiss">&times;</button>')
+				.slideDown(200);
+			$errorBanner.find('.stsrc-renewal-notice__dismiss').on('click', function() {
+				$errorBanner.slideUp(200);
+			});
+		}
+
+		function clearRenewalError() {
+			$errorBanner.slideUp(150);
+		}
+
 		$continueBtn.on('click', function() {
 			if ($continueBtn.prop('disabled')) {
 				return;
 			}
+
+			clearRenewalError();
 
 			var membershipTypeId = $form.find('input[name="target_membership_type_id"]:checked').val();
 			var paymentMethod = getPaymentMethod();
@@ -194,7 +212,7 @@
 				if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
 					msg = xhr.responseJSON.data.message;
 				}
-				alert(msg);
+				showRenewalError(msg);
 				$continueBtn.prop('disabled', false).text('Continue to Renewal Payment');
 			});
 		});
