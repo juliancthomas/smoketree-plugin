@@ -668,7 +668,7 @@ class STSRC_Ajax_Handler {
 	/**
 	 * Revalidate submitted discount data server-side.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    array $post_data Raw request payload.
 	 * @param    array $data      Validated registration data.
 	 * @return   array|WP_Error|null
@@ -743,7 +743,7 @@ class STSRC_Ajax_Handler {
 	/**
 	 * Persist discount usage when a registration finalizes immediately.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    int   $member_id         Member ID.
 	 * @param    array $discount_payload  Validated payload.
 	 * @return   void
@@ -760,7 +760,7 @@ class STSRC_Ajax_Handler {
 	/**
 	 * Finalize zero-dollar discounted registrations without Stripe.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    array $data             Registration data.
 	 * @param    int   $member_id        Member ID.
 	 * @param    array $discount_payload Validated discount payload.

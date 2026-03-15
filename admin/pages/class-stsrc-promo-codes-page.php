@@ -11,7 +11,7 @@ class STSRC_Promo_Codes_Page {
 	/**
 	 * Register promo codes submenu.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @return   void
 	 */
 	public function register_submenu(): void {
@@ -28,7 +28,7 @@ class STSRC_Promo_Codes_Page {
 	/**
 	 * Conditionally enqueue promo admin assets.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    string $hook Current page hook.
 	 * @return   void
 	 */
@@ -73,7 +73,7 @@ class STSRC_Promo_Codes_Page {
 	/**
 	 * Render promo codes admin page.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @return   void
 	 */
 	public function render(): void {

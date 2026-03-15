@@ -329,7 +329,7 @@ class STSRC_Payment_Service {
 	/**
 	 * Calculate Stripe processing fee by payment method.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    float  $amount         Subtotal amount before fee.
 	 * @param    string $payment_method Stripe payment method type.
 	 * @return   float

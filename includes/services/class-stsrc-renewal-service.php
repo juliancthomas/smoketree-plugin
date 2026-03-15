@@ -593,8 +593,16 @@ class STSRC_Renewal_Service {
 		$target_type_name  = strtolower( (string) ( $target_type['name'] ?? '' ) );
 		$active_family_ids = STSRC_Family_Member_DB::get_active_ids_by_member( $member_id );
 		$active_extra_ids  = STSRC_Extra_Member_DB::get_active_ids_by_member( $member_id );
-		$retain_family_ids = $this->normalize_ids( $payload['retain_family_member_ids'] ?? array() );
-		$retain_extra_ids  = $this->normalize_ids( $payload['retain_extra_member_ids'] ?? array() );
+
+		$payload_has_family = ! empty( $payload['retain_family_member_ids'] ) || ! empty( $payload['new_family_member_count'] );
+		$payload_has_extra  = ! empty( $payload['retain_extra_member_ids'] ) || ! empty( $payload['new_extra_member_count'] );
+
+		$retain_family_ids = $payload_has_family
+			? $this->normalize_ids( $payload['retain_family_member_ids'] ?? array() )
+			: $active_family_ids;
+		$retain_extra_ids  = $payload_has_extra
+			? $this->normalize_ids( $payload['retain_extra_member_ids'] ?? array() )
+			: $active_extra_ids;
 		$new_family_count  = max( 0, absint( $payload['new_family_member_count'] ?? 0 ) );
 		$new_extra_count   = max( 0, absint( $payload['new_extra_member_count'] ?? 0 ) );
 		$errors            = array();

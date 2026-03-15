@@ -206,7 +206,7 @@ class Smoketree_Plugin_Public {
 	/**
 	 * Check if current page is the registration form.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @return   bool
 	 */
 	private function is_registration_page(): bool {

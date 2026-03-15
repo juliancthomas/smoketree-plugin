@@ -227,7 +227,7 @@ class Smoketree_Plugin {
 	/**
 	 * Output referral-specific OpenGraph tags on registration page.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @return   void
 	 */
 	public function output_referral_og_tags(): void {
@@ -279,7 +279,7 @@ class Smoketree_Plugin {
 	/**
 	 * Determine whether current request is the registration page.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @return   bool
 	 */
 	private function is_registration_page_for_og(): bool {

@@ -453,7 +453,7 @@ class Smoketree_Stripe_Webhooks {
 	/**
 	 * Build discount usage payload from Stripe session metadata.
 	 *
-	 * @since    1.4.0
+	 * @since    1.4.1
 	 * @param    array $metadata Session metadata.
 	 * @return   array|null
 	 */
