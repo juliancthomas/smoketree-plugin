@@ -19,6 +19,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extr
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'helpers/class-stsrc-renewal-helpers.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-renewal-pricing-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-payment-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-logger.php';
 
 /**
  * Renewal service class.
@@ -332,6 +333,14 @@ class STSRC_Renewal_Service {
 			)
 		);
 		if ( empty( $completion['applied'] ) ) {
+			STSRC_Logger::warning(
+				'Stripe renewal completion failed during transaction.',
+				array(
+					'method'     => __METHOD__,
+					'renewal_id' => $renewal_id,
+					'reason'     => (string) ( $completion['reason'] ?? 'unknown' ),
+				)
+			);
 			return array(
 				'applied'    => false,
 				'reason'     => (string) ( $completion['reason'] ?? 'no_update_applied' ),
@@ -346,6 +355,14 @@ class STSRC_Renewal_Service {
 			$email_service->send_member_renewal_confirmation( (int) ( $renewal['member_id'] ?? 0 ), $renewal, $member );
 			$email_service->send_admin_renewal_notice( $renewal, $member );
 		}
+		STSRC_Logger::info(
+			'Stripe renewal completed successfully.',
+			array(
+				'method'     => __METHOD__,
+				'renewal_id' => $renewal_id,
+				'member_id'  => (int) ( $renewal['member_id'] ?? 0 ),
+			)
+		);
 
 		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
 	}
@@ -389,6 +406,14 @@ class STSRC_Renewal_Service {
 			)
 		);
 		if ( empty( $completion['applied'] ) ) {
+			STSRC_Logger::warning(
+				'Offline renewal confirmation failed during transaction.',
+				array(
+					'method'     => __METHOD__,
+					'renewal_id' => $renewal_id,
+					'reason'     => (string) ( $completion['reason'] ?? 'unknown' ),
+				)
+			);
 			return array(
 				'applied'    => false,
 				'reason'     => (string) ( $completion['reason'] ?? 'no_update_applied' ),
@@ -403,6 +428,15 @@ class STSRC_Renewal_Service {
 			$email_service->send_member_renewal_confirmation( (int) ( $renewal['member_id'] ?? 0 ), $renewal, $member );
 			$email_service->send_admin_renewal_notice( $renewal, $member );
 		}
+		STSRC_Logger::info(
+			'Offline renewal confirmed successfully.',
+			array(
+				'method'        => __METHOD__,
+				'renewal_id'    => $renewal_id,
+				'member_id'     => (int) ( $renewal['member_id'] ?? 0 ),
+				'admin_user_id' => $admin_user_id,
+			)
+		);
 
 		return array( 'applied' => true, 'reason' => 'completed', 'renewal_id' => $renewal_id );
 	}

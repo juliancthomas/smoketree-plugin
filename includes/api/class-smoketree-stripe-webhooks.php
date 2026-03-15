@@ -231,13 +231,32 @@ class Smoketree_Stripe_Webhooks {
 	 */
 	private static function handle_renewal_checkout_completed( array $session, string $event_id ): bool {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-renewal-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-logger.php';
 
 		$renewal_service = new STSRC_Renewal_Service();
 		$result          = $renewal_service->finalize_stripe_renewal( $session, $event_id );
 
 		if ( ! empty( $result['applied'] ) ) {
+			STSRC_Logger::info(
+				'Renewal webhook completion applied.',
+				array(
+					'method'     => __METHOD__,
+					'event_id'   => $event_id,
+					'renewal_id' => (int) ( $result['renewal_id'] ?? 0 ),
+				)
+			);
 			return true;
 		}
+
+		STSRC_Logger::warning(
+			'Renewal webhook completion did not apply changes.',
+			array(
+				'method'     => __METHOD__,
+				'event_id'   => $event_id,
+				'renewal_id' => (int) ( $result['renewal_id'] ?? 0 ),
+				'reason'     => (string) ( $result['reason'] ?? 'unknown' ),
+			)
+		);
 
 		// Treat replayed completion as a no-op success.
 		return in_array( $result['reason'] ?? '', array( 'already_completed', 'no_update_applied' ), true );
