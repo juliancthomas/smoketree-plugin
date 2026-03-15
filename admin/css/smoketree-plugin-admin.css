@@ -860,3 +860,41 @@
 .stsrc-inline-block {
 	display: inline-block;
 }
+
+/* Demo account UI */
+.stsrc-demo-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #fff;
+	background-color: #7c3aed;
+	border-radius: 9999px;
+	margin-left: 8px;
+	vertical-align: middle;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.stsrc-demo-badge--large {
+	font-size: 13px;
+	padding: 4px 12px;
+}
+
+.stsrc-demo-toggle-section {
+	margin-top: 24px;
+	border-left: 4px solid #7c3aed;
+}
+
+.stsrc-demo-toggle-warning {
+	margin-top: 8px;
+	color: #b91c1c !important;
+	font-weight: 600;
+}
+
+.stsrc-demo-permanent-note {
+	margin: 8px 0 0;
+	font-style: normal !important;
+	color: #4b5563;
+}

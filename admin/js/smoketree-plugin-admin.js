@@ -931,6 +931,73 @@
 				}
 			});
 
+			const $demoToggle = $('#stsrc-demo-flag-checkbox');
+			if ($demoToggle.length) {
+				$demoToggle.on('change', function() {
+					const $checkbox = $(this);
+
+					if (!$checkbox.is(':checked')) {
+						return;
+					}
+
+					const confirmed = window.confirm(
+						'Are you sure you want to flag this member as a demo account?\n' +
+						'This action is PERMANENT and cannot be undone.\n' +
+						'Demo accounts are excluded from all reporting, billing, emails, and automated processes.'
+					);
+					if (!confirmed) {
+						$checkbox.prop('checked', false);
+						return;
+					}
+
+					const memberId = parseInt($checkbox.data('member-id'), 10) || 0;
+					const nonce = $checkbox.data('nonce') || STSRCAdmin.nonce;
+					if (!memberId || !nonce) {
+						$checkbox.prop('checked', false);
+						STSRCAdmin.showNotice('Missing demo account metadata. Please refresh and try again.', 'error');
+						return;
+					}
+
+					$checkbox.prop('disabled', true);
+
+					$.ajax({
+						url: STSRCAdmin.ajaxUrl,
+						type: 'POST',
+						data: {
+							action: 'stsrc_set_demo_flag',
+							member_id: memberId,
+							nonce: nonce
+						},
+						success: function(response) {
+							if (response && response.success) {
+								$('#stsrc-demo-toggle-content').html(
+									'<p><span class="stsrc-demo-badge stsrc-demo-badge--large">DEMO ACCOUNT</span></p>' +
+									'<p class="stsrc-demo-permanent-note">This account is permanently flagged as a demo account.</p>'
+								);
+
+								if ($('.stsrc-member-heading .stsrc-demo-badge').length === 0) {
+									$('.stsrc-member-heading').append(' <span class="stsrc-demo-badge stsrc-demo-badge--large">DEMO ACCOUNT</span>');
+								}
+
+								if ($('.stsrc-member-heading').next('.stsrc-demo-permanent-note').length === 0) {
+									$('.stsrc-member-heading').after('<p class="stsrc-demo-permanent-note">This account is permanently flagged as a demo account.</p>');
+								}
+
+								STSRCAdmin.showNotice((response.data && response.data.message) || 'Member flagged as a demo account.', 'success');
+								return;
+							}
+
+							$checkbox.prop('checked', false).prop('disabled', false);
+							STSRCAdmin.showNotice((response.data && response.data.message) || 'Unable to flag member as demo.', 'error');
+						},
+						error: function() {
+							$checkbox.prop('checked', false).prop('disabled', false);
+							STSRCAdmin.showNotice('An error occurred while flagging this member as demo.', 'error');
+						}
+					});
+				});
+			}
+
 			// Soft-delete modal interactions.
 			const $deleteButton = $('#stsrc-delete-member-btn');
 			const $modal = $('#stsrc-delete-member-modal');

@@ -19,10 +19,11 @@ $delete_meta = $data['delete_meta'] ?? array();
 $pending_renewal = $data['pending_renewal'] ?? null;
 $is_edit = ! empty( $member );
 $member_id = $member['member_id'] ?? 0;
+$is_demo = $is_edit && 1 === (int) ( $member['is_demo'] ?? 0 );
 ?>
 
 <div class="wrap">
-	<h1>
+	<h1 class="stsrc-member-heading">
 		<?php
 		if ( $is_edit ) {
 			echo esc_html__( 'Edit Member', 'smoketree-plugin' );
@@ -30,7 +31,14 @@ $member_id = $member['member_id'] ?? 0;
 			echo esc_html__( 'Add New Member', 'smoketree-plugin' );
 		}
 		?>
+		<?php if ( $is_demo ) : ?>
+			<span class="stsrc-demo-badge stsrc-demo-badge--large"><?php echo esc_html__( 'Demo Account', 'smoketree-plugin' ); ?></span>
+		<?php endif; ?>
 	</h1>
+
+	<?php if ( $is_demo ) : ?>
+		<p class="stsrc-demo-permanent-note"><?php echo esc_html__( 'This account is permanently flagged as a demo account.', 'smoketree-plugin' ); ?></p>
+	<?php endif; ?>
 
 	<?php if ( $is_edit && 'cancelled' === ( $member['status'] ?? '' ) ) : ?>
 		<div class="notice notice-warning" style="margin: 15px 0;">
@@ -384,6 +392,33 @@ $member_id = $member['member_id'] ?? 0;
 				</div>
 			<?php endif; ?>
 		</div>
+
+		<?php if ( $is_edit ) : ?>
+			<div class="stsrc-form-section stsrc-demo-toggle-section">
+				<h2><?php echo esc_html__( 'Demo Account', 'smoketree-plugin' ); ?></h2>
+				<div id="stsrc-demo-toggle-content">
+					<?php if ( $is_demo ) : ?>
+						<p>
+							<span class="stsrc-demo-badge stsrc-demo-badge--large"><?php echo esc_html__( 'Demo Account', 'smoketree-plugin' ); ?></span>
+						</p>
+						<p class="stsrc-demo-permanent-note"><?php echo esc_html__( 'This account is permanently flagged as a demo account.', 'smoketree-plugin' ); ?></p>
+					<?php else : ?>
+						<label class="stsrc-inline-checkbox">
+							<input
+								type="checkbox"
+								id="stsrc-demo-flag-checkbox"
+								value="1"
+								data-member-id="<?php echo esc_attr( $member_id ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
+							<span><?php echo esc_html__( 'Flag as Demo Account', 'smoketree-plugin' ); ?></span>
+						</label>
+						<p class="stsrc-demo-toggle-warning">
+							<?php echo esc_html__( 'Warning: this action is permanent and cannot be reversed.', 'smoketree-plugin' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 
 		<p class="submit">
 			<input type="submit" name="submit" id="submit" class="button button-primary" value="<?php echo esc_attr__( 'Save Member', 'smoketree-plugin' ); ?>">
