@@ -61,14 +61,16 @@ class STSRC_Discount_Service {
 			return new WP_Error( 'promo_usage_limit_reached', __( "This promo code's usage limit has been reached.", 'smoketree-plugin' ) );
 		}
 
-		if ( ! empty( $promo->allowed_type_ids ) ) {
-			$allowed = json_decode( (string) $promo->allowed_type_ids, true );
-			if ( is_array( $allowed ) ) {
-				$allowed = array_map( 'absint', $allowed );
-				if ( ! empty( $allowed ) && ! in_array( $membership_type_id, $allowed, true ) ) {
-					return new WP_Error( 'invalid_membership_type', __( 'This promo code is not valid for the selected membership type.', 'smoketree-plugin' ) );
-				}
-			}
+		$discount_values = json_decode( (string) ( $promo->discount_values ?? '{}' ), true );
+		if ( ! is_array( $discount_values ) ) {
+			$discount_values = array();
+		}
+
+		$type_key       = (string) $membership_type_id;
+		$discount_value = isset( $discount_values[ $type_key ] ) ? (float) $discount_values[ $type_key ] : 0.00;
+
+		if ( $discount_value <= 0 ) {
+			return new WP_Error( 'invalid_membership_type', __( 'This promo code is not valid for the selected membership type.', 'smoketree-plugin' ) );
 		}
 
 		$membership_type = STSRC_Membership_DB::get_membership_type( $membership_type_id );
@@ -77,7 +79,7 @@ class STSRC_Discount_Service {
 		}
 
 		$base_price       = (float) ( $membership_type['price'] ?? 0 );
-		$computed_amount  = self::compute_discounted_total( $base_price, (string) $promo->discount_type, (float) $promo->discount_value );
+		$computed_amount  = self::compute_discounted_total( $base_price, (string) $promo->discount_type, $discount_value );
 		$discount_applied = max( 0.00, $base_price - $computed_amount );
 
 		$label = 'Promo: ' . (string) $promo->code_name . ' - -$' . number_format( $discount_applied, 2 );
@@ -85,7 +87,7 @@ class STSRC_Discount_Service {
 		return array(
 			'code_id'          => (int) $promo->code_id,
 			'discount_type'    => (string) $promo->discount_type,
-			'discount_value'   => (float) $promo->discount_value,
+			'discount_value'   => $discount_value,
 			'computed_amount'  => $discount_applied,
 			'label'            => $label,
 			'base_amount'      => $base_price,
