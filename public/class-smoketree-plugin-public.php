@@ -90,9 +90,17 @@ class Smoketree_Plugin_Public {
 
 			if ( $this->is_member_portal_page() ) {
 				wp_enqueue_style(
+					'smartwizard',
+					plugin_dir_url( __FILE__ ) . 'vendor/smartwizard/smart_wizard_all.min.css',
+					array(),
+					$this->get_asset_version( 'vendor/smartwizard/smart_wizard_all.min.css' ),
+					'all'
+				);
+
+				wp_enqueue_style(
 					$this->plugin_name . '-member-portal',
 					plugin_dir_url( __FILE__ ) . 'css/member-portal.css',
-					array( $this->plugin_name ),
+					array( $this->plugin_name, 'smartwizard' ),
 					$this->get_asset_version( 'css/member-portal.css' ),
 					'all'
 				);
@@ -243,9 +251,17 @@ class Smoketree_Plugin_Public {
 				$minimum_payment = (float) get_option( 'stsrc_minimum_balance_payment', 10.00 );
 
 				wp_enqueue_script(
+					'smartwizard',
+					plugin_dir_url( __FILE__ ) . 'vendor/smartwizard/jquery.smartWizard.min.js',
+					array( 'jquery' ),
+					$this->get_asset_version( 'vendor/smartwizard/jquery.smartWizard.min.js' ),
+					true
+				);
+
+				wp_enqueue_script(
 					$this->plugin_name . '-member-portal',
 					plugin_dir_url( __FILE__ ) . 'js/member-portal.js',
-					array( 'jquery', $this->plugin_name ),
+					array( 'jquery', $this->plugin_name, 'smartwizard' ),
 					$this->version,
 					true
 				);

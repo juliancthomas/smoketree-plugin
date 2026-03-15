@@ -39,36 +39,161 @@
 	}
 
 	function initRenewalSection() {
-		const $form = $('#stsrc-renewal-form');
-		if ($form.length === 0) {
+		var $form = $('#stsrc-renewal-form');
+		var $wizard = $('#stsrc-renewal-wizard');
+		if ($form.length === 0 || $wizard.length === 0) {
 			return;
 		}
 
-		const renewalConfig = (window.stsrcPublic && window.stsrcPublic.renewal) ? window.stsrcPublic.renewal : null;
-		const ajaxUrl = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) ? window.stsrcPublic.ajaxUrl : '';
-		const quoteAction = renewalConfig && renewalConfig.actions ? renewalConfig.actions.quote : 'stsrc_renewal_quote';
+		var STEP_PLAN = 0;
+		var STEP_MEMBERS = 1;
+		var STEP_PAYMENT = 2;
+		var STEP_REVIEW = 3;
 
-		const $membershipRows = $('.stsrc-renewal-card');
-		const $continueBtn = $('#stsrc-renewal-continue-btn');
-		const $membershipAmount = $('#stsrc-renewal-membership-amount');
-		const $extrasAmount = $('#stsrc-renewal-extras-amount');
-		const $feeAmount = $('#stsrc-renewal-fee-amount');
-		const $totalAmount = $('#stsrc-renewal-total-amount');
-		const $balanceAmount = $('#stsrc-renewal-balance-amount');
+		var renewalConfig = (window.stsrcPublic && window.stsrcPublic.renewal) ? window.stsrcPublic.renewal : null;
+		var ajaxUrl = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) ? window.stsrcPublic.ajaxUrl : '';
+		var quoteAction = renewalConfig && renewalConfig.actions ? renewalConfig.actions.quote : 'stsrc_renewal_quote';
 
-		var $membersSection = $('#stsrc-renewal-members');
+		var $membershipRows = $('.stsrc-renewal-card');
+		var $continueBtn = $('#stsrc-renewal-continue-btn');
+		var $membershipAmount = $('#stsrc-renewal-membership-amount');
+		var $extrasAmount = $('#stsrc-renewal-extras-amount');
+		var $extrasRow = $('#stsrc-renewal-extras-row');
+		var $feeAmount = $('#stsrc-renewal-fee-amount');
+		var $totalAmount = $('#stsrc-renewal-total-amount');
+		var $balanceAmount = $('#stsrc-renewal-balance-amount');
+
 		var $familyGroup = $('#stsrc-renewal-family-group');
 		var $extrasGroup = $('#stsrc-renewal-extras-group');
 		var $newExtraCountEl = $('#stsrc-new-extra-count');
 		var $extraMinus = $('#stsrc-extra-minus');
 		var $extraPlus = $('#stsrc-extra-plus');
 		var $familyHint = $('#stsrc-family-hint');
-		var extraPrice = parseFloat($membersSection.data('extra-price') || 50);
-		var maxExtras = parseInt($membersSection.data('max-extras') || 3, 10);
+		var extraPrice = parseFloat($wizard.data('extra-price') || 50);
+		var maxExtras = parseInt($wizard.data('max-extras') || 3, 10);
+		var balanceOwed = parseFloat($wizard.data('balance') || 0);
 		var newExtraCount = 0;
 
+		var skipMembersStep = false;
+
+		// --- SmartWizard initialization ---
+		$wizard.smartWizard({
+			selected: STEP_PLAN,
+			theme: 'arrows',
+			autoAdjustHeight: true,
+			transition: {
+				animation: 'slideHorizontal',
+				speed: '400',
+				easing: 'ease'
+			},
+			toolbar: {
+				position: 'bottom',
+				showNextButton: true,
+				showPreviousButton: true
+			},
+			anchor: {
+				enableNavigation: true,
+				enableNavigationAlways: false,
+				enableDoneStep: true,
+				markPreviousStepsAsDone: true,
+				removeDoneStepOnNavigateBack: true,
+				enableDoneStepNavigation: true
+			},
+			keyboard: {
+				keyNavigation: false
+			},
+			lang: {
+				next: 'Next Step',
+				previous: 'Back'
+			}
+		});
+
+		// --- Step skip logic ---
+		function needsMembersStep() {
+			var typeName = getSelectedTypeName();
+			return typeName === 'household' || typeName === 'duo';
+		}
+
+		$wizard.on('leaveStep', function(e, anchorObject, currentStepIdx, nextStepIdx, stepDirection) {
+			if (stepDirection === 'forward' && !validateStep(currentStepIdx)) {
+				return false;
+			}
+
+			if (nextStepIdx === STEP_MEMBERS && !needsMembersStep()) {
+				var skipTo = (stepDirection === 'forward') ? STEP_PAYMENT : STEP_PLAN;
+				setTimeout(function() { $wizard.smartWizard('goToStep', skipTo); }, 10);
+				return false;
+			}
+
+			return true;
+		});
+
+		$wizard.on('showStep', function(e, anchorObject, stepIdx, stepDirection) {
+			if (stepIdx === STEP_MEMBERS) {
+				updateMemberSections();
+			}
+
+			if (stepIdx === STEP_PAYMENT) {
+				updatePaymentInstructions();
+				updateAutoRenewalVisibility();
+			}
+
+			if (stepIdx === STEP_REVIEW) {
+				populateReviewStep();
+				requestQuote();
+			}
+
+			updateToolbarVisibility(stepIdx);
+		});
+
+		function updateToolbarVisibility(stepIdx) {
+			var $toolbar = $wizard.find('.toolbar-bottom');
+			if (stepIdx === STEP_REVIEW) {
+				$toolbar.find('.sw-btn-next').hide();
+			} else {
+				$toolbar.find('.sw-btn-next').show();
+			}
+		}
+
+		// --- Step validation ---
+		function validateStep(stepIdx) {
+			if (stepIdx === STEP_PLAN) {
+				return !!$form.find('input[name="target_membership_type_id"]:checked').val();
+			}
+			if (stepIdx === STEP_MEMBERS) {
+				return validateMembersStep();
+			}
+			if (stepIdx === STEP_PAYMENT) {
+				return !!$form.find('input[name="payment_method"]:checked').val();
+			}
+			return true;
+		}
+
+		function validateMembersStep() {
+			var typeName = getSelectedTypeName();
+			var required = typeName === 'household' ? 2 : (typeName === 'duo' ? 1 : 0);
+			if (required === 0) {
+				return true;
+			}
+			var retained = getRetainedFamilyIds().length;
+			if (retained < required) {
+				updateFamilyHint();
+				return false;
+			}
+			return true;
+		}
+
+		// --- Helpers ---
 		function getSelectedTypeName() {
 			return ($form.find('input[name="target_membership_type_id"]:checked').data('type-name') || '').toLowerCase();
+		}
+
+		function getSelectedTypeLabel() {
+			return $form.find('input[name="target_membership_type_id"]:checked').data('type-label') || '';
+		}
+
+		function getSelectedTypePrice() {
+			return parseFloat($form.find('input[name="target_membership_type_id"]:checked').data('type-price') || 0);
 		}
 
 		function getRetainedFamilyIds() {
@@ -119,12 +244,6 @@
 			var showFamily = (typeName === 'household' || typeName === 'duo') && hasFamily;
 			var showExtras = typeName === 'household';
 
-			if (showFamily || showExtras) {
-				$membersSection.slideDown(200);
-			} else {
-				$membersSection.slideUp(200);
-			}
-
 			if (showFamily) {
 				$familyGroup.show();
 			} else {
@@ -132,9 +251,9 @@
 			}
 
 			if (showExtras) {
-				$extrasGroup.slideDown(200);
+				$extrasGroup.show();
 			} else {
-				$extrasGroup.slideUp(200);
+				$extrasGroup.hide();
 				newExtraCount = 0;
 				$newExtraCountEl.text('0');
 			}
@@ -166,31 +285,34 @@
 		}
 
 		function formatCurrency(value) {
-			const parsed = Number(value || 0);
+			var parsed = Number(value || 0);
 			return '$' + parsed.toFixed(2);
-		}
-
-		function getSelectedMembershipPrice() {
-			const $selected = $form.find('input[name="target_membership_type_id"]:checked').closest('.stsrc-renewal-card');
-			const priceText = $selected.find('.stsrc-renewal-card__price').text().replace(/[^0-9.]/g, '');
-			return Number(priceText || 0);
-		}
-
-		function getBalanceAmount() {
-			const value = ($balanceAmount.text() || '').replace(/[^0-9.\-]/g, '');
-			return Number(value || 0);
 		}
 
 		function getPaymentMethod() {
 			return $form.find('input[name="payment_method"]:checked').val() || 'card';
 		}
 
+		var paymentMethodLabels = {
+			card: 'Credit/Debit Card',
+			ach: 'Bank Account (ACH)',
+			zelle: 'Zelle',
+			check: 'Check',
+			cash: 'Cash',
+			payment_plan: 'Payment Plan'
+		};
+
+		function getPaymentMethodLabel() {
+			return paymentMethodLabels[getPaymentMethod()] || getPaymentMethod();
+		}
+
+		// --- Quote calculation ---
 		function calcFallbackQuote() {
-			const membership = getSelectedMembershipPrice();
-			const extras = getExtrasMemberAmount();
-			const subtotal = Math.max(0, membership + extras + getBalanceAmount());
-			const paymentMethod = getPaymentMethod();
-			let fee = 0;
+			var membership = getSelectedTypePrice();
+			var extras = getExtrasMemberAmount();
+			var subtotal = Math.max(0, membership + extras + balanceOwed);
+			var paymentMethod = getPaymentMethod();
+			var fee = 0;
 
 			if (paymentMethod === 'card') {
 				fee = (subtotal * 0.029) + 0.30;
@@ -213,21 +335,27 @@
 			}
 
 			$membershipAmount.text(formatCurrency(quote.membership_base || 0));
-			$extrasAmount.text(formatCurrency(quote.extra_members_amount || 0));
+
+			var extrasAmt = quote.extra_members_amount || 0;
+			$extrasAmount.text(formatCurrency(extrasAmt));
+			if (extrasAmt > 0) {
+				$extrasRow.show();
+			} else {
+				$extrasRow.hide();
+			}
+
 			$feeAmount.text(formatCurrency(quote.processing_fee || 0));
 			$totalAmount.text(formatCurrency(quote.total || 0));
-			$continueBtn.prop('disabled', false);
 		}
 
 		function requestQuote() {
-			const membershipTypeId = $form.find('input[name="target_membership_type_id"]:checked').val();
-			const paymentMethod = getPaymentMethod();
+			var membershipTypeId = $form.find('input[name="target_membership_type_id"]:checked').val();
+			var paymentMethod = getPaymentMethod();
 			if (!membershipTypeId) {
-				$continueBtn.prop('disabled', true);
 				return;
 			}
 
-			const fallbackQuote = calcFallbackQuote();
+			var fallbackQuote = calcFallbackQuote();
 			if (!ajaxUrl || !renewalConfig || !renewalConfig.nonce) {
 				renderQuote(fallbackQuote);
 				return;
@@ -245,13 +373,52 @@
 					member_id: renewalConfig.member ? renewalConfig.member.member_id : 0
 				}, getMemberPayload())
 			}).done(function(response) {
-				const serverQuote = response && response.success && response.data ? response.data.quote : null;
+				var serverQuote = response && response.success && response.data ? response.data.quote : null;
 				renderQuote(serverQuote || fallbackQuote);
 			}).fail(function() {
 				renderQuote(fallbackQuote);
 			});
 		}
 
+		// --- Review step population ---
+		function populateReviewStep() {
+			var typeName = getSelectedTypeName();
+			$('#stsrc-review-plan').text(getSelectedTypeLabel() + ' — ' + formatCurrency(getSelectedTypePrice()));
+
+			$('#stsrc-review-payment').text(getPaymentMethodLabel());
+
+			var $membersRow = $('#stsrc-review-members-row');
+			if (typeName === 'household' || typeName === 'duo') {
+				var parts = [];
+				var familyCount = getRetainedFamilyIds().length;
+				if (familyCount > 0) {
+					parts.push(familyCount + ' family member' + (familyCount !== 1 ? 's' : ''));
+				}
+				if (typeName === 'household') {
+					var extraCount = getRetainedExtraIds().length + newExtraCount;
+					if (extraCount > 0) {
+						parts.push(extraCount + ' extra member' + (extraCount !== 1 ? 's' : ''));
+					}
+				}
+				$('#stsrc-review-members').text(parts.length ? parts.join(', ') : 'None');
+				$membersRow.show();
+			} else {
+				$membersRow.hide();
+			}
+
+			var stripePaymentMethods = ['card', 'ach'];
+			var $autoRenewalRow = $('#stsrc-review-auto-renewal-row');
+			var method = getPaymentMethod();
+			if (stripePaymentMethods.indexOf(method) !== -1) {
+				var isOptedIn = $('#stsrc-renewal-auto-renewal-optin').is(':checked');
+				$('#stsrc-review-auto-renewal').text(isOptedIn ? 'Yes' : 'No');
+				$autoRenewalRow.show();
+			} else {
+				$autoRenewalRow.hide();
+			}
+		}
+
+		// --- Payment step interactions ---
 		$membershipRows.on('click', function() {
 			$membershipRows.removeClass('is-current');
 			$(this).addClass('is-current');
@@ -264,13 +431,12 @@
 			var $match = $instructionsWrap.find('[data-method="' + method + '"]');
 			if ($match.length) {
 				$match.show();
-				$instructionsWrap.slideDown(200);
+				$instructionsWrap.show();
 			} else {
-				$instructionsWrap.slideUp(200);
+				$instructionsWrap.hide();
 			}
 		}
 		$form.on('change', 'input[name="payment_method"]', updatePaymentInstructions);
-		updatePaymentInstructions();
 
 		var $autoRenewalSection = $('#stsrc-renewal-auto-renewal');
 		var $autoRenewalCheckbox = $('#stsrc-renewal-auto-renewal-optin');
@@ -285,14 +451,13 @@
 			}
 		}
 		$form.on('change', 'input[name="payment_method"]', updateAutoRenewalVisibility);
-		updateAutoRenewalVisibility();
 
+		// --- Extra member stepper ---
 		$extraMinus.on('click', function() {
 			if (newExtraCount > 0) {
 				newExtraCount--;
 				$newExtraCountEl.text(newExtraCount);
 				updateStepperLimits();
-				requestQuote();
 			}
 		});
 
@@ -302,20 +467,13 @@
 				newExtraCount++;
 				$newExtraCountEl.text(newExtraCount);
 				updateStepperLimits();
-				requestQuote();
 			}
 		});
 
-		$form.on('change', 'input[name="retain_family_member_ids[]"]', function() {
-			updateFamilyHint();
-			requestQuote();
-		});
+		$form.on('change', 'input[name="retain_family_member_ids[]"]', updateFamilyHint);
+		$form.on('change', 'input[name="retain_extra_member_ids[]"]', updateStepperLimits);
 
-		$form.on('change', 'input[name="retain_extra_member_ids[]"]', function() {
-			updateStepperLimits();
-			requestQuote();
-		});
-
+		// --- Error handling ---
 		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
 		$form.closest('.stsrc-renewal-section').prepend($errorBanner);
 
@@ -332,11 +490,8 @@
 			$errorBanner.slideUp(150);
 		}
 
+		// --- Submit ---
 		$continueBtn.on('click', function() {
-			if ($continueBtn.prop('disabled')) {
-				return;
-			}
-
 			clearRenewalError();
 
 			var membershipTypeId = $form.find('input[name="target_membership_type_id"]:checked').val();
@@ -387,12 +542,9 @@
 		});
 
 		$form.on('change', 'input[name="target_membership_type_id"]', function() {
-			updateMemberSections();
-			requestQuote();
+			$membershipRows.removeClass('is-current');
+			$(this).closest('.stsrc-renewal-card').addClass('is-current');
 		});
-		$form.on('change', 'input[name="payment_method"]', requestQuote);
-		updateMemberSections();
-		requestQuote();
 	}
 
 	function initReferralCopyButton() {
