@@ -78,9 +78,8 @@ class STSRC_Renewal_Helpers {
 	/**
 	 * Check whether a member is eligible for renewal portal actions.
 	 *
-	 * Step 1 eligibility is intentionally conservative and only checks account
-	 * context/state. Season idempotency checks are added when renewal ledger
-	 * persistence is introduced in subsequent implementation steps.
+	 * Returns false when the member is cancelled, already active for the
+	 * current season, or has an in-flight/completed renewal ledger entry.
 	 *
 	 * @since  1.0.0
 	 * @param  array $member Member record.
@@ -95,7 +94,15 @@ class STSRC_Renewal_Helpers {
 			return false;
 		}
 
-		return 'cancelled' !== $status;
+		if ( 'cancelled' === $status ) {
+			return false;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-renewal-db.php';
+		$season_key  = self::get_season_key();
+		$eligibility = STSRC_Renewal_DB::get_eligibility( $member_id, $season_key );
+
+		return ! empty( $eligibility['eligible'] );
 	}
 }
 

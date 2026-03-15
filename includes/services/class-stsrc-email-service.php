@@ -891,6 +891,62 @@ class STSRC_Email_Service {
 	}
 
 	/**
+	 * Send admin notification for a renewal awaiting offline payment.
+	 *
+	 * @param array $renewal Renewal row.
+	 * @param array $member  Member row.
+	 * @return bool
+	 */
+	public function send_admin_renewal_pending_notice( array $renewal, array $member ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$type_id         = (int) ( $renewal['new_membership_type_id'] ?? 0 );
+		$membership_type = STSRC_Membership_DB::get_membership_type( $type_id );
+		$method          = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		$method_label_map = array(
+			'zelle'        => __( 'Zelle', 'smoketree-plugin' ),
+			'check'        => __( 'Check', 'smoketree-plugin' ),
+			'cash'         => __( 'Cash', 'smoketree-plugin' ),
+			'payment_plan' => __( 'Payment Plan', 'smoketree-plugin' ),
+		);
+		$member_id = (int) ( $renewal['member_id'] ?? 0 );
+		$data      = array(
+			'member_name'          => trim( (string) ( $member['first_name'] ?? '' ) . ' ' . (string) ( $member['last_name'] ?? '' ) ),
+			'member_email'         => (string) ( $member['email'] ?? '' ),
+			'season_key'           => (string) ( $renewal['season_key'] ?? '' ),
+			'membership_type_name' => (string) ( $membership_type['name'] ?? '' ),
+			'payment_method_label' => $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ),
+			'total_amount'         => (float) ( $renewal['total_amount'] ?? 0 ),
+			'member_admin_url'     => add_query_arg(
+				array(
+					'action'    => 'edit',
+					'member_id' => $member_id,
+				),
+				admin_url( 'admin.php?page=stsrc-members' )
+			),
+		);
+		$subject    = sprintf(
+			/* translators: %s: member full name */
+			__( 'Renewal Submitted (Awaiting Payment) - %s', 'smoketree-plugin' ),
+			$data['member_name']
+		);
+		$recipients = $this->get_admin_notification_recipients();
+		if ( empty( $recipients ) ) {
+			return false;
+		}
+
+		$sent_any = false;
+		foreach ( $recipients as $recipient ) {
+			$result = $this->send_email( 'email/notify-admin-renewal-pending.php', $data, $recipient, $subject );
+			if ( $result ) {
+				$sent_any = true;
+			}
+		}
+
+		return $sent_any;
+	}
+
+	/**
 	 * Send renewal confirmation email to member.
 	 *
 	 * @param int   $member_id Member ID.

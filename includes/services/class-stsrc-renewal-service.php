@@ -272,6 +272,13 @@ class STSRC_Renewal_Service {
 				(float) ( $quote['total'] ?? 0.00 ),
 				sanitize_key( $payment_method )
 			);
+
+			$renewal_record = STSRC_Renewal_DB::get_renewal( $renewal_id );
+			if ( ! empty( $renewal_record ) ) {
+				require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+				$email_service = new STSRC_Email_Service();
+				$email_service->send_admin_renewal_pending_notice( $renewal_record, $member );
+			}
 		}
 
 		return array(
