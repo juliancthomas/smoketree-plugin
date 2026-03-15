@@ -17,6 +17,7 @@ require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-memb
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'helpers/class-stsrc-renewal-helpers.php';
+require_once plugin_dir_path( __FILE__ ) . 'class-stsrc-renewal-pricing-service.php';
 
 /**
  * Renewal service class.
@@ -26,6 +27,108 @@ class STSRC_Renewal_Service {
 	private const TYPE_DUO       = 'duo';
 	private const TYPE_SINGLE    = 'single';
 	private const TYPE_CIVIC     = 'civic';
+
+	/**
+	 * Quote pricing for a requested transition and payment method.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param int    $target_membership_type_id Target membership type ID.
+	 * @param string $payment_method Requested payment method.
+	 * @param array  $payload Transition payload.
+	 * @return array{
+	 *   valid:bool,
+	 *   errors:string[],
+	 *   transition:array<string,mixed>,
+	 *   quote:?array
+	 * }
+	 */
+	public function get_quote( int $member_id, int $target_membership_type_id, string $payment_method, array $payload = array() ): array {
+		$transition = $this->validate_transition( $member_id, $target_membership_type_id, $payload );
+		if ( empty( $transition['valid'] ) ) {
+			return array(
+				'valid'      => false,
+				'errors'     => $transition['errors'] ?? array( 'invalid_transition' ),
+				'transition' => $transition,
+				'quote'      => null,
+			);
+		}
+
+		$member      = STSRC_Member_DB::get_member( $member_id );
+		$target_type = STSRC_Membership_DB::get_membership_type( $target_membership_type_id );
+		if ( empty( $member ) || empty( $target_type ) ) {
+			return array(
+				'valid'      => false,
+				'errors'     => array( 'invalid_member_or_target_type' ),
+				'transition' => $transition,
+				'quote'      => null,
+			);
+		}
+
+		$pricing_service = new STSRC_Renewal_Pricing_Service();
+		$quote           = $pricing_service->calculate_quote(
+			(float) ( $target_type['price'] ?? 0.00 ),
+			(int) ( $transition['actions']['resulting_extra_count'] ?? 0 ),
+			(float) ( $member['balance_owed'] ?? 0.00 ),
+			$payment_method
+		);
+
+		return array(
+			'valid'      => true,
+			'errors'     => array(),
+			'transition' => $transition,
+			'quote'      => $quote,
+		);
+	}
+
+	/**
+	 * Build deterministic submit context (eligibility + idempotency + quote).
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param int    $target_membership_type_id Target membership type ID.
+	 * @param string $payment_method Payment method.
+	 * @param array  $payload Transition payload.
+	 * @param string|null $season_key Optional season key.
+	 * @return array<string,mixed>
+	 */
+	public function build_submit_context(
+		int $member_id,
+		int $target_membership_type_id,
+		string $payment_method,
+		array $payload = array(),
+		?string $season_key = null
+	): array {
+		$eligibility = $this->get_eligibility( $member_id, $season_key );
+		if ( empty( $eligibility['eligible'] ) ) {
+			return array(
+				'can_submit'  => false,
+				'reason'      => $eligibility['reason'] ?? 'not_eligible',
+				'eligibility' => $eligibility,
+				'duplicate'   => null,
+				'pricing'     => null,
+			);
+		}
+
+		$duplicate = $this->guard_repeated_submission( $member_id, $season_key );
+		if ( ! empty( $duplicate['is_duplicate'] ) ) {
+			return array(
+				'can_submit'  => false,
+				'reason'      => $duplicate['reason'] ?? 'duplicate_submission',
+				'eligibility' => $eligibility,
+				'duplicate'   => $duplicate,
+				'pricing'     => null,
+			);
+		}
+
+		$pricing = $this->get_quote( $member_id, $target_membership_type_id, $payment_method, $payload );
+
+		return array(
+			'can_submit'  => ! empty( $pricing['valid'] ),
+			'reason'      => ! empty( $pricing['valid'] ) ? 'ready_to_submit' : 'invalid_quote',
+			'eligibility' => $eligibility,
+			'duplicate'   => $duplicate,
+			'pricing'     => $pricing,
+		);
+	}
 
 	/**
 	 * Get eligibility and idempotency details for a member renewal attempt.
