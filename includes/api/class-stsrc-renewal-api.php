@@ -374,9 +374,14 @@ class STSRC_Renewal_API {
 	 */
 	private function normalize_payment_method( string $method ): string {
 		$method  = sanitize_key( $method );
-		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'payment_plan', 'zelle', 'check' );
+		$allowed = array( 'card', 'ach', 'bank_account', 'us_bank_account', 'payment_plan', 'cash', 'zelle', 'check' );
 
-		return in_array( $method, $allowed, true ) ? $method : 'card';
+		if ( ! in_array( $method, $allowed, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid payment method.', 'smoketree-plugin' ) ), 400 );
+			exit;
+		}
+
+		return $method;
 	}
 
 	/**
