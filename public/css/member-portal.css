@@ -674,6 +674,150 @@
 	opacity: 1;
 }
 
+/* Renewal member management */
+.stsrc-renewal-members {
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	padding: 16px;
+	background: #fff;
+}
+
+.stsrc-renewal-members__group {
+	margin-bottom: 16px;
+}
+
+.stsrc-renewal-members__group:last-child {
+	margin-bottom: 0;
+}
+
+.stsrc-renewal-members__group h4 {
+	margin: 0 0 6px;
+	font-size: 15px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.stsrc-renewal-extra-price {
+	font-size: 13px;
+	font-weight: 400;
+	color: #646970;
+	background: #f0f0f1;
+	border-radius: 999px;
+	padding: 2px 10px;
+}
+
+.stsrc-renewal-members__list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.stsrc-renewal-member-check {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.stsrc-renewal-member-check:hover {
+	border-color: #a7aaad;
+}
+
+.stsrc-renewal-member-check input[type="checkbox"] {
+	flex-shrink: 0;
+	margin: 0;
+}
+
+.stsrc-renewal-member-check input[type="checkbox"]:checked + .stsrc-renewal-member-check__name {
+	font-weight: 600;
+}
+
+.stsrc-renewal-member-check__name {
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.stsrc-renewal-member-check__email {
+	font-size: 12px;
+	color: #646970;
+	margin-left: auto;
+}
+
+.stsrc-renewal-members__hint {
+	margin: 8px 0 0;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: #fef3c7;
+	color: #92400e;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.stsrc-renewal-extras-stepper {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #f6f7f7;
+}
+
+.stsrc-renewal-extras-stepper__label {
+	font-size: 14px;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.stsrc-renewal-extras-stepper__controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.stsrc-stepper-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1d2327;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+	line-height: 1;
+}
+
+.stsrc-stepper-btn:hover:not(:disabled) {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.stsrc-stepper-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.stsrc-stepper-value {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1d2327;
+	min-width: 24px;
+	text-align: center;
+}
+
 @media (max-width: 900px) {
 	.stsrc-renewal-grid {
 		grid-template-columns: 1fr;

@@ -56,6 +56,115 @@
 		const $totalAmount = $('#stsrc-renewal-total-amount');
 		const $balanceAmount = $('#stsrc-renewal-balance-amount');
 
+		var $membersSection = $('#stsrc-renewal-members');
+		var $familyGroup = $('#stsrc-renewal-family-group');
+		var $extrasGroup = $('#stsrc-renewal-extras-group');
+		var $newExtraCountEl = $('#stsrc-new-extra-count');
+		var $extraMinus = $('#stsrc-extra-minus');
+		var $extraPlus = $('#stsrc-extra-plus');
+		var $familyHint = $('#stsrc-family-hint');
+		var extraPrice = parseFloat($membersSection.data('extra-price') || 50);
+		var maxExtras = parseInt($membersSection.data('max-extras') || 3, 10);
+		var newExtraCount = 0;
+
+		function getSelectedTypeName() {
+			return ($form.find('input[name="target_membership_type_id"]:checked').data('type-name') || '').toLowerCase();
+		}
+
+		function getRetainedFamilyIds() {
+			var ids = [];
+			$form.find('input[name="retain_family_member_ids[]"]:checked').each(function() {
+				ids.push(parseInt($(this).val(), 10));
+			});
+			return ids;
+		}
+
+		function getRetainedExtraIds() {
+			var ids = [];
+			$form.find('input[name="retain_extra_member_ids[]"]:checked').each(function() {
+				ids.push(parseInt($(this).val(), 10));
+			});
+			return ids;
+		}
+
+		function getMemberPayload() {
+			var typeName = getSelectedTypeName();
+			var payload = {};
+
+			if (typeName === 'household' || typeName === 'duo') {
+				payload.retain_family_member_ids = getRetainedFamilyIds();
+				payload.new_family_member_count = 0;
+			}
+
+			if (typeName === 'household') {
+				payload.retain_extra_member_ids = getRetainedExtraIds();
+				payload.new_extra_member_count = newExtraCount;
+			}
+
+			return payload;
+		}
+
+		function getExtrasMemberAmount() {
+			var typeName = getSelectedTypeName();
+			if (typeName !== 'household') {
+				return 0;
+			}
+			var retainedCount = getRetainedExtraIds().length;
+			return (retainedCount + newExtraCount) * extraPrice;
+		}
+
+		function updateMemberSections() {
+			var typeName = getSelectedTypeName();
+			var hasFamily = $familyGroup.length > 0;
+			var showFamily = (typeName === 'household' || typeName === 'duo') && hasFamily;
+			var showExtras = typeName === 'household';
+
+			if (showFamily || showExtras) {
+				$membersSection.slideDown(200);
+			} else {
+				$membersSection.slideUp(200);
+			}
+
+			if (showFamily) {
+				$familyGroup.show();
+			} else {
+				$familyGroup.hide();
+			}
+
+			if (showExtras) {
+				$extrasGroup.slideDown(200);
+			} else {
+				$extrasGroup.slideUp(200);
+				newExtraCount = 0;
+				$newExtraCountEl.text('0');
+			}
+
+			updateFamilyHint();
+			updateStepperLimits();
+		}
+
+		function updateFamilyHint() {
+			var typeName = getSelectedTypeName();
+			var required = typeName === 'household' ? 2 : (typeName === 'duo' ? 1 : 0);
+			if (required === 0 || !$familyHint.length) {
+				$familyHint.hide();
+				return;
+			}
+			var retained = getRetainedFamilyIds().length;
+			if (retained < required) {
+				$familyHint.text('At least ' + required + ' family member' + (required > 1 ? 's' : '') + ' required for this plan.').show();
+			} else {
+				$familyHint.hide();
+			}
+		}
+
+		function updateStepperLimits() {
+			var retainedCount = getRetainedExtraIds().length;
+			var totalExtras = retainedCount + newExtraCount;
+			$extraMinus.prop('disabled', newExtraCount <= 0);
+			$extraPlus.prop('disabled', totalExtras >= maxExtras);
+		}
+
 		function formatCurrency(value) {
 			const parsed = Number(value || 0);
 			return '$' + parsed.toFixed(2);
@@ -78,7 +187,7 @@
 
 		function calcFallbackQuote() {
 			const membership = getSelectedMembershipPrice();
-			const extras = 0;
+			const extras = getExtrasMemberAmount();
 			const subtotal = Math.max(0, membership + extras + getBalanceAmount());
 			const paymentMethod = getPaymentMethod();
 			let fee = 0;
@@ -127,14 +236,14 @@
 			$.ajax({
 				url: ajaxUrl,
 				type: 'POST',
-				data: {
+				data: $.extend({
 					action: quoteAction,
 					nonce: renewalConfig.nonce,
 					target_membership_type_id: membershipTypeId,
 					payment_method: paymentMethod,
 					season_key: renewalConfig.seasonKey || '',
 					member_id: renewalConfig.member ? renewalConfig.member.member_id : 0
-				}
+				}, getMemberPayload())
 			}).done(function(response) {
 				const serverQuote = response && response.success && response.data ? response.data.quote : null;
 				renderQuote(serverQuote || fallbackQuote);
@@ -178,6 +287,35 @@
 		$form.on('change', 'input[name="payment_method"]', updateAutoRenewalVisibility);
 		updateAutoRenewalVisibility();
 
+		$extraMinus.on('click', function() {
+			if (newExtraCount > 0) {
+				newExtraCount--;
+				$newExtraCountEl.text(newExtraCount);
+				updateStepperLimits();
+				requestQuote();
+			}
+		});
+
+		$extraPlus.on('click', function() {
+			var retainedCount = getRetainedExtraIds().length;
+			if (retainedCount + newExtraCount < maxExtras) {
+				newExtraCount++;
+				$newExtraCountEl.text(newExtraCount);
+				updateStepperLimits();
+				requestQuote();
+			}
+		});
+
+		$form.on('change', 'input[name="retain_family_member_ids[]"]', function() {
+			updateFamilyHint();
+			requestQuote();
+		});
+
+		$form.on('change', 'input[name="retain_extra_member_ids[]"]', function() {
+			updateStepperLimits();
+			requestQuote();
+		});
+
 		var $errorBanner = $('<div class="stsrc-renewal-notice stsrc-renewal-notice--error" role="alert" style="display:none;"></div>');
 		$form.closest('.stsrc-renewal-section').prepend($errorBanner);
 
@@ -217,7 +355,7 @@
 			$.ajax({
 				url: ajaxUrl,
 				type: 'POST',
-				data: {
+				data: $.extend({
 					action: submitAction,
 					nonce: nonce,
 					target_membership_type_id: membershipTypeId,
@@ -225,7 +363,7 @@
 					season_key: seasonKey,
 					member_id: memberId,
 					auto_renewal_optin: $autoRenewalCheckbox.is(':checked') ? '1' : '0'
-				}
+				}, getMemberPayload())
 			}).done(function(response) {
 				if (response && response.success && response.data) {
 					if (response.data.redirect_url) {
@@ -248,7 +386,12 @@
 			});
 		});
 
-		$form.on('change', 'input[name="target_membership_type_id"], input[name="payment_method"]', requestQuote);
+		$form.on('change', 'input[name="target_membership_type_id"]', function() {
+			updateMemberSections();
+			requestQuote();
+		});
+		$form.on('change', 'input[name="payment_method"]', requestQuote);
+		updateMemberSections();
 		requestQuote();
 	}
 
