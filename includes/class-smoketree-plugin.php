@@ -286,8 +286,10 @@ class Smoketree_Plugin {
 	private function register_ajax_handlers() {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-ajax-handler.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-balance-ajax.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-renewal-api.php';
 		$ajax_handler = new STSRC_Ajax_Handler();
 		$balance_ajax = new STSRC_Balance_Ajax();
+		$renewal_api  = new STSRC_Renewal_API();
 
 		// Login endpoint (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_login', $ajax_handler, 'login' );
@@ -313,6 +315,9 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_get_customer_portal_url', $ajax_handler, 'get_customer_portal_url' );
 		$this->loader->add_action( 'wp_ajax_stsrc_toggle_auto_renewal', $ajax_handler, 'toggle_auto_renewal' );
 		$this->loader->add_action( 'wp_ajax_stsrc_create_balance_payment', $balance_ajax, 'handle_create_balance_payment' );
+		$this->loader->add_action( 'wp_ajax_stsrc_renewal_eligibility', $renewal_api, 'eligibility' );
+		$this->loader->add_action( 'wp_ajax_stsrc_renewal_quote', $renewal_api, 'quote' );
+		$this->loader->add_action( 'wp_ajax_stsrc_renewal_submit', $renewal_api, 'submit' );
 
 		// Admin endpoints (admin capability required)
 		$this->loader->add_action( 'wp_ajax_stsrc_create_member', $ajax_handler, 'create_member' );
