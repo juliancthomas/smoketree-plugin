@@ -137,6 +137,14 @@ class Smoketree_Plugin {
 		 * Database management utilities.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-database.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-promo-codes-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-affiliate-referrals-db.php';
+
+		/**
+		 * Discount services and AJAX handlers.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/services/class-stsrc-discount-service.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api/class-stsrc-discount-ajax.php';
 
 		/**
 		 * Legacy authentication service for migrated members.
@@ -290,6 +298,7 @@ class Smoketree_Plugin {
 		$ajax_handler = new STSRC_Ajax_Handler();
 		$balance_ajax = new STSRC_Balance_Ajax();
 		$renewal_api  = new STSRC_Renewal_API();
+		$discount_ajax = new STSRC_Discount_Ajax();
 
 		// Login endpoint (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_login', $ajax_handler, 'login' );
@@ -298,6 +307,10 @@ class Smoketree_Plugin {
 		// Registration endpoint (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_register_member', $ajax_handler, 'register_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_register_member', $ajax_handler, 'register_member' );
+		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_validate_promo_code', $discount_ajax, 'validate_promo_code' );
+		$this->loader->add_action( 'wp_ajax_stsrc_validate_promo_code', $discount_ajax, 'validate_promo_code' );
+		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_validate_affiliate_code', $discount_ajax, 'validate_affiliate_code' );
+		$this->loader->add_action( 'wp_ajax_stsrc_validate_affiliate_code', $discount_ajax, 'validate_affiliate_code' );
 
 		// Member portal endpoints (login required)
 		$this->loader->add_action( 'wp_ajax_stsrc_update_profile', $ajax_handler, 'update_profile' );
@@ -344,6 +357,10 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_adjust_balance', $balance_ajax, 'handle_admin_adjust_balance' );
 		$this->loader->add_action( 'wp_ajax_stsrc_record_payment', $balance_ajax, 'handle_admin_record_payment' );
 		$this->loader->add_action( 'wp_ajax_stsrc_renewal_confirm_offline_payment', $renewal_api, 'confirm_offline_payment' );
+		$this->loader->add_action( 'wp_ajax_stsrc_create_promo_code', $discount_ajax, 'create_promo_code' );
+		$this->loader->add_action( 'wp_ajax_stsrc_update_promo_code', $discount_ajax, 'update_promo_code' );
+		$this->loader->add_action( 'wp_ajax_stsrc_delete_promo_code', $discount_ajax, 'delete_promo_code' );
+		$this->loader->add_action( 'wp_ajax_stsrc_toggle_payout_status', $discount_ajax, 'toggle_payout_status' );
 
 		// Password reset endpoints (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_forgot_password', $ajax_handler, 'forgot_password' );
