@@ -62,6 +62,7 @@ class STSRC_Database {
 			zip VARCHAR(10) NOT NULL DEFAULT '30084',
 			country VARCHAR(2) NOT NULL DEFAULT 'US',
 			referral_source VARCHAR(100) DEFAULT NULL,
+			affiliate_code VARCHAR(30) DEFAULT NULL,
 			waiver_full_name VARCHAR(255) NOT NULL,
 			waiver_signed_date DATE NOT NULL,
 			auto_renewal_enabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -71,7 +72,9 @@ class STSRC_Database {
 			PRIMARY KEY (member_id),
 			UNIQUE KEY email (email(191)),
 			UNIQUE KEY user_id (user_id),
+			UNIQUE KEY uq_affiliate_code (affiliate_code),
 			KEY membership_type_id (membership_type_id),
+			KEY idx_affiliate_code (affiliate_code),
 			KEY status (status),
 			KEY stripe_customer_id (stripe_customer_id(191)),
 			KEY created_at (created_at)
@@ -202,6 +205,66 @@ class STSRC_Database {
 			KEY expires_at (expires_at)
 		) $charset_collate;";
 		dbDelta( $sql_access_codes );
+
+		// Table: wp_stsrc_promo_codes
+		$table_promo_codes = $wpdb->prefix . 'stsrc_promo_codes';
+		$sql_promo_codes = "CREATE TABLE $table_promo_codes (
+			code_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			code_name VARCHAR(50) NOT NULL,
+			discount_type ENUM('flat','percentage') NOT NULL,
+			discount_value DECIMAL(10,2) NOT NULL,
+			expires_at DATETIME DEFAULT NULL,
+			is_one_time_use TINYINT(1) NOT NULL DEFAULT 0,
+			usage_limit INT(10) UNSIGNED DEFAULT NULL,
+			usage_count INT(10) UNSIGNED NOT NULL DEFAULT 0,
+			allowed_type_ids TEXT DEFAULT NULL,
+			is_active TINYINT(1) NOT NULL DEFAULT 1,
+			deleted_at DATETIME DEFAULT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (code_id),
+			UNIQUE KEY uq_code_name (code_name),
+			KEY idx_is_active (is_active),
+			KEY idx_expires_at (expires_at)
+		) $charset_collate;";
+		dbDelta( $sql_promo_codes );
+
+		// Table: wp_stsrc_promo_code_usages
+		$table_promo_code_usages = $wpdb->prefix . 'stsrc_promo_code_usages';
+		$sql_promo_code_usages = "CREATE TABLE $table_promo_code_usages (
+			usage_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			code_id BIGINT(20) UNSIGNED NOT NULL,
+			member_id BIGINT(20) UNSIGNED NOT NULL,
+			discount_amount DECIMAL(10,2) NOT NULL,
+			membership_type_id BIGINT(20) UNSIGNED NOT NULL,
+			used_at DATETIME NOT NULL,
+			PRIMARY KEY (usage_id),
+			KEY idx_code_id (code_id),
+			KEY idx_member_id (member_id),
+			UNIQUE KEY uq_member_code (member_id, code_id)
+		) $charset_collate;";
+		dbDelta( $sql_promo_code_usages );
+
+		// Table: wp_stsrc_affiliate_referrals
+		$table_affiliate_referrals = $wpdb->prefix . 'stsrc_affiliate_referrals';
+		$sql_affiliate_referrals = "CREATE TABLE $table_affiliate_referrals (
+			referral_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			referral_code VARCHAR(30) NOT NULL,
+			referrer_member_id BIGINT(20) UNSIGNED NOT NULL,
+			new_member_id BIGINT(20) UNSIGNED NOT NULL,
+			new_member_discount DECIMAL(10,2) NOT NULL,
+			referrer_credit DECIMAL(10,2) NOT NULL,
+			payout_status ENUM('pending','paid') NOT NULL DEFAULT 'pending',
+			paid_at DATETIME DEFAULT NULL,
+			paid_by_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			referred_at DATETIME NOT NULL,
+			PRIMARY KEY (referral_id),
+			KEY idx_referrer (referrer_member_id),
+			KEY idx_new_member (new_member_id),
+			KEY idx_payout_status (payout_status),
+			UNIQUE KEY uq_new_member (new_member_id)
+		) $charset_collate;";
+		dbDelta( $sql_affiliate_referrals );
 
 		// Table: wp_stsrc_payment_logs
 		$table_payment_logs = $wpdb->prefix . 'stsrc_payment_logs';
@@ -366,6 +429,9 @@ class STSRC_Database {
 		$table_payment_logs   = $wpdb->prefix . 'stsrc_payment_logs';
 		$table_transactions   = $wpdb->prefix . 'stsrc_transactions';
 		$table_renewals       = $wpdb->prefix . 'stsrc_member_renewals';
+		$table_promo_codes    = $wpdb->prefix . 'stsrc_promo_codes';
+		$table_promo_usages   = $wpdb->prefix . 'stsrc_promo_code_usages';
+		$table_referrals      = $wpdb->prefix . 'stsrc_affiliate_referrals';
 
 		// Check and add foreign keys if they don't exist
 		$constraints = array(
@@ -418,6 +484,34 @@ class STSRC_Database {
 					ADD CONSTRAINT fk_renewals_member_id
 					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
 			),
+			array(
+				'table' => $table_promo_usages,
+				'name'  => 'fk_promo_usages_code_id',
+				'sql'   => "ALTER TABLE {$table_promo_usages}
+					ADD CONSTRAINT fk_promo_usages_code_id
+					FOREIGN KEY (code_id) REFERENCES {$table_promo_codes}(code_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_promo_usages,
+				'name'  => 'fk_promo_usages_member_id',
+				'sql'   => "ALTER TABLE {$table_promo_usages}
+					ADD CONSTRAINT fk_promo_usages_member_id
+					FOREIGN KEY (member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_referrals,
+				'name'  => 'fk_referrals_referrer_member_id',
+				'sql'   => "ALTER TABLE {$table_referrals}
+					ADD CONSTRAINT fk_referrals_referrer_member_id
+					FOREIGN KEY (referrer_member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
+			array(
+				'table' => $table_referrals,
+				'name'  => 'fk_referrals_new_member_id',
+				'sql'   => "ALTER TABLE {$table_referrals}
+					ADD CONSTRAINT fk_referrals_new_member_id
+					FOREIGN KEY (new_member_id) REFERENCES {$table_members}(member_id) ON DELETE CASCADE"
+			),
 		);
 
 		foreach ( $constraints as $constraint ) {
@@ -454,6 +548,9 @@ class STSRC_Database {
 
 		$tables = array(
 			$wpdb->prefix . 'stsrc_member_renewals',
+			$wpdb->prefix . 'stsrc_affiliate_referrals',
+			$wpdb->prefix . 'stsrc_promo_code_usages',
+			$wpdb->prefix . 'stsrc_promo_codes',
 			$wpdb->prefix . 'stsrc_transactions',
 			$wpdb->prefix . 'stsrc_payment_logs',
 			$wpdb->prefix . 'stsrc_access_codes',
