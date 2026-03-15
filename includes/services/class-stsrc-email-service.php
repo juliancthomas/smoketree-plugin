@@ -35,6 +35,14 @@ class STSRC_Email_Service {
 	private int $rate_limit = 60;
 
 	/**
+	 * Request-scoped cache of member demo flags.
+	 *
+	 * @since    1.5.0
+	 * @var      array<int,bool>
+	 */
+	private static array $demo_member_cache = array();
+
+	/**
 	 * Send email using template.
 	 *
 	 * @since    1.0.0
@@ -46,6 +54,10 @@ class STSRC_Email_Service {
 	 * @return   bool                     True on success, false on failure
 	 */
 	public function send_email( string $template, array $data, string $to, string $subject, array $attachments = array() ): bool {
+		if ( $this->is_demo_member( $data ) ) {
+			return true;
+		}
+
 		// Render template
 		$message = $this->render_template( $template, $data );
 
@@ -112,6 +124,27 @@ class STSRC_Email_Service {
 	 * @return   array                     Array with 'sent', 'failed', and 'total' counts
 	 */
 	public function send_batch_email( array $recipients, string $template, array $template_data, string $subject, array $attachments = array(), string $campaign_id = '' ): array {
+		$recipients = array_values(
+			array_filter(
+				$recipients,
+				function( $recipient ): bool {
+					if ( is_numeric( $recipient ) ) {
+						return ! $this->is_demo_member(
+							array(
+								'member_id' => (int) $recipient,
+							)
+						);
+					}
+
+					if ( is_array( $recipient ) ) {
+						return ! $this->is_demo_member( $recipient );
+					}
+
+					return true;
+				}
+			)
+		);
+
 		$results = array(
 			'sent'   => 0,
 			'failed' => 0,
@@ -233,6 +266,53 @@ class STSRC_Email_Service {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Determine whether the email data references a demo member.
+	 *
+	 * @since    1.5.0
+	 * @param    array $data Email payload data.
+	 * @return   bool
+	 */
+	private function is_demo_member( array $data ): bool {
+		$member_id = 0;
+
+		if ( isset( $data['member_id'] ) ) {
+			$member_id = (int) $data['member_id'];
+		}
+
+		if ( $member_id <= 0 && isset( $data['member'] ) ) {
+			$member_data = $data['member'];
+			if ( is_array( $member_data ) ) {
+				$member_id = (int) ( $member_data['member_id'] ?? 0 );
+				if ( 1 === (int) ( $member_data['is_demo'] ?? 0 ) ) {
+					return true;
+				}
+			} elseif ( is_object( $member_data ) ) {
+				if ( isset( $member_data->member_id ) ) {
+					$member_id = (int) $member_data->member_id;
+				}
+				if ( isset( $member_data->is_demo ) && 1 === (int) $member_data->is_demo ) {
+					return true;
+				}
+			}
+		}
+
+		if ( $member_id <= 0 ) {
+			return false;
+		}
+
+		if ( isset( self::$demo_member_cache[ $member_id ] ) ) {
+			return self::$demo_member_cache[ $member_id ];
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member( $member_id );
+		$is_demo = ! empty( $member ) && 1 === (int) ( $member['is_demo'] ?? 0 );
+		self::$demo_member_cache[ $member_id ] = $is_demo;
+
+		return $is_demo;
 	}
 
 	/**
