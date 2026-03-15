@@ -3,7 +3,7 @@ You are an expert software architect tasked with creating detailed technical spe
 Your specifications will be used as direct input for planning & code generation AI systems, so they must be precise, structured, and comprehensive.
 
 First, carefully review the project request:
-prompts\proejct-requests\mixed-payment-tracking.md
+prompts\project-requests\demo-account-project-request.md
 
 Your task is to generate a comprehensive technical specification based on this information.
 

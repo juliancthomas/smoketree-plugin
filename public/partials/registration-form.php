@@ -335,7 +335,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- Discounts -->
 	<div class="stsrc-form-section" id="stsrc-discounts-section">
 		<h2><?php echo esc_html__( 'Discounts', 'smoketree-plugin' ); ?></h2>
-		<div class="stsrc-discount-field" id="promo-code-group">
+		<div class="stsrc-discount-field stsrc-form-group" id="promo-code-group">
 			<label for="stsrc_promo_code"><?php echo esc_html__( 'Promo Code', 'smoketree-plugin' ); ?></label>
 			<div class="stsrc-discount-field__controls">
 				<input type="text" name="promo_code" id="stsrc_promo_code" placeholder="<?php echo esc_attr__( 'Enter promo code', 'smoketree-plugin' ); ?>">
@@ -344,7 +344,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="stsrc-discount-feedback" id="promo-feedback"></div>
 		</div>
 
-		<div class="stsrc-discount-field" id="affiliate-code-group">
+		<div class="stsrc-discount-field stsrc-form-group" id="affiliate-code-group">
 			<label for="stsrc_affiliate_code"><?php echo esc_html__( 'Referral Code', 'smoketree-plugin' ); ?></label>
 			<div class="stsrc-discount-field__controls">
 				<input type="text" name="affiliate_code" id="stsrc_affiliate_code" placeholder="<?php echo esc_attr__( 'Enter referral code', 'smoketree-plugin' ); ?>">

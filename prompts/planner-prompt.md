@@ -3,13 +3,13 @@ You are an AI task planner responsible for breaking down a complex wordpress plu
 Your goal is to create a detailed, step-by-step plan that will guide the code generation process for building this feature based on a provided technical specification.
 
 First, carefully review the project request:
-prompts\project-requests\mixed-payment-tracking.md
+prompts\project-requests\demo-account-project-request.md
 
 Next, carefully review the project rules:
 docs\best practices.md
 
 Technical Specification:
-prompts\tec-specs\mixed-payment-tracking-tech-spec.md
+prompts\tec-specs\demo-account-tech-spec.md
 
 After reviewing these inputs, your task is to create a comprehensive, detailed plan for implementing the feature.
 
