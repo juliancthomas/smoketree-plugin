@@ -83,10 +83,13 @@ class STSRC_Promo_Codes_Page {
 
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-promo-codes-db.php';
 		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-affiliate-referrals-db.php';
 
+		$tab         = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'promo-codes';
 		$paged       = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
 		$search      = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$is_active   = isset( $_GET['is_active'] ) && '' !== $_GET['is_active'] ? absint( wp_unslash( $_GET['is_active'] ) ) : null;
+		$payout      = isset( $_GET['payout_status'] ) ? sanitize_key( wp_unslash( $_GET['payout_status'] ) ) : '';
 		$per_page    = 20;
 		$codes       = STSRC_Promo_Codes_DB::get_all_codes(
 			array(
@@ -98,6 +101,13 @@ class STSRC_Promo_Codes_Page {
 		);
 		$type_rows   = STSRC_Membership_DB::get_all_membership_types();
 		$type_labels = array();
+		$referrals   = STSRC_Affiliate_Referrals_DB::get_referral_log(
+			array(
+				'page'          => $paged,
+				'per_page'      => $per_page,
+				'payout_status' => in_array( $payout, array( 'pending', 'paid' ), true ) ? $payout : '',
+			)
+		);
 
 		foreach ( $type_rows as $row ) {
 			$type_labels[ (int) $row['membership_type_id'] ] = (string) $row['name'];
@@ -105,12 +115,15 @@ class STSRC_Promo_Codes_Page {
 
 		$data = array(
 			'codes'       => $codes,
+			'tab'         => $tab,
 			'paged'       => $paged,
 			'search'      => $search,
 			'is_active'   => $is_active,
+			'payout'      => $payout,
 			'per_page'    => $per_page,
 			'type_rows'   => $type_rows,
 			'type_labels' => $type_labels,
+			'referrals'   => $referrals,
 		);
 
 		include plugin_dir_path( dirname( __FILE__ ) ) . 'partials/promo-codes-list.php';

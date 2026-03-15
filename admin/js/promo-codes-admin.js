@@ -130,5 +130,23 @@
 			window.location.reload();
 		});
 	});
+
+	$(document).on('click', '.stsrc-toggle-payout-status', function() {
+		var referralId = $(this).data('id');
+		var nextStatus = $(this).data('next');
+
+		$.post(stsrcPromoAdmin.ajaxUrl, {
+			action: 'stsrc_toggle_payout_status',
+			nonce: stsrcPromoAdmin.nonce,
+			referral_id: referralId,
+			status: nextStatus
+		}).done(function(response) {
+			if (!response.success) {
+				window.alert(response.data && response.data.message ? response.data.message : 'Unable to update payout status.');
+				return;
+			}
+			window.location.reload();
+		});
+	});
 })(jQuery);
 
