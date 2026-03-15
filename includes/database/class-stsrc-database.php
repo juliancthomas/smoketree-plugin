@@ -67,6 +67,7 @@ class STSRC_Database {
 			waiver_signed_date DATE NOT NULL,
 			auto_renewal_enabled TINYINT(1) NOT NULL DEFAULT 0,
 			expiration_date DATE DEFAULT NULL,
+			is_demo TINYINT(1) NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (member_id),

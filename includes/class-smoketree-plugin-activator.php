@@ -105,6 +105,7 @@ class Smoketree_Plugin_Activator {
 
 		self::upgrade_renewal_database();
 		self::upgrade_promo_database();
+		self::upgrade_demo_database();
 	}
 
 	/**
@@ -188,6 +189,36 @@ class Smoketree_Plugin_Activator {
 				update_option( 'stsrc_affiliate_code_backfill_done', '1' );
 			}
 		}
+	}
+
+	/**
+	 * Ensure demo-account schema is installed/upgraded safely.
+	 *
+	 * @since    1.5.0
+	 * @return   void
+	 */
+	private static function upgrade_demo_database(): void {
+		global $wpdb;
+
+		$demo_db_version = get_option( 'stsrc_demo_db_version', '0.0.0' );
+
+		if ( version_compare( $demo_db_version, '1.0.0', '>=' ) ) {
+			return;
+		}
+
+		$table_members = $wpdb->prefix . 'stsrc_members';
+		$column_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$table_members} LIKE 'is_demo'"
+		);
+
+		if ( empty( $column_exists ) ) {
+			$wpdb->query(
+				"ALTER TABLE {$table_members}
+				ADD COLUMN is_demo TINYINT(1) NOT NULL DEFAULT 0"
+			);
+		}
+
+		update_option( 'stsrc_demo_db_version', '1.0.0' );
 	}
 
 	/**
