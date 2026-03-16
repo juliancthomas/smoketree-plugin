@@ -993,6 +993,7 @@ class STSRC_Email_Service {
 			'season_key'           => (string) ( $renewal['season_key'] ?? '' ),
 			'membership_type_name' => (string) ( $membership_type['name'] ?? '' ),
 			'total_amount'         => (float) ( $renewal['total_amount'] ?? 0 ),
+			'payment_method'       => $method,
 			'payment_method_label' => $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ),
 			'payment_instructions' => $payment_instructions,
 		);
