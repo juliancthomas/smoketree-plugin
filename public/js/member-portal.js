@@ -661,10 +661,9 @@
 						window.location.href = response.data.redirect_url;
 						return;
 					}
-					if (response.data.message) {
-						$form.html('<div class="stsrc-renewal-success"><p>' + $('<span/>').text(response.data.message).html() + '</p></div>');
-						return;
-					}
+					var portalUrl = window.location.pathname + '?renewal=pending&payment_method=' + encodeURIComponent(paymentMethod);
+					window.location.href = portalUrl;
+					return;
 				}
 				$continueBtn.prop('disabled', false).text('Continue to Renewal Payment');
 			}).fail(function(xhr) {

@@ -278,6 +278,7 @@ class STSRC_Renewal_Service {
 				require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 				$email_service = new STSRC_Email_Service();
 				$email_service->send_admin_renewal_pending_notice( $renewal_record, $member );
+				$email_service->send_member_renewal_pending_email( $renewal_record, $member );
 			}
 		}
 

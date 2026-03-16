@@ -160,4 +160,47 @@ class STSRC_Member_Portal {
 			echo '<div class="stsrc-notice warning"><p>' . esc_html__( 'Payment was cancelled. You can try again whenever you are ready.', 'smoketree-plugin' ) . '</p></div>';
 		}
 	}
+
+	/**
+	 * Render pending renewal notice with payment instructions.
+	 *
+	 * @param string $renewal_status Renewal query param value (e.g. "pending").
+	 * @param string $payment_method Payment method query param value.
+	 * @return void
+	 */
+	public static function render_renewal_pending_notice( string $renewal_status, string $payment_method ): void {
+		if ( 'pending' !== sanitize_text_field( $renewal_status ) ) {
+			return;
+		}
+
+		$payment_method = sanitize_key( $payment_method );
+
+		echo '<div class="stsrc-notice success">';
+		echo '<p><strong>' . esc_html__( 'Your renewal has been submitted!', 'smoketree-plugin' ) . '</strong></p>';
+		echo '<p>' . esc_html__( 'Your membership will be activated once payment is received and confirmed.', 'smoketree-plugin' ) . '</p>';
+
+		if ( ! function_exists( 'get_field' ) ) {
+			echo '</div>';
+			return;
+		}
+
+		$acf_field_map = array(
+			'zelle'        => 'zelle_instructions',
+			'check'        => 'check_instructions',
+			'cash'         => 'cash_instructions',
+			'payment_plan' => 'payment_plan_instructions',
+		);
+
+		if ( isset( $acf_field_map[ $payment_method ] ) ) {
+			$instructions = get_field( $acf_field_map[ $payment_method ], 'option' );
+			if ( ! empty( $instructions ) ) {
+				echo '<div style="margin-top: 10px; padding: 12px; background: #f9f9f9; border-left: 3px solid #0073aa; border-radius: 3px;">';
+				echo '<strong>' . esc_html__( 'Payment Instructions:', 'smoketree-plugin' ) . '</strong>';
+				echo '<div style="margin-top: 6px;">' . wp_kses_post( $instructions ) . '</div>';
+				echo '</div>';
+			}
+		}
+
+		echo '</div>';
+	}
 }

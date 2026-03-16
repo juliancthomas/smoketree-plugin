@@ -116,6 +116,8 @@ $payment_status        = isset( $request_params['payment'] ) ? sanitize_text_fie
 $extra_member_state    = isset( $request_params['extra_member'] ) ? sanitize_text_field( $request_params['extra_member'] ) : '';
 $registration_status   = isset( $request_params['registration'] ) ? sanitize_text_field( $request_params['registration'] ) : '';
 $registration_pay_type = isset( $request_params['payment_type'] ) ? sanitize_text_field( $request_params['payment_type'] ) : '';
+$renewal_status        = isset( $request_params['renewal'] ) ? sanitize_text_field( $request_params['renewal'] ) : '';
+$renewal_pay_method    = isset( $request_params['payment_method'] ) ? sanitize_text_field( $request_params['payment_method'] ) : '';
 
 // Load plugin header
 require_once plugin_dir_path( __FILE__ ) . 'header.php';
@@ -134,6 +136,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 		<?php STSRC_Member_Portal::render_registration_notice( $registration_status, $registration_pay_type ); ?>
 		<?php STSRC_Member_Portal::render_payment_status_notice( $payment_status ); ?>
+		<?php STSRC_Member_Portal::render_renewal_pending_notice( $renewal_status, $renewal_pay_method ); ?>
 
 		<?php if ( 'success' === $extra_member_state ) : ?>
 			<div class="stsrc-notice success">

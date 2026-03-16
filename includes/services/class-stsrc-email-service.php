@@ -947,6 +947,65 @@ class STSRC_Email_Service {
 	}
 
 	/**
+	 * Send renewal pending-payment email to member with payment instructions.
+	 *
+	 * Triggered immediately after a non-Stripe renewal submission so the
+	 * member has a permanent reference for how to pay.
+	 *
+	 * @param array $renewal Renewal record.
+	 * @param array $member  Member record.
+	 * @return bool
+	 */
+	public function send_member_renewal_pending_email( array $renewal, array $member ): bool {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+
+		$to_email = sanitize_email( (string) ( $member['email'] ?? '' ) );
+		if ( '' === $to_email ) {
+			return false;
+		}
+
+		$type_id          = (int) ( $renewal['new_membership_type_id'] ?? 0 );
+		$membership_type  = STSRC_Membership_DB::get_membership_type( $type_id );
+		$method           = sanitize_key( (string) ( $renewal['payment_method'] ?? '' ) );
+		$method_label_map = array(
+			'zelle'        => __( 'Zelle', 'smoketree-plugin' ),
+			'check'        => __( 'Check', 'smoketree-plugin' ),
+			'cash'         => __( 'Cash', 'smoketree-plugin' ),
+			'payment_plan' => __( 'Payment Plan', 'smoketree-plugin' ),
+		);
+
+		$acf_field_map = array(
+			'zelle'        => 'zelle_instructions',
+			'check'        => 'check_instructions',
+			'cash'         => 'cash_instructions',
+			'payment_plan' => 'payment_plan_instructions',
+		);
+
+		$payment_instructions = '';
+		if ( isset( $acf_field_map[ $method ] ) ) {
+			$payment_instructions = (string) $this->get_option_or_field( $acf_field_map[ $method ] );
+		}
+
+		$data = array(
+			'first_name'           => (string) ( $member['first_name'] ?? '' ),
+			'last_name'            => (string) ( $member['last_name'] ?? '' ),
+			'member_id'            => (int) ( $member['member_id'] ?? 0 ),
+			'season_key'           => (string) ( $renewal['season_key'] ?? '' ),
+			'membership_type_name' => (string) ( $membership_type['name'] ?? '' ),
+			'total_amount'         => (float) ( $renewal['total_amount'] ?? 0 ),
+			'payment_method_label' => $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ),
+			'payment_instructions' => $payment_instructions,
+		);
+
+		return $this->send_email(
+			'email/renewal-pending-payment.php',
+			$data,
+			$to_email,
+			__( 'Your Smoketree Renewal — Payment Instructions', 'smoketree-plugin' )
+		);
+	}
+
+	/**
 	 * Send renewal confirmation email to member.
 	 *
 	 * @param int   $member_id Member ID.
