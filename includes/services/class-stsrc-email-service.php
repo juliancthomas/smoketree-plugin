@@ -819,13 +819,6 @@ class STSRC_Email_Service {
 			)
 		);
 
-		$admin_users = get_users( array( 'role' => 'administrator' ) );
-		foreach ( $admin_users as $admin_user ) {
-			if ( ! empty( $admin_user->user_email ) ) {
-				$emails[] = sanitize_email( (string) $admin_user->user_email );
-			}
-		}
-
 		$emails = array_filter( $emails, 'is_email' );
 		$emails = array_values( array_unique( $emails ) );
 
