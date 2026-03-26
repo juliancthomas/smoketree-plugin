@@ -2565,8 +2565,8 @@ class STSRC_Ajax_Handler {
 			return;
 		}
 
-		$subject = sanitize_text_field( $_POST['subject'] ?? '' );
-		$message = wp_kses_post( $_POST['message'] ?? '' );
+		$subject = sanitize_text_field( wp_unslash( $_POST['subject'] ?? '' ) );
+		$message = wp_kses_post( wp_unslash( $_POST['message'] ?? '' ) );
 		$template = sanitize_text_field( $_POST['template'] ?? '' );
 		$is_test = isset( $_POST['test_email'] ) && '1' === $_POST['test_email'];
 

@@ -481,12 +481,18 @@ class Smoketree_Plugin_Public {
 
 		// Check if user has admin capabilities
 		if ( isset( $user->ID ) && user_can( $user, 'manage_options' ) ) {
-			// Admins go to wp-admin
 			return admin_url();
 		}
 
-		// All other users (members) go to member portal
-		return home_url( '/member-portal' );
+		// Only redirect actual members to the member portal
+		if ( isset( $user->user_email ) ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-member-db.php';
+			if ( STSRC_Member_DB::get_member_by_email( $user->user_email ) ) {
+				return home_url( '/member-portal' );
+			}
+		}
+
+		return $redirect_to;
 	}
 
 	/**
@@ -546,11 +552,33 @@ class Smoketree_Plugin_Public {
 					
 					case 'rp':
 					case 'resetpass':
-						// Preserve reset key and login parameters
 						$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
 						$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : '';
-						wp_safe_redirect( home_url( '/reset-password?token=' . $key . '&email=' . $login ) );
-						exit;
+
+						require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-member-db.php';
+						$rp_user = $login ? get_user_by( 'login', $login ) : null;
+
+						if ( $rp_user && STSRC_Member_DB::get_member_by_email( $rp_user->user_email ) ) {
+							wp_safe_redirect( home_url( '/reset-password?token=' . $key . '&email=' . $login ) );
+							exit;
+						}
+
+						if ( is_user_logged_in() && ! empty( $key ) && ! empty( $login ) ) {
+							wp_logout();
+							wp_safe_redirect(
+								add_query_arg(
+									array(
+										'action' => 'rp',
+										'key'    => $key,
+										'login'  => $login,
+									),
+									wp_login_url()
+								)
+							);
+							exit;
+						}
+
+						return;
 					
 					case 'logout':
 						// Let the handle_logout_redirect method handle this
@@ -606,8 +634,11 @@ class Smoketree_Plugin_Public {
 	 */
 	public function block_dashboard_for_members(): void {
 		if ( is_admin() && ! current_user_can( 'edit_posts' ) && ! wp_doing_ajax() ) {
-			wp_safe_redirect( home_url( '/member-portal' ) );
-			exit;
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-member-db.php';
+			if ( STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email ) ) {
+				wp_safe_redirect( home_url( '/member-portal' ) );
+				exit;
+			}
 		}
 	}
 
@@ -622,7 +653,13 @@ class Smoketree_Plugin_Public {
 	 * @return   string                Modified password reset email message.
 	 */
 	public function custom_password_reset_email( $message, $key, $user_login, $user_data ) {
-		// Create custom reset URL pointing to our custom page
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member_by_email( $user_data->user_email );
+
+		if ( ! $member ) {
+			return $message;
+		}
+
 		$reset_url = home_url( '/reset-password?token=' . $key . '&email=' . rawurlencode( $user_data->user_email ) );
 		
 		$message = __( 'Someone has requested a password reset for the following account:', 'smoketree-plugin' ) . "\r\n\r\n";
