@@ -187,6 +187,7 @@ class Smoketree_Plugin_Public {
 			'reset-password.php',
 			'member-portal.php',
 			'guest-pass-portal.php',
+			'default-v2.php',
 		);
 
 		return in_array( $page_template, $plugin_templates, true );
@@ -388,6 +389,7 @@ class Smoketree_Plugin_Public {
 		$templates['reset-password.php'] = __( 'Smoketree Reset Password', 'smoketree-plugin' );
 		$templates['member-portal.php'] = __( 'Smoketree Member Portal', 'smoketree-plugin' );
 		$templates['guest-pass-portal.php'] = __( 'Smoketree Guest Pass Portal', 'smoketree-plugin' );
+		$templates['default-v2.php'] = __( 'Smoketree Default V2', 'smoketree-plugin' );
 		return $templates;
 	}
 
@@ -433,6 +435,10 @@ class Smoketree_Plugin_Public {
 		// Guest pass portal page
 		elseif ( 'guest-pass-portal.php' === $page_template || 'guest-pass-portal' === $page_slug ) {
 			$template = plugin_dir_path( __FILE__ ) . 'templates/guest-pass-portal.php';
+		}
+		// Default V2 page
+		elseif ( 'default-v2.php' === $page_template ) {
+			$template = plugin_dir_path( __FILE__ ) . 'templates/default-v2.php';
 		}
 
 		return $template;
