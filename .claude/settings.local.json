@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/Julian.Thomas/Desktop/smoketree-plugin/includes/api/*.php)"
+    ]
+  }
+}
