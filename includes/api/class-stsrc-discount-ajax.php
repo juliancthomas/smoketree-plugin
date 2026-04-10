@@ -165,6 +165,46 @@ class STSRC_Discount_Ajax {
 	}
 
 	/**
+	 * Regenerate (or generate) an affiliate/referral code for a member (admin).
+	 *
+	 * @since    1.5.0
+	 * @return   void
+	 */
+	public function reset_member_affiliate_code(): void {
+		$this->assert_admin_request();
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Member ID is required.', 'smoketree-plugin' ) ), 400 );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-discount-service.php';
+
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => __( 'Member not found.', 'smoketree-plugin' ) ), 404 );
+		}
+
+		$new_code = STSRC_Discount_Service::generate_affiliate_code( (string) $member['last_name'] );
+
+		global $wpdb;
+		$updated = $wpdb->update(
+			$wpdb->prefix . 'stsrc_members',
+			array( 'affiliate_code' => $new_code ),
+			array( 'member_id' => $member_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Unable to update referral code.', 'smoketree-plugin' ) ), 500 );
+		}
+
+		wp_send_json_success( array( 'affiliate_code' => $new_code ) );
+	}
+
+	/**
 	 * Run affiliate-code backfill on demand (admin).
 	 *
 	 * @since    1.4.2

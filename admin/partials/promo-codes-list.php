@@ -32,12 +32,17 @@ $payout      = $data['payout'] ?? '';
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-promo-codes&tab=promo-codes' ) ); ?>" class="nav-tab <?php echo 'promo-codes' === $tab ? 'nav-tab-active' : ''; ?>">
 			<?php echo esc_html__( 'Promo Codes', 'smoketree-plugin' ); ?>
 		</a>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-promo-codes&tab=referral-codes' ) ); ?>" class="nav-tab <?php echo 'referral-codes' === $tab ? 'nav-tab-active' : ''; ?>">
+			<?php echo esc_html__( 'Referral Codes', 'smoketree-plugin' ); ?>
+		</a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=stsrc-promo-codes&tab=referrals' ) ); ?>" class="nav-tab <?php echo 'referrals' === $tab ? 'nav-tab-active' : ''; ?>">
 			<?php echo esc_html__( 'Referral Report', 'smoketree-plugin' ); ?>
 		</a>
 	</h2>
 
-	<?php if ( 'referrals' === $tab ) : ?>
+	<?php if ( 'referral-codes' === $tab ) : ?>
+		<?php include plugin_dir_path( __FILE__ ) . 'referral-codes-tab.php'; ?>
+	<?php elseif ( 'referrals' === $tab ) : ?>
 		<?php include plugin_dir_path( __FILE__ ) . 'affiliate-referrals-report.php'; ?>
 	<?php else : ?>
 		<form method="get" class="stsrc-promo-filters">

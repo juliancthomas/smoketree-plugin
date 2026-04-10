@@ -1,10 +1,11 @@
 (function($) {
 	'use strict';
 
-	var $modal = $('#stsrc-promo-code-modal');
-	if (!$modal.length || typeof stsrcPromoAdmin === 'undefined') {
+	if (typeof stsrcPromoAdmin === 'undefined') {
 		return;
 	}
+
+	var $modal = $('#stsrc-promo-code-modal');
 
 	function closeModal() {
 		$modal.hide().attr('aria-hidden', 'true');
@@ -139,6 +140,36 @@
 				return;
 			}
 			window.location.reload();
+		});
+	});
+
+	$(document).on('click', '.stsrc-reset-affiliate-code', function() {
+		var memberId   = $(this).data('member-id');
+		var memberName = $(this).data('member-name');
+		var $btn       = $(this);
+
+		if (!window.confirm('Regenerate the referral code for ' + memberName + '?')) {
+			return;
+		}
+
+		$btn.prop('disabled', true).text('Saving…');
+
+		$.post(stsrcPromoAdmin.ajaxUrl, {
+			action: 'stsrc_reset_affiliate_code',
+			nonce: stsrcPromoAdmin.nonce,
+			member_id: memberId
+		}).done(function(response) {
+			if (!response.success) {
+				window.alert(response.data && response.data.message ? response.data.message : 'Unable to generate code.');
+				$btn.prop('disabled', false).text('Regenerate');
+				return;
+			}
+			var newCode = response.data.affiliate_code || '';
+			$('#stsrc-aff-code-' + memberId).html('<code>' + newCode + '</code>');
+			$btn.prop('disabled', false).text('Regenerate');
+		}).fail(function() {
+			window.alert('Unable to generate code.');
+			$btn.prop('disabled', false).text('Regenerate');
 		});
 	});
 

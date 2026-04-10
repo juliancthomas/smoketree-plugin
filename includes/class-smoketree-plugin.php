@@ -440,6 +440,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_promo_code', $discount_ajax, 'delete_promo_code' );
 		$this->loader->add_action( 'wp_ajax_stsrc_toggle_payout_status', $discount_ajax, 'toggle_payout_status' );
 		$this->loader->add_action( 'wp_ajax_stsrc_run_affiliate_backfill', $discount_ajax, 'run_affiliate_backfill' );
+		$this->loader->add_action( 'wp_ajax_stsrc_reset_affiliate_code', $discount_ajax, 'reset_member_affiliate_code' );
 
 		// Password reset endpoints (no login required)
 		$this->loader->add_action( 'wp_ajax_nopriv_stsrc_forgot_password', $ajax_handler, 'forgot_password' );

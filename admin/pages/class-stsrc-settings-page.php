@@ -169,16 +169,6 @@ class STSRC_Settings_Page {
 		$settings['contact_email'] = function_exists( 'get_field' ) ? get_field( 'stsrc_contact_email', 'option' ) : get_option( 'stsrc_contact_email', '' );
 		$settings['season_renewal_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_season_renewal_date', 'option' ) : get_option( 'stsrc_season_renewal_date', '' );
 		$settings['tax_rate'] = function_exists( 'get_field' ) ? get_field( 'stsrc_tax_rate', 'option' ) : get_option( 'stsrc_tax_rate', '0' );
-		$raw_affiliate_discounts = function_exists( 'get_field' )
-			? get_field( 'stsrc_affiliate_type_discounts', 'option' )
-			: get_option( 'stsrc_affiliate_type_discounts', '' );
-		if ( is_string( $raw_affiliate_discounts ) && '' !== $raw_affiliate_discounts ) {
-			$raw_affiliate_discounts = json_decode( $raw_affiliate_discounts, true );
-		}
-		$settings['affiliate_type_discounts'] = is_array( $raw_affiliate_discounts ) ? $raw_affiliate_discounts : array();
-		$settings['affiliate_referrer_credit'] = function_exists( 'get_field' )
-			? ( get_field( 'stsrc_affiliate_referrer_credit', 'option' ) ?: 50 )
-			: get_option( 'stsrc_affiliate_referrer_credit', 50 );
 
 		// Waiver Settings
 		$settings['waiver_text'] = function_exists( 'get_field' ) ? get_field( 'stsrc_waiver_text', 'option' ) : get_option( 'stsrc_waiver_text', '' );
@@ -201,6 +191,16 @@ class STSRC_Settings_Page {
 
 		// Community Links
 		$settings['whatsapp_url'] = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
+
+		// Banner Settings
+		$settings['banner_enabled']     = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_enabled', 'option' ) : get_option( 'stsrc_banner_enabled', '0' );
+		$settings['banner_message']     = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_message', 'option' ) : get_option( 'stsrc_banner_message', '' );
+		$settings['banner_type']        = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_type', 'option' ) : get_option( 'stsrc_banner_type', 'info' );
+		$settings['banner_audience']    = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_audience', 'option' ) : get_option( 'stsrc_banner_audience', 'all' );
+		$settings['banner_dismissible'] = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_dismissible', 'option' ) : get_option( 'stsrc_banner_dismissible', '1' );
+		$settings['banner_expiry_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_expiry_date', 'option' ) : get_option( 'stsrc_banner_expiry_date', '' );
+		$settings['banner_link_label']  = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_link_label', 'option' ) : get_option( 'stsrc_banner_link_label', '' );
+		$settings['banner_link_url']    = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_link_url', 'option' ) : get_option( 'stsrc_banner_link_url', '' );
 
 		return $settings;
 	}
