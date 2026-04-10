@@ -18,6 +18,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( session_status() === PHP_SESSION_NONE ) {
 	session_start();
 }
+
+// Announcement banner
+$stsrc_banner_active = false;
+$stsrc_banner        = array();
+$stsrc_banner_key    = '';
+
+if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
+	$stsrc_banner_message  = get_option( 'stsrc_banner_message', '' );
+	$stsrc_banner_expiry   = get_option( 'stsrc_banner_expiry_date', '' );
+	$stsrc_banner_audience = get_option( 'stsrc_banner_audience', 'all' );
+
+	$stsrc_banner_expired = ! empty( $stsrc_banner_expiry ) && strtotime( $stsrc_banner_expiry . ' 23:59:59' ) < time();
+	$stsrc_audience_match = (
+		'all' === $stsrc_banner_audience ||
+		( 'members' === $stsrc_banner_audience && is_user_logged_in() ) ||
+		( 'public' === $stsrc_banner_audience && ! is_user_logged_in() )
+	);
+
+	if ( ! empty( $stsrc_banner_message ) && ! $stsrc_banner_expired && $stsrc_audience_match ) {
+		$stsrc_banner_active = true;
+		$stsrc_banner        = array(
+			'message'     => $stsrc_banner_message,
+			'type'        => get_option( 'stsrc_banner_type', 'info' ),
+			'dismissible' => '1' === get_option( 'stsrc_banner_dismissible', '1' ),
+			'link_label'  => get_option( 'stsrc_banner_link_label', '' ),
+			'link_url'    => get_option( 'stsrc_banner_link_url', '' ),
+		);
+		$stsrc_banner_key = substr( md5( $stsrc_banner_message ), 0, 8 );
+	}
+}
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -175,7 +205,7 @@ if ( session_status() === PHP_SESSION_NONE ) {
 		color: #059669;
 	}
 
-	/* Body Padding for Fixed Header */
+	/* Body Padding for Fixed Header — overridden dynamically by JS to account for banner */
 	body {
 		padding-top: 74px;
 	}
@@ -183,18 +213,87 @@ if ( session_status() === PHP_SESSION_NONE ) {
 	.stsrc-site-body {
 		background-color: #ffffff;
 	}
-	
+
 	@media (min-width: 768px) {
 		body {
 			padding-top: 50px;
 		}
 	}
+
+	/* Announcement Banner */
+	.stsrc-banner {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		line-height: 1.4;
+		text-align: center;
+	}
+
+	.stsrc-banner--info    { background-color: #dbeafe; color: #1e40af; }
+	.stsrc-banner--warning { background-color: #fef9c3; color: #854d0e; }
+	.stsrc-banner--alert   { background-color: #fee2e2; color: #991b1b; }
+	.stsrc-banner--success { background-color: #dcfce7; color: #166534; }
+
+	.stsrc-banner-content {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.stsrc-banner-link {
+		font-weight: 600;
+		text-decoration: underline;
+		color: inherit;
+		white-space: nowrap;
+	}
+
+	.stsrc-banner-link:hover { opacity: 0.8; }
+
+	.stsrc-banner-dismiss {
+		display: flex;
+		align-items: center;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: inherit;
+		opacity: 0.6;
+		padding: 0.125rem;
+		margin-left: 0.25rem;
+		flex-shrink: 0;
+	}
+
+	.stsrc-banner-dismiss:hover { opacity: 1; }
 </style>
 
 <body <?php body_class( 'stsrc-site-body' ); ?>>
 <?php wp_body_open(); ?>
 
 <header class="stsrc-header">
+
+	<?php if ( $stsrc_banner_active ) : ?>
+	<div id="stsrc-banner"
+		class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?>"
+		role="alert"
+		<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>"<?php endif; ?>>
+		<div class="stsrc-banner-content">
+			<span><?php echo esc_html( $stsrc_banner['message'] ); ?></span>
+			<?php if ( ! empty( $stsrc_banner['link_url'] ) && ! empty( $stsrc_banner['link_label'] ) ) : ?>
+				<a href="<?php echo esc_url( $stsrc_banner['link_url'] ); ?>" class="stsrc-banner-link"><?php echo esc_html( $stsrc_banner['link_label'] ); ?></a>
+			<?php endif; ?>
+		</div>
+		<?php if ( $stsrc_banner['dismissible'] ) : ?>
+			<button type="button" class="stsrc-banner-dismiss" aria-label="<?php echo esc_attr__( 'Dismiss announcement', 'smoketree-plugin' ); ?>">
+				<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+			</button>
+		<?php endif; ?>
+	</div>
+	<?php endif; ?>
+
 	<div class="stsrc-header-container">
 		<!-- Logo -->
 		<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="stsrc-logo-link">
@@ -233,15 +332,48 @@ if ( session_status() === PHP_SESSION_NONE ) {
 </header>
 
 <script>
+// Dynamic body padding — accounts for header height including any banner
+function stsrcSyncPadding() {
+	var h = document.querySelector('.stsrc-header');
+	if (h) document.body.style.paddingTop = h.offsetHeight + 'px';
+}
+stsrcSyncPadding();
+window.addEventListener('resize', stsrcSyncPadding);
+
+// Banner dismiss
+(function() {
+	var banner = document.getElementById('stsrc-banner');
+	if (!banner) return;
+
+	var key = banner.getAttribute('data-banner-key');
+
+	// Hide immediately if previously dismissed
+	if (key && localStorage.getItem('stsrc_banner_' + key) === '1') {
+		banner.style.display = 'none';
+		stsrcSyncPadding();
+		return;
+	}
+
+	var btn = banner.querySelector('.stsrc-banner-dismiss');
+	if (btn && key) {
+		btn.addEventListener('click', function() {
+			localStorage.setItem('stsrc_banner_' + key, '1');
+			banner.style.display = 'none';
+			stsrcSyncPadding();
+		});
+	}
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
-	const menuToggle = document.getElementById('stsrc-menu-toggle');
-	const menu = document.getElementById('stsrc-menu');
-	
+	var menuToggle = document.getElementById('stsrc-menu-toggle');
+	var menu = document.getElementById('stsrc-menu');
+
 	if (menuToggle && menu) {
 		menuToggle.addEventListener('click', function() {
 			menu.classList.toggle('active');
-			const isExpanded = menu.classList.contains('active');
+			var isExpanded = menu.classList.contains('active');
 			menuToggle.setAttribute('aria-expanded', isExpanded);
+			stsrcSyncPadding();
 		});
 	}
 });

@@ -3269,6 +3269,30 @@ class STSRC_Ajax_Handler {
 			}
 		}
 
+		// Save banner settings
+		update_option( 'stsrc_banner_enabled', isset( $post_data['banner_enabled'] ) ? '1' : '0' );
+		update_option( 'stsrc_banner_dismissible', isset( $post_data['banner_dismissible'] ) ? '1' : '0' );
+		if ( isset( $post_data['banner_message'] ) ) {
+			update_option( 'stsrc_banner_message', sanitize_textarea_field( $post_data['banner_message'] ) );
+		}
+		$banner_type = sanitize_text_field( $post_data['banner_type'] ?? 'info' );
+		if ( in_array( $banner_type, array( 'info', 'warning', 'alert', 'success' ), true ) ) {
+			update_option( 'stsrc_banner_type', $banner_type );
+		}
+		$banner_audience = sanitize_text_field( $post_data['banner_audience'] ?? 'all' );
+		if ( in_array( $banner_audience, array( 'all', 'members', 'public' ), true ) ) {
+			update_option( 'stsrc_banner_audience', $banner_audience );
+		}
+		if ( isset( $post_data['banner_expiry_date'] ) ) {
+			update_option( 'stsrc_banner_expiry_date', sanitize_text_field( $post_data['banner_expiry_date'] ) );
+		}
+		if ( isset( $post_data['banner_link_label'] ) ) {
+			update_option( 'stsrc_banner_link_label', sanitize_text_field( $post_data['banner_link_label'] ) );
+		}
+		if ( isset( $post_data['banner_link_url'] ) ) {
+			update_option( 'stsrc_banner_link_url', esc_url_raw( $post_data['banner_link_url'] ) );
+		}
+
 		// If ACF is available, also save to ACF options
 		if ( function_exists( 'update_field' ) ) {
 			if ( isset( $post_data['stripe_publishable_key'] ) ) {

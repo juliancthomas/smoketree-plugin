@@ -203,46 +203,6 @@ $membership_types = $data['membership_types'] ?? array();
 								<p class="description"><?php echo esc_html__( 'Tax percentage to apply to membership fees (e.g., 7.5 for 7.5%)', 'smoketree-plugin' ); ?></p>
 							</td>
 						</tr>
-						<tr>
-							<th><?php echo esc_html__( 'Referral Discount per Membership Type ($)', 'smoketree-plugin' ); ?></th>
-							<td>
-								<?php
-								$affiliate_type_discounts = $settings['affiliate_type_discounts'] ?? array();
-								?>
-								<table class="widefat stsrc-affiliate-type-discounts-table" style="max-width:500px;">
-									<thead>
-										<tr>
-											<th><?php echo esc_html__( 'Membership Type', 'smoketree-plugin' ); ?></th>
-											<th><?php echo esc_html__( 'Price', 'smoketree-plugin' ); ?></th>
-											<th><?php echo esc_html__( 'Referral Discount ($)', 'smoketree-plugin' ); ?></th>
-										</tr>
-									</thead>
-									<tbody>
-										<?php foreach ( $membership_types as $mt ) : ?>
-											<?php $mt_id = (int) $mt['membership_type_id']; ?>
-											<tr>
-												<td><?php echo esc_html( (string) $mt['name'] ); ?></td>
-												<td>$<?php echo esc_html( number_format( (float) $mt['price'], 2 ) ); ?></td>
-												<td>
-													<input type="number"
-														name="affiliate_type_discounts[<?php echo esc_attr( $mt_id ); ?>]"
-														value="<?php echo esc_attr( isset( $affiliate_type_discounts[ (string) $mt_id ] ) ? $affiliate_type_discounts[ (string) $mt_id ] : '' ); ?>"
-														class="small-text" step="0.01" min="0" placeholder="0">
-												</td>
-											</tr>
-										<?php endforeach; ?>
-									</tbody>
-								</table>
-								<p class="description"><?php echo esc_html__( 'Dollar discount applied to a new member who uses a valid referral code, per membership type. Leave blank for no discount.', 'smoketree-plugin' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th><label for="affiliate_referrer_credit"><?php echo esc_html__( 'Referrer Credit Amount ($)', 'smoketree-plugin' ); ?></label></th>
-							<td>
-								<input type="number" name="affiliate_referrer_credit" id="affiliate_referrer_credit" value="<?php echo esc_attr( $settings['affiliate_referrer_credit'] ?? 50 ); ?>" class="regular-text" step="0.01" min="0">
-								<p class="description"><?php echo esc_html__( 'Dollar credit amount owed to the referring member for each successful referral.', 'smoketree-plugin' ); ?></p>
-							</td>
-						</tr>
 					</table>
 				</div>
 
@@ -355,6 +315,81 @@ $membership_types = $data['membership_types'] ?? array();
 							<td>
 								<input type="number" name="minimum_balance_payment" id="minimum_balance_payment" value="<?php echo esc_attr( $settings['minimum_balance_payment'] ?? '10.00' ); ?>" class="regular-text" step="0.01" min="0.01" required>
 								<p class="description"><?php echo esc_html__( 'Minimum amount members can pay toward their balance via Stripe (e.g., 10.00 for $10 minimum)', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<!-- Announcement Banner -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Announcement Banner', 'smoketree-plugin' ); ?></h2>
+					<p class="description"><?php echo esc_html__( 'Display a site-wide banner at the top of every page. Useful for seasonal announcements, pool closures, or registration deadlines.', 'smoketree-plugin' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="banner_enabled"><?php echo esc_html__( 'Enable Banner', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<label>
+									<input type="checkbox" name="banner_enabled" id="banner_enabled" value="1" <?php checked( $settings['banner_enabled'] ?? '0', '1' ); ?>>
+									<?php echo esc_html__( 'Show banner on the site', 'smoketree-plugin' ); ?>
+								</label>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_message"><?php echo esc_html__( 'Message', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<textarea name="banner_message" id="banner_message" rows="3" class="large-text"><?php echo esc_textarea( $settings['banner_message'] ?? '' ); ?></textarea>
+								<p class="description"><?php echo esc_html__( 'The announcement text. Plain text only.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_type"><?php echo esc_html__( 'Banner Type', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<select name="banner_type" id="banner_type">
+									<option value="info"    <?php selected( $settings['banner_type'] ?? 'info', 'info' ); ?>><?php echo esc_html__( 'Info (blue)', 'smoketree-plugin' ); ?></option>
+									<option value="success" <?php selected( $settings['banner_type'] ?? '', 'success' ); ?>><?php echo esc_html__( 'Success (green)', 'smoketree-plugin' ); ?></option>
+									<option value="warning" <?php selected( $settings['banner_type'] ?? '', 'warning' ); ?>><?php echo esc_html__( 'Warning (yellow)', 'smoketree-plugin' ); ?></option>
+									<option value="alert"   <?php selected( $settings['banner_type'] ?? '', 'alert' ); ?>><?php echo esc_html__( 'Alert (red)', 'smoketree-plugin' ); ?></option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_audience"><?php echo esc_html__( 'Show To', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<select name="banner_audience" id="banner_audience">
+									<option value="all"     <?php selected( $settings['banner_audience'] ?? 'all', 'all' ); ?>><?php echo esc_html__( 'Everyone', 'smoketree-plugin' ); ?></option>
+									<option value="members" <?php selected( $settings['banner_audience'] ?? '', 'members' ); ?>><?php echo esc_html__( 'Logged-in members only', 'smoketree-plugin' ); ?></option>
+									<option value="public"  <?php selected( $settings['banner_audience'] ?? '', 'public' ); ?>><?php echo esc_html__( 'Logged-out visitors only', 'smoketree-plugin' ); ?></option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_dismissible"><?php echo esc_html__( 'Dismissible', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<label>
+									<input type="checkbox" name="banner_dismissible" id="banner_dismissible" value="1" <?php checked( $settings['banner_dismissible'] ?? '1', '1' ); ?>>
+									<?php echo esc_html__( 'Allow visitors to close the banner', 'smoketree-plugin' ); ?>
+								</label>
+								<p class="description"><?php echo esc_html__( 'When unchecked, the banner cannot be dismissed. Use for urgent notices.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_expiry_date"><?php echo esc_html__( 'Expiry Date', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="date" name="banner_expiry_date" id="banner_expiry_date" value="<?php echo esc_attr( $settings['banner_expiry_date'] ?? '' ); ?>" class="regular-text">
+								<p class="description"><?php echo esc_html__( 'Banner auto-hides after this date. Leave blank for no expiry.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_link_label"><?php echo esc_html__( 'Link Label', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="text" name="banner_link_label" id="banner_link_label" value="<?php echo esc_attr( $settings['banner_link_label'] ?? '' ); ?>" class="regular-text" placeholder="<?php echo esc_attr__( 'Learn more', 'smoketree-plugin' ); ?>">
+								<p class="description"><?php echo esc_html__( 'Optional call-to-action link text. Leave blank to show no link.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="banner_link_url"><?php echo esc_html__( 'Link URL', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<input type="url" name="banner_link_url" id="banner_link_url" value="<?php echo esc_attr( $settings['banner_link_url'] ?? '' ); ?>" class="large-text" placeholder="https://">
 							</td>
 						</tr>
 					</table>
