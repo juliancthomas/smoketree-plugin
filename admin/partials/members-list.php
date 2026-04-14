@@ -482,46 +482,53 @@ $active_signup_month = $filters['signup_month'] ?? '';
 	</table>
 
 	<!-- Season Reset -->
-	<div class="stsrc-season-reset-box">
-		<h2><?php echo esc_html__('Season Reset', 'smoketree-plugin'); ?></h2>
-		<p class="description">
-			<?php echo esc_html__('Run this once at the start of a new season. It changes every active member\'s status to inactive so they must renew to regain access. Members who opted in to auto-renewal (Stripe only) will be charged automatically by the scheduled cron job and moved back to active.', 'smoketree-plugin'); ?>
-		</p>
-		<p class="description">
-			<strong><?php echo esc_html__('What this does:', 'smoketree-plugin'); ?></strong>
-		</p>
-		<ol class="description" style="margin: 4px 0 12px 1.5em; list-style: decimal;">
-			<li><?php echo esc_html__('Sets all active members to inactive.', 'smoketree-plugin'); ?></li>
-			<li><?php echo esc_html__('Members must go through the renewal flow in the portal to become active again.', 'smoketree-plugin'); ?></li>
-			<li><?php echo esc_html__('Stripe members with auto-renewal enabled will be charged automatically and reactivated.', 'smoketree-plugin'); ?></li>
-		</ol>
+	<div class="stsrc-season-reset-box stsrc-collapsible is-collapsed">
+		<h2>
+			<button type="button" class="stsrc-collapsible-toggle" aria-expanded="false" data-key="stsrc_season_reset_box">
+				<?php echo esc_html__('Season Reset', 'smoketree-plugin'); ?>
+				<span class="stsrc-collapse-icon" aria-hidden="true">&#9654;</span>
+			</button>
+		</h2>
+		<div class="stsrc-collapsible-body">
+			<p class="description">
+				<?php echo esc_html__('Run this once at the start of a new season. It changes every active member\'s status to inactive so they must renew to regain access. Members who opted in to auto-renewal (Stripe only) will be charged automatically by the scheduled cron job and moved back to active.', 'smoketree-plugin'); ?>
+			</p>
+			<p class="description">
+				<strong><?php echo esc_html__('What this does:', 'smoketree-plugin'); ?></strong>
+			</p>
+			<ol class="description" style="margin: 4px 0 12px 1.5em; list-style: decimal;">
+				<li><?php echo esc_html__('Sets all active members to inactive.', 'smoketree-plugin'); ?></li>
+				<li><?php echo esc_html__('Members must go through the renewal flow in the portal to become active again.', 'smoketree-plugin'); ?></li>
+				<li><?php echo esc_html__('Stripe members with auto-renewal enabled will be charged automatically and reactivated.', 'smoketree-plugin'); ?></li>
+			</ol>
 
-		<form method="post"
-			action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
-			class="stsrc-ajax-form stsrc-season-reset-form"
-			data-reload="true"
-			data-confirm="<?php echo esc_attr__('This will mark all active members as inactive. Members with auto-renewal (Stripe) will be charged and reactivated by the next cron run. Continue?', 'smoketree-plugin'); ?>">
-			<input type="hidden" name="action" value="stsrc_bulk_update_members">
-			<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
-			<input type="hidden" name="target" value="season_reset">
-			<input type="hidden" name="from_status" value="active">
-			<input type="hidden" name="new_status" value="inactive">
+			<form method="post"
+				action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
+				class="stsrc-ajax-form stsrc-season-reset-form"
+				data-reload="true"
+				data-confirm="<?php echo esc_attr__('This will mark all active members as inactive. Members with auto-renewal (Stripe) will be charged and reactivated by the next cron run. Continue?', 'smoketree-plugin'); ?>">
+				<input type="hidden" name="action" value="stsrc_bulk_update_members">
+				<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
+				<input type="hidden" name="target" value="season_reset">
+				<input type="hidden" name="from_status" value="active">
+				<input type="hidden" name="new_status" value="inactive">
 
-			<label class="stsrc-inline-checkbox">
-				<input type="checkbox" name="clear_auto_renewal" value="1">
-				<span><?php echo esc_html__('Clear auto-renewal opt-in for all members (uncheck to preserve existing preferences)', 'smoketree-plugin'); ?></span>
-			</label>
+				<label class="stsrc-inline-checkbox">
+					<input type="checkbox" name="clear_auto_renewal" value="1">
+					<span><?php echo esc_html__('Clear auto-renewal opt-in for all members (uncheck to preserve existing preferences)', 'smoketree-plugin'); ?></span>
+				</label>
 
-			<label class="stsrc-inline-checkbox">
-				<input type="checkbox" name="reset_guest_pass_balance" value="1">
-				<span><?php echo esc_html__('Reset guest pass balances to 0', 'smoketree-plugin'); ?></span>
-			</label>
+				<label class="stsrc-inline-checkbox">
+					<input type="checkbox" name="reset_guest_pass_balance" value="1">
+					<span><?php echo esc_html__('Reset guest pass balances to 0', 'smoketree-plugin'); ?></span>
+				</label>
 
-			<div class="stsrc-bulk-status-actions">
-				<button type="submit" class="button button-secondary">
-					<?php echo esc_html__('Start Season Reset', 'smoketree-plugin'); ?>
-				</button>
-			</div>
-		</form>
+				<div class="stsrc-bulk-status-actions">
+					<button type="submit" class="button button-secondary">
+						<?php echo esc_html__('Start Season Reset', 'smoketree-plugin'); ?>
+					</button>
+				</div>
+			</form>
+		</div>
 	</div>
 </div>
