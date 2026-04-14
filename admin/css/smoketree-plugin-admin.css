@@ -593,7 +593,21 @@
 	max-width: 200px;
 }
 
-.stsrc-filter-group:last-child {
+.stsrc-filter-row + .stsrc-filter-row {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.stsrc-filter-group--checkbox {
+	justify-content: flex-end;
+}
+
+.stsrc-filter-group--checkbox .stsrc-inline-checkbox {
+	margin: 0;
+}
+
+.stsrc-filter-actions {
 	display: flex;
 	flex-direction: row;
 	align-items: flex-end;
@@ -617,7 +631,7 @@
 		max-width: 100%;
 	}
 
-	.stsrc-filter-group:last-child {
+	.stsrc-filter-actions {
 		margin-left: 0;
 	}
 }

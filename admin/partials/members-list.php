@@ -66,6 +66,7 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		<form method="get" action="">
 			<input type="hidden" name="page" value="stsrc-members">
 
+			<!-- Row 1: Member identity -->
 			<div class="stsrc-filter-row">
 				<div class="stsrc-filter-group">
 					<label for="search"><?php echo esc_html__('Search', 'smoketree-plugin'); ?>:</label>
@@ -96,14 +97,17 @@ $active_signup_month = $filters['signup_month'] ?? '';
 					</select>
 				</div>
 
-				<div class="stsrc-filter-group">
+				<div class="stsrc-filter-group stsrc-filter-group--checkbox">
 					<label for="show_deleted"><?php echo esc_html__('Deleted Records', 'smoketree-plugin'); ?>:</label>
-					<label class="stsrc-inline-checkbox" style="margin: 0;">
+					<label class="stsrc-inline-checkbox">
 						<input type="checkbox" name="show_deleted" id="show_deleted" value="1" <?php checked($filters['show_deleted'] ?? '0', '1'); ?>>
 						<span><?php echo esc_html__('Show Deleted', 'smoketree-plugin'); ?></span>
 					</label>
 				</div>
+			</div>
 
+			<!-- Row 2: Payment & preferences -->
+			<div class="stsrc-filter-row">
 				<div class="stsrc-filter-group">
 					<label for="payment_type"><?php echo esc_html__('Payment Type', 'smoketree-plugin'); ?>:</label>
 					<select name="payment_type" id="payment_type">
@@ -143,7 +147,10 @@ $active_signup_month = $filters['signup_month'] ?? '';
 						<option value="demo" <?php selected($filters['demo_filter'] ?? 'all', 'demo'); ?>><?php echo esc_html__('Demo Members Only', 'smoketree-plugin'); ?></option>
 					</select>
 				</div>
+			</div>
 
+			<!-- Row 3: Dates + actions -->
+			<div class="stsrc-filter-row">
 				<div class="stsrc-filter-group">
 					<label for="date_from"><?php echo esc_html__('Date From', 'smoketree-plugin'); ?>:</label>
 					<input type="date" name="date_from" id="date_from" value="<?php echo esc_attr($filters['date_from'] ?? ''); ?>">
@@ -166,7 +173,7 @@ $active_signup_month = $filters['signup_month'] ?? '';
 					</select>
 				</div>
 
-				<div class="stsrc-filter-group">
+				<div class="stsrc-filter-group stsrc-filter-actions">
 					<input type="submit" class="button" value="<?php echo esc_attr__('Filter', 'smoketree-plugin'); ?>">
 					<a href="<?php echo esc_url(admin_url('admin.php?page=stsrc-members')); ?>" class="button">
 						<?php echo esc_html__('Clear', 'smoketree-plugin'); ?>
