@@ -294,6 +294,24 @@ class STSRC_Member_DB {
 			}
 		}
 
+		if ( ! empty( $filters['signup_month'] ) && preg_match( '/^\d{4}-\d{2}$/', $filters['signup_month'] ) ) {
+			list( $year, $month ) = explode( '-', $filters['signup_month'] );
+			$year               = intval( $year );
+			$month              = intval( $month );
+			$renewals_table     = $wpdb->prefix . 'stsrc_member_renewals';
+			$where_clauses[]    = "(
+				( YEAR(created_at) = %d AND MONTH(created_at) = %d )
+				OR member_id IN (
+					SELECT member_id FROM {$renewals_table}
+					WHERE YEAR(completed_at) = %d AND MONTH(completed_at) = %d AND status = 'completed'
+				)
+			)";
+			$where_values[]     = $year;
+			$where_values[]     = $month;
+			$where_values[]     = $year;
+			$where_values[]     = $month;
+		}
+
 		// Build query
 		$query = "SELECT * FROM {$table_name}";
 

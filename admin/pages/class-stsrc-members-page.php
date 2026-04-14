@@ -106,6 +106,10 @@ class STSRC_Members_Page {
 		}
 		$filters['show_deleted'] = ! empty( $request['show_deleted'] ) ? '1' : '0';
 
+		if ( ! empty( $request['signup_month'] ) && preg_match( '/^\d{4}-\d{2}$/', $request['signup_month'] ) ) {
+			$filters['signup_month'] = sanitize_text_field( $request['signup_month'] );
+		}
+
 		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';
 		$order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
 		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
