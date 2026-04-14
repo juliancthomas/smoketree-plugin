@@ -529,6 +529,21 @@
 	color: #2271b1;
 }
 
+.stsrc-stats-toolbar {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.stsrc-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-bottom: 2px;
+}
+
 /* ==========================================================================
    Filter Styles
    ========================================================================== */

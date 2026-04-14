@@ -178,34 +178,34 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		</form>
 	</div>
 
-	<!-- Stats -->
+	<!-- Stats & Toolbar -->
 	<div class="stsrc-stats">
-		<div class="stsrc-stat-cards">
-			<div class="stsrc-stat-card">
-				<span class="stsrc-stat-value"><?php echo esc_html(number_format($active_count)); ?></span>
-				<span class="stsrc-stat-label"><?php echo esc_html__('Active Members', 'smoketree-plugin'); ?></span>
+		<div class="stsrc-stats-toolbar">
+			<div class="stsrc-stat-cards">
+				<div class="stsrc-stat-card">
+					<span class="stsrc-stat-value"><?php echo esc_html(number_format($active_count)); ?></span>
+					<span class="stsrc-stat-label"><?php echo esc_html__('Active Members', 'smoketree-plugin'); ?></span>
+				</div>
+				<div class="stsrc-stat-card">
+					<span class="stsrc-stat-value"><?php echo esc_html(number_format(count($members))); ?></span>
+					<span class="stsrc-stat-label"><?php echo esc_html__('Filtered Results', 'smoketree-plugin'); ?></span>
+				</div>
+				<div class="stsrc-stat-card stsrc-stat-card--selected">
+					<span class="stsrc-stat-value" id="stsrc-selected-count-display">0</span>
+					<span class="stsrc-stat-label"><?php echo esc_html__('Selected', 'smoketree-plugin'); ?></span>
+				</div>
 			</div>
-			<div class="stsrc-stat-card">
-				<span class="stsrc-stat-value"><?php echo esc_html(number_format(count($members))); ?></span>
-				<span class="stsrc-stat-label"><?php echo esc_html__('Filtered Results', 'smoketree-plugin'); ?></span>
-			</div>
-			<div class="stsrc-stat-card stsrc-stat-card--selected">
-				<span class="stsrc-stat-value" id="stsrc-selected-count-display">0</span>
-				<span class="stsrc-stat-label"><?php echo esc_html__('Selected', 'smoketree-plugin'); ?></span>
+			<div class="stsrc-toolbar-actions">
+				<form method="post" action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>">
+					<input type="hidden" name="action" value="stsrc_export_members">
+					<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
+					<?php foreach ($filters as $key => $value) : ?>
+						<input type="hidden" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($value); ?>">
+					<?php endforeach; ?>
+					<input type="submit" class="button" value="<?php echo esc_attr__('Export to CSV', 'smoketree-plugin'); ?>">
+				</form>
 			</div>
 		</div>
-	</div>
-
-	<!-- Export Button -->
-	<div class="stsrc-actions">
-		<form method="post" action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" style="display: inline;">
-			<input type="hidden" name="action" value="stsrc_export_members">
-			<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
-			<?php foreach ($filters as $key => $value) : ?>
-				<input type="hidden" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($value); ?>">
-			<?php endforeach; ?>
-			<input type="submit" class="button" value="<?php echo esc_attr__('Export to CSV', 'smoketree-plugin'); ?>">
-		</form>
 	</div>
 
 	<!-- Bulk Status Update -->
