@@ -119,6 +119,24 @@
 			$(document).on('change', 'input[name="member_ids[]"], #cb-select-all', function() {
 				STSRCAdmin.updateSelectedDisplay();
 			});
+
+			// Bulk action tabs
+			$(document).on('click', '.stsrc-bulk-tab', STSRCAdmin.handleBulkTabClick);
+		},
+
+		/**
+		 * Switch between bulk action tabs (Change Status / Add Guest Passes).
+		 */
+		handleBulkTabClick: function() {
+			var $tab    = $(this);
+			var panelId = $tab.data('panel');
+			var $box    = $tab.closest('.stsrc-bulk-actions-box');
+
+			$box.find('.stsrc-bulk-tab').removeClass('is-active').attr('aria-selected', 'false');
+			$tab.addClass('is-active').attr('aria-selected', 'true');
+
+			$box.find('.stsrc-bulk-panel').attr('hidden', true);
+			$('#' + panelId).removeAttr('hidden');
 		},
 
 		/**
@@ -143,7 +161,7 @@
 
 		// Bulk members validation and confirmation.
 		if ($form.hasClass('stsrc-members-bulk-form')) {
-			const selectedCount = $form.find('input[name="member_ids[]"]:checked').length;
+			const selectedCount = $('#stsrc-members-form input[name="member_ids[]"]:checked').length;
 			if (selectedCount === 0) {
 				STSRCAdmin.showNotice(strings.noMembersSelected || 'Please select at least one member.', 'warning');
 				return;
@@ -206,6 +224,14 @@
 			});
 		}
 
+		// Inject selected member IDs into bulk-status form (checkboxes live in #stsrc-members-form).
+		if ($form.hasClass('stsrc-members-bulk-form')) {
+			$form.find('.stsrc-bulk-dynamic-ids').remove();
+			$('#stsrc-members-form input[name="member_ids[]"]:checked').each(function() {
+				$form.append('<input type="hidden" class="stsrc-bulk-dynamic-ids" name="member_ids[]" value="' + parseInt($(this).val(), 10) + '">');
+			});
+		}
+
 		const $submitBtn = $form.find('button[type="submit"], input[type="submit"]');
 		const action = $form.data('action') || $form.find('input[name="action"]').val();
 		const formData = $form.serialize();
@@ -246,6 +272,7 @@
 					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
 				},
 				complete: function() {
+					$form.find('.stsrc-bulk-dynamic-ids').remove();
 					$form.removeClass('stsrc-loading');
 					$submitBtn.prop('disabled', false).removeClass('disabled');
 				}

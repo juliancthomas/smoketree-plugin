@@ -78,6 +78,51 @@
    Bulk Status & Season Reset
    ========================================================================== */
 
+/* Consolidated bulk actions box */
+.stsrc-bulk-actions-box {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.stsrc-bulk-actions-box h2 {
+	margin: 0 0 4px;
+}
+
+.stsrc-bulk-tabs {
+	display: flex;
+	gap: 0;
+	border-bottom: 2px solid #ccd0d4;
+	margin: 16px 0 20px;
+}
+
+.stsrc-bulk-tab {
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.stsrc-bulk-tab:hover {
+	color: #2271b1;
+}
+
+.stsrc-bulk-tab.is-active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+.stsrc-bulk-panel {
+	padding-top: 4px;
+}
+
 .stsrc-bulk-status-box,
 .stsrc-season-reset-box,
 .stsrc-bulk-guest-pass-box {
