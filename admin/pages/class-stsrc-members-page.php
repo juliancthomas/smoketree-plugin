@@ -178,7 +178,15 @@ class STSRC_Members_Page {
 		// Get active member count
 		$active_count = STSRC_Member_DB::get_active_member_count();
 
-		// Build guest pass balance lookup.
+		// Paginate (post-query, after all filtering/sorting)
+		$per_page       = 50;
+		$paged          = max( 1, intval( $request['paged'] ?? 1 ) );
+		$total_filtered = count( $members );
+		$total_pages    = max( 1, (int) ceil( $total_filtered / $per_page ) );
+		$paged          = min( $paged, $total_pages );
+		$members        = array_slice( $members, ( $paged - 1 ) * $per_page, $per_page );
+
+		// Build guest pass balance lookup (scoped to current page).
 		$guest_pass_balances = array();
 		foreach ( $members as $member ) {
 			$mid = (int) $member['member_id'];
@@ -191,6 +199,10 @@ class STSRC_Members_Page {
 			'filters'              => $filters,
 			'active_count'         => $active_count,
 			'guest_pass_balances'  => $guest_pass_balances,
+			'total_filtered'       => $total_filtered,
+			'paged'                => $paged,
+			'per_page'             => $per_page,
+			'total_pages'          => $total_pages,
 		);
 
 		// Include list template

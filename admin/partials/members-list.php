@@ -17,6 +17,10 @@ $membership_types = $data['membership_types'] ?? array();
 $filters = $data['filters'] ?? array();
 $active_count = $data['active_count'] ?? 0;
 $guest_pass_balances = $data['guest_pass_balances'] ?? array();
+$total_filtered = $data['total_filtered'] ?? count($members);
+$paged          = $data['paged'] ?? 1;
+$per_page       = $data['per_page'] ?? 50;
+$total_pages    = $data['total_pages'] ?? 1;
 $admin_nonce = wp_create_nonce('stsrc_admin_nonce');
 $current_orderby = $filters['orderby'] ?? 'created_at';
 $current_order   = strtoupper($filters['order'] ?? 'DESC');
@@ -196,7 +200,7 @@ $active_signup_month = $filters['signup_month'] ?? '';
 					<span class="stsrc-stat-label"><?php echo esc_html__('Active Members', 'smoketree-plugin'); ?></span>
 				</div>
 				<div class="stsrc-stat-card">
-					<span class="stsrc-stat-value"><?php echo esc_html(number_format(count($members))); ?></span>
+					<span class="stsrc-stat-value"><?php echo esc_html(number_format($total_filtered)); ?></span>
 					<span class="stsrc-stat-label"><?php echo esc_html__('Filtered Results', 'smoketree-plugin'); ?></span>
 				</div>
 				<div class="stsrc-stat-card stsrc-stat-card--selected">
@@ -349,6 +353,48 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		</div>
 
 	</form>
+
+	<?php if ($total_pages > 1) : ?>
+	<div class="stsrc-pagination tablenav">
+		<div class="tablenav-pages">
+			<span class="displaying-num">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: number of items */
+						_n('%s item', '%s items', $total_filtered, 'smoketree-plugin'),
+						number_format_i18n($total_filtered)
+					)
+				);
+				?>
+			</span>
+			<?php
+			$pagination_base = add_query_arg(
+				array_merge(
+					$sort_base_params,
+					array(
+						'orderby' => $current_orderby,
+						'order'   => $current_order,
+					)
+				),
+				admin_url('admin.php')
+			);
+			echo wp_kses_post(
+				paginate_links(
+					array(
+						'base'      => $pagination_base . '%_%',
+						'format'    => '&paged=%#%',
+						'current'   => $paged,
+						'total'     => $total_pages,
+						'prev_text' => '&laquo;',
+						'next_text' => '&raquo;',
+					)
+				)
+			);
+			?>
+		</div>
+	</div>
+	<?php endif; ?>
 
 	<!-- Bulk Actions -->
 	<div class="stsrc-bulk-actions-box">

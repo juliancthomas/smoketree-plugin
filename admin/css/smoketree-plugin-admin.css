@@ -75,6 +75,23 @@
 }
 
 /* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.stsrc-pagination {
+	margin: 8px 0 16px;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+.stsrc-pagination .tablenav-pages {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* ==========================================================================
    Bulk Status & Season Reset
    ========================================================================== */
 
