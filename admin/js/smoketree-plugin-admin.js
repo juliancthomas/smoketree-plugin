@@ -24,6 +24,7 @@
 			this.initTooltips();
 			this.initConfirmations();
 			this.initCollapsibles();
+			this.initMembersListPagination();
 		},
 
 		/**
@@ -1425,6 +1426,78 @@
 		 */
 		initConfirmations: function() {
 			// Confirmation dialogs implementation
+		},
+
+		/**
+		 * Per-page selector and page persistence for the members list.
+		 *
+		 * localStorage keys:
+		 *   stsrc_members_per_page  — '10' | '25' | '50' | '100'
+		 *   stsrc_members_paged     — page number as string
+		 */
+		initMembersListPagination: function() {
+			var $select = $('#stsrc-per-page-select');
+			if ( ! $select.length ) {
+				return; // Not on the members list page.
+			}
+
+			var LS_PER_PAGE = 'stsrc_members_per_page';
+			var LS_PAGED    = 'stsrc_members_paged';
+			var urlParams   = new URLSearchParams(window.location.search);
+			var urlPerPage  = urlParams.get('per_page');
+			var urlPaged    = urlParams.get('paged');
+			var referrer    = document.referrer || '';
+			var returnFromMember = referrer.indexOf('page=stsrc-members') !== -1 &&
+				( referrer.indexOf('action=edit') !== -1 || referrer.indexOf('action=view') !== -1 );
+
+			// --- A: Save current URL state to localStorage ---
+			if ( urlPerPage ) {
+				localStorage.setItem(LS_PER_PAGE, urlPerPage);
+			}
+			localStorage.setItem(LS_PAGED, urlPaged || '1');
+
+			// --- B: Restore per_page if missing from URL ---
+			if ( ! urlPerPage ) {
+				var savedPerPage = localStorage.getItem(LS_PER_PAGE);
+				if ( savedPerPage && savedPerPage !== '10' ) {
+					urlParams.set('per_page', savedPerPage);
+					// Also restore page if returning from edit/view.
+					if ( returnFromMember ) {
+						var savedPaged = localStorage.getItem(LS_PAGED);
+						if ( savedPaged && savedPaged !== '1' ) {
+							urlParams.set('paged', savedPaged);
+						}
+					}
+					window.location.search = urlParams.toString();
+					return;
+				}
+			}
+
+			// --- C: Restore paged when returning from member edit/view ---
+			if ( urlPerPage && ! urlPaged && returnFromMember ) {
+				var savedPaged2 = localStorage.getItem(LS_PAGED);
+				if ( savedPaged2 && savedPaged2 !== '1' ) {
+					urlParams.set('paged', savedPaged2);
+					window.location.search = urlParams.toString();
+					return;
+				}
+			}
+
+			// --- Per-page dropdown change → redirect to page 1 with new value ---
+			$select.on('change', function() {
+				var val    = $(this).val();
+				var params = new URLSearchParams(window.location.search);
+				localStorage.setItem(LS_PER_PAGE, val);
+				params.set('per_page', val);
+				params.delete('paged');
+				window.location.search = params.toString();
+			});
+
+			// --- Filter form submit: clear saved page, sync hidden input ---
+			$('.stsrc-filters form').on('submit', function() {
+				localStorage.removeItem(LS_PAGED);
+				$('#stsrc-per-page-hidden').val( $select.val() );
+			});
 		},
 
 		/**

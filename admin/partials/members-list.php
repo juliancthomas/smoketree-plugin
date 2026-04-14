@@ -19,7 +19,7 @@ $active_count = $data['active_count'] ?? 0;
 $guest_pass_balances = $data['guest_pass_balances'] ?? array();
 $total_filtered = $data['total_filtered'] ?? count($members);
 $paged          = $data['paged'] ?? 1;
-$per_page       = $data['per_page'] ?? 50;
+$per_page       = $data['per_page'] ?? 10;
 $total_pages    = $data['total_pages'] ?? 1;
 $admin_nonce = wp_create_nonce('stsrc_admin_nonce');
 $current_orderby = $filters['orderby'] ?? 'created_at';
@@ -42,6 +42,7 @@ $sort_base_params = array(
 	'demo_filter'        => $filters['demo_filter'] ?? 'all',
 	'show_deleted'       => $filters['show_deleted'] ?? '',
 	'signup_month'       => $filters['signup_month'] ?? '',
+	'per_page'           => $per_page,
 );
 
 $balance_sort_url = add_query_arg( array_merge( $sort_base_params, array( 'orderby' => 'balance',    'order' => $next_balance_order ) ), admin_url('admin.php') );
@@ -71,6 +72,7 @@ $active_signup_month = $filters['signup_month'] ?? '';
 	<div class="stsrc-filters">
 		<form method="get" action="">
 			<input type="hidden" name="page" value="stsrc-members">
+			<input type="hidden" name="per_page" id="stsrc-per-page-hidden" value="<?php echo esc_attr($per_page); ?>">
 
 			<!-- Row 1: Member identity -->
 			<div class="stsrc-filter-row">
@@ -354,47 +356,59 @@ $active_signup_month = $filters['signup_month'] ?? '';
 
 	</form>
 
-	<?php if ($total_pages > 1) : ?>
 	<div class="stsrc-pagination tablenav">
+		<div class="stsrc-pagination-left">
+			<label for="stsrc-per-page-select">
+				<?php echo esc_html__('Show:', 'smoketree-plugin'); ?>
+				<select id="stsrc-per-page-select">
+					<option value="10" <?php selected($per_page, 10); ?>>10</option>
+					<option value="25" <?php selected($per_page, 25); ?>>25</option>
+					<option value="50" <?php selected($per_page, 50); ?>>50</option>
+					<option value="100" <?php selected($per_page, 100); ?>>100</option>
+				</select>
+				<?php echo esc_html__('per page', 'smoketree-plugin'); ?>
+			</label>
+		</div>
 		<div class="tablenav-pages">
 			<span class="displaying-num">
 				<?php
 				echo esc_html(
 					sprintf(
-						/* translators: 1: number of items */
+						/* translators: %s: number of items */
 						_n('%s item', '%s items', $total_filtered, 'smoketree-plugin'),
 						number_format_i18n($total_filtered)
 					)
 				);
 				?>
 			</span>
-			<?php
-			$pagination_base = add_query_arg(
-				array_merge(
-					$sort_base_params,
-					array(
-						'orderby' => $current_orderby,
-						'order'   => $current_order,
+			<?php if ($total_pages > 1) : ?>
+				<?php
+				$pagination_base = add_query_arg(
+					array_merge(
+						$sort_base_params,
+						array(
+							'orderby' => $current_orderby,
+							'order'   => $current_order,
+						)
+					),
+					admin_url('admin.php')
+				);
+				echo wp_kses_post(
+					paginate_links(
+						array(
+							'base'      => $pagination_base . '%_%',
+							'format'    => '&paged=%#%',
+							'current'   => $paged,
+							'total'     => $total_pages,
+							'prev_text' => '&laquo;',
+							'next_text' => '&raquo;',
+						)
 					)
-				),
-				admin_url('admin.php')
-			);
-			echo wp_kses_post(
-				paginate_links(
-					array(
-						'base'      => $pagination_base . '%_%',
-						'format'    => '&paged=%#%',
-						'current'   => $paged,
-						'total'     => $total_pages,
-						'prev_text' => '&laquo;',
-						'next_text' => '&raquo;',
-					)
-				)
-			);
-			?>
+				);
+				?>
+			<?php endif; ?>
 		</div>
 	</div>
-	<?php endif; ?>
 
 	<!-- Bulk Actions -->
 	<div class="stsrc-bulk-actions-box">

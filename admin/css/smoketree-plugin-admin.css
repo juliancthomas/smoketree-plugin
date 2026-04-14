@@ -79,10 +79,22 @@
    ========================================================================== */
 
 .stsrc-pagination {
-	margin: 8px 0 16px;
 	display: flex;
-	justify-content: flex-end;
+	justify-content: space-between;
 	align-items: center;
+	margin: 8px 0 16px;
+}
+
+.stsrc-pagination-left {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: #3c434a;
+}
+
+.stsrc-pagination-left select {
+	margin: 0 4px;
 }
 
 .stsrc-pagination .tablenav-pages {

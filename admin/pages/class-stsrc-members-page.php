@@ -179,7 +179,11 @@ class STSRC_Members_Page {
 		$active_count = STSRC_Member_DB::get_active_member_count();
 
 		// Paginate (post-query, after all filtering/sorting)
-		$per_page       = 50;
+		$allowed_per_page = array( 10, 25, 50, 100 );
+		$per_page         = isset( $request['per_page'] ) ? (int) $request['per_page'] : 10;
+		if ( ! in_array( $per_page, $allowed_per_page, true ) ) {
+			$per_page = 10;
+		}
 		$paged          = max( 1, intval( $request['paged'] ?? 1 ) );
 		$total_filtered = count( $members );
 		$total_pages    = max( 1, (int) ceil( $total_filtered / $per_page ) );
