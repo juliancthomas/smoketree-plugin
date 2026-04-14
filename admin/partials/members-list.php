@@ -231,8 +231,8 @@ $active_signup_month = $filters['signup_month'] ?? '';
 						<th class="manage-column"><?php echo esc_html__('Membership Type', 'smoketree-plugin'); ?></th>
 						<th class="manage-column"><?php echo esc_html__('Status', 'smoketree-plugin'); ?></th>
 						<th class="manage-column"><?php echo esc_html__('Payment Type', 'smoketree-plugin'); ?></th>
-						<th class="manage-column stsrc-auto-renewal-column" title="<?php echo esc_attr__('Auto-Renewal', 'smoketree-plugin'); ?>"><?php echo esc_html__('AR', 'smoketree-plugin'); ?></th>
-						<th class="manage-column stsrc-guest-pass-column" title="<?php echo esc_attr__('Guest Passes', 'smoketree-plugin'); ?>"><?php echo esc_html__('GP', 'smoketree-plugin'); ?></th>
+						<th class="manage-column stsrc-auto-renewal-column"><?php echo esc_html__('Auto-Renewal', 'smoketree-plugin'); ?></th>
+						<th class="manage-column stsrc-guest-pass-column"><?php echo esc_html__('Guest Passes', 'smoketree-plugin'); ?></th>
 						<th class="manage-column stsrc-balance-column">
 							<a href="<?php echo esc_url($balance_sort_url); ?>" class="stsrc-sort-link">
 								<?php echo esc_html__('Balance', 'smoketree-plugin'); ?>

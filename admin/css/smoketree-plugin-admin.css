@@ -289,11 +289,17 @@
 	border-bottom: none;
 }
 
-/* Members list: guest pass column */
+/* Members list: auto-renewal and guest pass columns */
+.stsrc-auto-renewal-column {
+	text-align: center;
+	white-space: nowrap;
+	width: 110px;
+}
+
 .stsrc-guest-pass-column {
 	text-align: center;
 	white-space: nowrap;
-	width: 40px;
+	width: 100px;
 }
 
 /* Members list: quick edit inline row */
