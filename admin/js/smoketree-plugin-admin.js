@@ -23,6 +23,37 @@
 			this.bindEvents();
 			this.initTooltips();
 			this.initConfirmations();
+			this.initCollapsibles();
+		},
+
+		/**
+		 * Initialise collapsible panels and restore saved state from localStorage.
+		 */
+		initCollapsibles: function() {
+			// Restore any previously expanded panels (default is collapsed via CSS class).
+			$('.stsrc-collapsible').each(function () {
+				var $box    = $(this);
+				var $toggle = $box.find('.stsrc-collapsible-toggle');
+				var key     = $toggle.data('key');
+				if (key && localStorage.getItem('stsrc_collapsed_' + key) === '0') {
+					$box.removeClass('is-collapsed');
+					$toggle.attr('aria-expanded', 'true');
+				}
+			});
+
+			$(document).on('click', '.stsrc-collapsible-toggle', function () {
+				var $toggle    = $(this);
+				var $box       = $toggle.closest('.stsrc-collapsible');
+				var key        = $toggle.data('key');
+				var collapsing = !$box.hasClass('is-collapsed');
+
+				$box.toggleClass('is-collapsed', collapsing);
+				$toggle.attr('aria-expanded', collapsing ? 'false' : 'true');
+
+				if (key) {
+					localStorage.setItem('stsrc_collapsed_' + key, collapsing ? '1' : '0');
+				}
+			});
 		},
 
 		/**
@@ -83,6 +114,21 @@
 			if ($('#stsrc-quick-edit-template').length) {
 				this.initQuickEdit();
 			}
+
+			// Selected-member stat card
+			$(document).on('change', 'input[name="member_ids[]"], #cb-select-all', function() {
+				STSRCAdmin.updateSelectedDisplay();
+			});
+		},
+
+		/**
+		 * Update the "Selected" stat card count.
+		 */
+		updateSelectedDisplay: function() {
+			var count = $('input[name="member_ids[]"]:checked').length;
+			var $card = $('#stsrc-selected-count-display');
+			$card.text(count);
+			$card.closest('.stsrc-stat-card--selected').toggleClass('has-selection', count > 0);
 		},
 
 		/**

@@ -79,7 +79,8 @@
    ========================================================================== */
 
 .stsrc-bulk-status-box,
-.stsrc-season-reset-box {
+.stsrc-season-reset-box,
+.stsrc-bulk-guest-pass-box {
 	background: #fff;
 	border: 1px solid #ccd0d4;
 	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -88,7 +89,8 @@
 }
 
 .stsrc-bulk-status-box h2,
-.stsrc-season-reset-box h2 {
+.stsrc-season-reset-box h2,
+.stsrc-bulk-guest-pass-box h2 {
 	margin-top: 0;
 }
 
@@ -114,6 +116,51 @@
 
 .stsrc-bulk-status-actions {
 	margin-top: 16px;
+}
+
+/* Collapsible panels
+   ========================================================================== */
+
+.stsrc-collapsible-toggle {
+	background: none;
+	border: none;
+	padding: 0;
+	font-size: 1em;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: inherit;
+	width: 100%;
+	text-align: left;
+}
+
+.stsrc-collapsible-toggle:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.stsrc-collapse-icon {
+	font-size: 0.7em;
+	display: inline-block;
+	transition: transform 0.2s ease;
+}
+
+.stsrc-collapsible-body {
+	overflow: hidden;
+	max-height: 800px;
+	opacity: 1;
+	transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.stsrc-collapsible.is-collapsed .stsrc-collapsible-body {
+	max-height: 0;
+	opacity: 0;
+}
+
+.stsrc-collapsible.is-collapsed .stsrc-collapse-icon {
+	transform: rotate(-90deg);
 }
 
 /* ==========================================================================
@@ -433,6 +480,53 @@
 
 .stsrc-status-standard {
 	background: #2271b1;
+}
+
+/* ==========================================================================
+   Stat Cards
+   ========================================================================== */
+
+.stsrc-stat-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 16px 0;
+}
+
+.stsrc-stat-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 12px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 120px;
+}
+
+.stsrc-stat-card .stsrc-stat-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #2271b1;
+	line-height: 1.2;
+}
+
+.stsrc-stat-card .stsrc-stat-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #50575e;
+	margin-top: 4px;
+	white-space: nowrap;
+}
+
+.stsrc-stat-card--selected .stsrc-stat-value {
+	color: #1d2327;
+}
+
+.stsrc-stat-card--selected.has-selection .stsrc-stat-value {
+	color: #2271b1;
 }
 
 /* ==========================================================================
