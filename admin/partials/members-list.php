@@ -42,31 +42,13 @@ $balance_sort_url = add_query_arg(
 	admin_url('admin.php')
 );
 
-// Build the last 12 months for the signup-month quick-links.
-$signup_month_links = array();
+// Build the last 12 months for the signup-month dropdown.
+$signup_month_options = array();
 for ($i = 0; $i < 12; $i++) {
 	$ts    = mktime(0, 0, 0, (int) gmdate('n') - $i, 1);
-	$value = gmdate('Y-m', $ts);
-	$label = gmdate('M Y', $ts);
-	$url   = add_query_arg(
-		array(
-			'page'               => 'stsrc-members',
-			'search'             => $filters['search'] ?? '',
-			'membership_type_id' => $filters['membership_type_id'] ?? '',
-			'status'             => $filters['status'] ?? '',
-			'payment_type'       => $filters['payment_type'] ?? '',
-			'balance_status'     => $filters['balance_status'] ?? '',
-			'auto_renewal'       => $filters['auto_renewal'] ?? '',
-			'demo_filter'        => $filters['demo_filter'] ?? 'all',
-			'show_deleted'       => $filters['show_deleted'] ?? '',
-			'signup_month'       => $value,
-		),
-		admin_url('admin.php')
-	);
-	$signup_month_links[] = array(
-		'value' => $value,
-		'label' => $label,
-		'url'   => $url,
+	$signup_month_options[] = array(
+		'value' => gmdate('Y-m', $ts),
+		'label' => gmdate('M Y', $ts),
 	);
 }
 $active_signup_month = $filters['signup_month'] ?? '';
@@ -172,24 +154,17 @@ $active_signup_month = $filters['signup_month'] ?? '';
 					<input type="date" name="date_to" id="date_to" value="<?php echo esc_attr($filters['date_to'] ?? ''); ?>">
 				</div>
 
-				<div class="stsrc-filter-row stsrc-signup-month-row">
-					<div class="stsrc-filter-group" style="flex-wrap: wrap; gap: 4px;">
-						<label style="white-space: nowrap;"><?php echo esc_html__('Signup Month', 'smoketree-plugin'); ?>:</label>
-						<?php foreach ($signup_month_links as $link) : ?>
-							<a href="<?php echo esc_url($link['url']); ?>"
-								class="button<?php echo $active_signup_month === $link['value'] ? ' button-primary' : ''; ?>">
-								<?php echo esc_html($link['label']); ?>
-							</a>
+				<div class="stsrc-filter-group">
+					<label for="signup_month"><?php echo esc_html__('Signup Month', 'smoketree-plugin'); ?>:</label>
+					<select name="signup_month" id="signup_month">
+						<option value=""><?php echo esc_html__('All Months', 'smoketree-plugin'); ?></option>
+						<?php foreach ($signup_month_options as $opt) : ?>
+							<option value="<?php echo esc_attr($opt['value']); ?>" <?php selected($active_signup_month, $opt['value']); ?>>
+								<?php echo esc_html($opt['label']); ?>
+							</option>
 						<?php endforeach; ?>
-						<?php if ($active_signup_month) : ?>
-							<a href="<?php echo esc_url(add_query_arg(array('page' => 'stsrc-members', 'signup_month' => ''), admin_url('admin.php'))); ?>" class="button">
-								<?php echo esc_html__('✕ Clear Month', 'smoketree-plugin'); ?>
-							</a>
-						<?php endif; ?>
-					</div>
+					</select>
 				</div>
-
-				<div class="stsrc-filter-group"></div>
 
 				<div class="stsrc-filter-group">
 					<input type="submit" class="button" value="<?php echo esc_attr__('Filter', 'smoketree-plugin'); ?>">
