@@ -20,27 +20,29 @@ $guest_pass_balances = $data['guest_pass_balances'] ?? array();
 $admin_nonce = wp_create_nonce('stsrc_admin_nonce');
 $current_orderby = $filters['orderby'] ?? 'created_at';
 $current_order   = strtoupper($filters['order'] ?? 'DESC');
-$next_balance_order = ('balance' === $current_orderby && 'ASC' === $current_order) ? 'DESC' : 'ASC';
+$next_balance_order  = ('balance'    === $current_orderby && 'ASC' === $current_order) ? 'DESC' : 'ASC';
+$next_name_order     = ('last_name'  === $current_orderby && 'ASC' === $current_order) ? 'DESC' : 'ASC';
+$next_created_order  = ('created_at' === $current_orderby && 'ASC' === $current_order) ? 'DESC' : 'ASC';
 
-$balance_sort_url = add_query_arg(
-	array(
-		'page'               => 'stsrc-members',
-		'search'             => $filters['search'] ?? '',
-		'membership_type_id' => $filters['membership_type_id'] ?? '',
-		'status'             => $filters['status'] ?? '',
-		'payment_type'       => $filters['payment_type'] ?? '',
-		'date_from'          => $filters['date_from'] ?? '',
-		'date_to'            => $filters['date_to'] ?? '',
-		'balance_status'     => $filters['balance_status'] ?? '',
-		'auto_renewal'       => $filters['auto_renewal'] ?? '',
-		'demo_filter'        => $filters['demo_filter'] ?? 'all',
-		'show_deleted'       => $filters['show_deleted'] ?? '',
-		'signup_month'       => $filters['signup_month'] ?? '',
-		'orderby'            => 'balance',
-		'order'              => $next_balance_order,
-	),
-	admin_url('admin.php')
+// Shared base params for sort URLs.
+$sort_base_params = array(
+	'page'               => 'stsrc-members',
+	'search'             => $filters['search'] ?? '',
+	'membership_type_id' => $filters['membership_type_id'] ?? '',
+	'status'             => $filters['status'] ?? '',
+	'payment_type'       => $filters['payment_type'] ?? '',
+	'date_from'          => $filters['date_from'] ?? '',
+	'date_to'            => $filters['date_to'] ?? '',
+	'balance_status'     => $filters['balance_status'] ?? '',
+	'auto_renewal'       => $filters['auto_renewal'] ?? '',
+	'demo_filter'        => $filters['demo_filter'] ?? 'all',
+	'show_deleted'       => $filters['show_deleted'] ?? '',
+	'signup_month'       => $filters['signup_month'] ?? '',
 );
+
+$balance_sort_url = add_query_arg( array_merge( $sort_base_params, array( 'orderby' => 'balance',    'order' => $next_balance_order ) ), admin_url('admin.php') );
+$name_sort_url    = add_query_arg( array_merge( $sort_base_params, array( 'orderby' => 'last_name',  'order' => $next_name_order ) ),    admin_url('admin.php') );
+$created_sort_url = add_query_arg( array_merge( $sort_base_params, array( 'orderby' => 'created_at', 'order' => $next_created_order ) ), admin_url('admin.php') );
 
 // Build the last 12 months for the signup-month dropdown.
 $signup_month_options = array();
@@ -233,7 +235,14 @@ $active_signup_month = $filters['signup_month'] ?? '';
 						<td class="manage-column column-cb check-column">
 							<input type="checkbox" id="cb-select-all">
 						</td>
-						<th class="manage-column"><?php echo esc_html__('Name', 'smoketree-plugin'); ?></th>
+						<th class="manage-column">
+							<a href="<?php echo esc_url($name_sort_url); ?>" class="stsrc-sort-link">
+								<?php echo esc_html__('Name', 'smoketree-plugin'); ?>
+								<?php if ('last_name' === $current_orderby) : ?>
+									<span class="stsrc-sort-indicator"><?php echo esc_html('ASC' === $current_order ? '▲' : '▼'); ?></span>
+								<?php endif; ?>
+							</a>
+						</th>
 						<th class="manage-column"><?php echo esc_html__('Email', 'smoketree-plugin'); ?></th>
 						<th class="manage-column"><?php echo esc_html__('Membership Type', 'smoketree-plugin'); ?></th>
 						<th class="manage-column"><?php echo esc_html__('Status', 'smoketree-plugin'); ?></th>
@@ -248,7 +257,14 @@ $active_signup_month = $filters['signup_month'] ?? '';
 								<?php endif; ?>
 							</a>
 						</th>
-						<th class="manage-column"><?php echo esc_html__('Created', 'smoketree-plugin'); ?></th>
+						<th class="manage-column">
+							<a href="<?php echo esc_url($created_sort_url); ?>" class="stsrc-sort-link">
+								<?php echo esc_html__('Created', 'smoketree-plugin'); ?>
+								<?php if ('created_at' === $current_orderby) : ?>
+									<span class="stsrc-sort-indicator"><?php echo esc_html('ASC' === $current_order ? '▲' : '▼'); ?></span>
+								<?php endif; ?>
+							</a>
+						</th>
 					</tr>
 				</thead>
 				<tbody>

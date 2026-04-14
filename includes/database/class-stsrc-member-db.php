@@ -319,7 +319,13 @@ class STSRC_Member_DB {
 			$query .= ' WHERE ' . implode( ' AND ', $where_clauses );
 		}
 
-		$query .= ' ORDER BY created_at DESC';
+		// Dynamic ORDER BY — balance is sorted post-query; fall back to created_at for it here.
+		$allowed_cols = array( 'created_at', 'last_name', 'first_name', 'email', 'status' );
+		$orderby_col  = ( isset( $filters['orderby'] ) && in_array( $filters['orderby'], $allowed_cols, true ) )
+			? $filters['orderby']
+			: 'created_at';
+		$order_dir    = ( isset( $filters['order'] ) && 'ASC' === $filters['order'] ) ? 'ASC' : 'DESC';
+		$query       .= " ORDER BY {$orderby_col} {$order_dir}";
 
 		// Execute query with prepared statement
 		if ( ! empty( $where_values ) ) {
