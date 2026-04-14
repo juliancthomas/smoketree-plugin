@@ -208,40 +208,6 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		</form>
 	</div>
 
-	<!-- Bulk Guest Passes -->
-	<div class="stsrc-bulk-guest-pass-box stsrc-collapsible is-collapsed">
-		<h2>
-			<button type="button" class="stsrc-collapsible-toggle" aria-expanded="false" data-key="stsrc_gp_box">
-				<?php echo esc_html__( 'Bulk Add Guest Passes', 'smoketree-plugin' ); ?>
-				<span class="stsrc-collapse-icon" aria-hidden="true">&#9654;</span>
-			</button>
-		</h2>
-		<div class="stsrc-collapsible-body">
-			<p class="description">
-				<?php echo esc_html__('Select members in the table above, enter a quantity, and click Apply.', 'smoketree-plugin'); ?>
-			</p>
-
-			<form class="stsrc-ajax-form stsrc-bulk-guest-pass-form" data-reload="true">
-				<input type="hidden" name="action" value="stsrc_bulk_update_members">
-				<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
-				<input type="hidden" name="target" value="add_guest_passes">
-
-				<div class="stsrc-bulk-status-fields">
-					<label for="stsrc-bulk-gp-qty">
-						<span class="stsrc-field-label"><?php echo esc_html__('Quantity', 'smoketree-plugin'); ?></span>
-						<input type="number" id="stsrc-bulk-gp-qty" name="guest_pass_quantity" min="1" step="1" value="25" style="width: 80px;">
-					</label>
-				</div>
-
-				<div class="stsrc-bulk-status-actions">
-					<button type="submit" class="button button-primary">
-						<?php echo esc_html__('Add to Selected Members', 'smoketree-plugin'); ?>
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-
 	<!-- Bulk Status Update -->
 	<form method="post"
 		action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
@@ -252,50 +218,6 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		<input type="hidden" name="action" value="stsrc_bulk_update_members">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
 		<input type="hidden" name="target" value="selected">
-
-		<div class="stsrc-bulk-status-box stsrc-collapsible is-collapsed">
-			<h2>
-				<button type="button" class="stsrc-collapsible-toggle" aria-expanded="false" data-key="stsrc_status_box">
-					<?php echo esc_html__( 'Bulk Status Update', 'smoketree-plugin' ); ?>
-					<span class="stsrc-collapse-icon" aria-hidden="true">&#9654;</span>
-				</button>
-			</h2>
-			<div class="stsrc-collapsible-body">
-				<p class="description">
-					<?php echo esc_html__('Select members in the table below, choose a new status, and optionally clear auto-renewal preferences or guest pass balances.', 'smoketree-plugin'); ?>
-				</p>
-
-				<div class="stsrc-bulk-status-fields">
-					<label for="stsrc-bulk-status-select">
-						<span class="stsrc-field-label"><?php echo esc_html__('Status', 'smoketree-plugin'); ?></span>
-						<select name="new_status" id="stsrc-bulk-status-select" required>
-							<option value=""><?php echo esc_html__('Select status…', 'smoketree-plugin'); ?></option>
-							<option value="active"><?php echo esc_html__('Active', 'smoketree-plugin'); ?></option>
-							<option value="pending"><?php echo esc_html__('Pending', 'smoketree-plugin'); ?></option>
-							<option value="cancelled"><?php echo esc_html__('Cancelled', 'smoketree-plugin'); ?></option>
-							<option value="inactive"><?php echo esc_html__('Inactive', 'smoketree-plugin'); ?></option>
-							<option value="deleted"><?php echo esc_html__('Deleted', 'smoketree-plugin'); ?></option>
-						</select>
-					</label>
-
-					<label class="stsrc-inline-checkbox">
-						<input type="checkbox" name="clear_auto_renewal" value="1">
-						<span><?php echo esc_html__('Clear auto-renewal opt-in', 'smoketree-plugin'); ?></span>
-					</label>
-
-					<label class="stsrc-inline-checkbox">
-						<input type="checkbox" name="reset_guest_pass_balance" value="1">
-						<span><?php echo esc_html__('Reset guest pass balance to 0', 'smoketree-plugin'); ?></span>
-					</label>
-				</div>
-
-				<div class="stsrc-bulk-status-actions">
-					<button type="submit" class="button button-primary">
-						<?php echo esc_html__('Apply to Selected Members', 'smoketree-plugin'); ?>
-					</button>
-				</div>
-			</div>
-		</div>
 
 		<div class="stsrc-table-wrapper">
 			<table class="wp-list-table widefat fixed striped table-view-list">
@@ -410,7 +332,85 @@ $active_signup_month = $filters['signup_month'] ?? '';
 				</tbody>
 			</table>
 		</div>
+
+		<div class="stsrc-bulk-status-box stsrc-collapsible is-collapsed">
+			<h2>
+				<button type="button" class="stsrc-collapsible-toggle" aria-expanded="false" data-key="stsrc_status_box">
+					<?php echo esc_html__( 'Bulk Status Update', 'smoketree-plugin' ); ?>
+					<span class="stsrc-collapse-icon" aria-hidden="true">&#9654;</span>
+				</button>
+			</h2>
+			<div class="stsrc-collapsible-body">
+				<p class="description">
+					<?php echo esc_html__('Select members in the table above, choose a new status, and optionally clear auto-renewal preferences or guest pass balances.', 'smoketree-plugin'); ?>
+				</p>
+
+				<div class="stsrc-bulk-status-fields">
+					<label for="stsrc-bulk-status-select">
+						<span class="stsrc-field-label"><?php echo esc_html__('Status', 'smoketree-plugin'); ?></span>
+						<select name="new_status" id="stsrc-bulk-status-select" required>
+							<option value=""><?php echo esc_html__('Select status…', 'smoketree-plugin'); ?></option>
+							<option value="active"><?php echo esc_html__('Active', 'smoketree-plugin'); ?></option>
+							<option value="pending"><?php echo esc_html__('Pending', 'smoketree-plugin'); ?></option>
+							<option value="cancelled"><?php echo esc_html__('Cancelled', 'smoketree-plugin'); ?></option>
+							<option value="inactive"><?php echo esc_html__('Inactive', 'smoketree-plugin'); ?></option>
+							<option value="deleted"><?php echo esc_html__('Deleted', 'smoketree-plugin'); ?></option>
+						</select>
+					</label>
+
+					<label class="stsrc-inline-checkbox">
+						<input type="checkbox" name="clear_auto_renewal" value="1">
+						<span><?php echo esc_html__('Clear auto-renewal opt-in', 'smoketree-plugin'); ?></span>
+					</label>
+
+					<label class="stsrc-inline-checkbox">
+						<input type="checkbox" name="reset_guest_pass_balance" value="1">
+						<span><?php echo esc_html__('Reset guest pass balance to 0', 'smoketree-plugin'); ?></span>
+					</label>
+				</div>
+
+				<div class="stsrc-bulk-status-actions">
+					<button type="submit" class="button button-primary">
+						<?php echo esc_html__('Apply to Selected Members', 'smoketree-plugin'); ?>
+					</button>
+				</div>
+			</div>
+		</div>
 	</form>
+
+	<!-- Bulk Guest Passes -->
+	<div class="stsrc-bulk-guest-pass-box stsrc-collapsible is-collapsed">
+		<h2>
+			<button type="button" class="stsrc-collapsible-toggle" aria-expanded="false" data-key="stsrc_gp_box">
+				<?php echo esc_html__( 'Bulk Add Guest Passes', 'smoketree-plugin' ); ?>
+				<span class="stsrc-collapse-icon" aria-hidden="true">&#9654;</span>
+			</button>
+		</h2>
+		<div class="stsrc-collapsible-body">
+			<p class="description">
+				<?php echo esc_html__('Select members in the table above, enter a quantity, and click Apply.', 'smoketree-plugin'); ?>
+			</p>
+
+			<form class="stsrc-ajax-form stsrc-bulk-guest-pass-form" data-reload="true">
+				<input type="hidden" name="action" value="stsrc_bulk_update_members">
+				<input type="hidden" name="nonce" value="<?php echo esc_attr($admin_nonce); ?>">
+				<input type="hidden" name="target" value="add_guest_passes">
+
+				<div class="stsrc-bulk-status-fields">
+					<label for="stsrc-bulk-gp-qty">
+						<span class="stsrc-field-label"><?php echo esc_html__('Quantity', 'smoketree-plugin'); ?></span>
+						<input type="number" id="stsrc-bulk-gp-qty" name="guest_pass_quantity" min="1" step="1" value="25" style="width: 80px;">
+					</label>
+				</div>
+
+				<div class="stsrc-bulk-status-actions">
+					<button type="submit" class="button button-primary">
+						<?php echo esc_html__('Add to Selected Members', 'smoketree-plugin'); ?>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
 
 
 
