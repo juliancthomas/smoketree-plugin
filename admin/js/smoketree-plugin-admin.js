@@ -131,6 +131,35 @@
 			}
 		}
 
+		// Bulk guest pass credit.
+		if ($form.hasClass('stsrc-bulk-guest-pass-form')) {
+			const selectedIds = $('#stsrc-members-form input[name="member_ids[]"]:checked').map(function () {
+				return $(this).val();
+			}).get();
+
+			if (selectedIds.length === 0) {
+				STSRCAdmin.showNotice(strings.noMembersSelected || 'Please select at least one member.', 'warning');
+				return;
+			}
+
+			const qty = parseInt($form.find('input[name="guest_pass_quantity"]').val(), 10);
+			if (!qty || qty <= 0) {
+				STSRCAdmin.showNotice('Please enter a quantity greater than 0.', 'warning');
+				return;
+			}
+
+			const confirmMessage = 'Add ' + qty + ' guest pass(es) to ' + selectedIds.length + ' selected member(s)?';
+			if (!window.confirm(confirmMessage)) {
+				return;
+			}
+
+			// Inject selected member IDs into this form before serialize().
+			$form.find('.stsrc-gp-dynamic-ids').remove();
+			$.each(selectedIds, function (i, id) {
+				$form.append('<input type="hidden" class="stsrc-gp-dynamic-ids" name="member_ids[]" value="' + parseInt(id, 10) + '">');
+			});
+		}
+
 		const $submitBtn = $form.find('button[type="submit"], input[type="submit"]');
 		const action = $form.data('action') || $form.find('input[name="action"]').val();
 		const formData = $form.serialize();

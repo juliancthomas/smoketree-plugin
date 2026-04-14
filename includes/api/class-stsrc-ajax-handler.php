@@ -1416,6 +1416,51 @@ class STSRC_Ajax_Handler {
 			);
 		}
 
+		// Handle bulk guest pass credit.
+		if ( 'add_guest_passes' === $target ) {
+			$member_ids = array_map( 'intval', (array) ( $post_data['member_ids'] ?? array() ) );
+			$member_ids = array_values( array_filter( $member_ids, static fn( $id ) => $id > 0 ) );
+
+			if ( empty( $member_ids ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please select at least one member.', 'smoketree-plugin' ) ) );
+				return;
+			}
+
+			$qty = intval( $post_data['guest_pass_quantity'] ?? 0 );
+			if ( $qty <= 0 ) {
+				wp_send_json_error( array( 'message' => __( 'Please enter a quantity greater than 0.', 'smoketree-plugin' ) ) );
+				return;
+			}
+
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
+
+			$credited = 0;
+			foreach ( $member_ids as $member_id ) {
+				$notes = sprintf(
+					/* translators: 1: quantity 2: admin user ID */
+					__( 'Bulk admin credit: %1$d pass(es) added by admin (user %2$d)', 'smoketree-plugin' ),
+					$qty,
+					get_current_user_id()
+				);
+				if ( STSRC_Guest_Pass_DB::admin_adjust_balance( $member_id, $qty, $notes ) ) {
+					$credited++;
+				}
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: passes credited 2: member count */
+						__( 'Added %1$d guest pass(es) to %2$d member(s).', 'smoketree-plugin' ),
+						$qty,
+						$credited
+					),
+					'updated' => $credited,
+				)
+			);
+			return;
+		}
+
 		$member_ids = array_map( 'intval', (array) ( $post_data['member_ids'] ?? array() ) );
 		$member_ids = array_values( array_filter( $member_ids, static fn( $id ) => $id > 0 ) );
 

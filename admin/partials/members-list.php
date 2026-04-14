@@ -388,6 +388,33 @@ $active_signup_month = $filters['signup_month'] ?? '';
 		</div>
 	</form>
 
+	<!-- Bulk Guest Passes -->
+	<div class="stsrc-bulk-guest-pass-box">
+		<h2><?php echo esc_html__( 'Bulk Add Guest Passes', 'smoketree-plugin' ); ?></h2>
+		<p class="description">
+			<?php echo esc_html__( 'Select members in the table above, enter a quantity, and click Apply.', 'smoketree-plugin' ); ?>
+		</p>
+
+		<form class="stsrc-ajax-form stsrc-bulk-guest-pass-form" data-reload="true">
+			<input type="hidden" name="action" value="stsrc_bulk_update_members">
+			<input type="hidden" name="nonce" value="<?php echo esc_attr( $admin_nonce ); ?>">
+			<input type="hidden" name="target" value="add_guest_passes">
+
+			<div class="stsrc-bulk-status-fields">
+				<label for="stsrc-bulk-gp-qty">
+					<span class="stsrc-field-label"><?php echo esc_html__( 'Quantity', 'smoketree-plugin' ); ?></span>
+					<input type="number" id="stsrc-bulk-gp-qty" name="guest_pass_quantity" min="1" step="1" value="25" style="width: 80px;">
+				</label>
+			</div>
+
+			<div class="stsrc-bulk-status-actions">
+				<button type="submit" class="button button-primary">
+					<?php echo esc_html__( 'Add to Selected Members', 'smoketree-plugin' ); ?>
+				</button>
+			</div>
+		</form>
+	</div>
+
 	<!-- Quick Edit Template (hidden, cloned by JS) -->
 	<table style="display:none;">
 		<tbody>
