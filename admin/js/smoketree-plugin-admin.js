@@ -23,6 +23,38 @@
 			this.bindEvents();
 			this.initTooltips();
 			this.initConfirmations();
+			this.initCollapsibles();
+			this.initMembersListPagination();
+		},
+
+		/**
+		 * Initialise collapsible panels and restore saved state from localStorage.
+		 */
+		initCollapsibles: function() {
+			// Restore any previously expanded panels (default is collapsed via CSS class).
+			$('.stsrc-collapsible').each(function () {
+				var $box    = $(this);
+				var $toggle = $box.find('.stsrc-collapsible-toggle');
+				var key     = $toggle.data('key');
+				if (key && localStorage.getItem('stsrc_collapsed_' + key) === '0') {
+					$box.removeClass('is-collapsed');
+					$toggle.attr('aria-expanded', 'true');
+				}
+			});
+
+			$(document).on('click', '.stsrc-collapsible-toggle', function () {
+				var $toggle    = $(this);
+				var $box       = $toggle.closest('.stsrc-collapsible');
+				var key        = $toggle.data('key');
+				var collapsing = !$box.hasClass('is-collapsed');
+
+				$box.toggleClass('is-collapsed', collapsing);
+				$toggle.attr('aria-expanded', collapsing ? 'false' : 'true');
+
+				if (key) {
+					localStorage.setItem('stsrc_collapsed_' + key, collapsing ? '1' : '0');
+				}
+			});
 		},
 
 		/**
@@ -83,6 +115,39 @@
 			if ($('#stsrc-quick-edit-template').length) {
 				this.initQuickEdit();
 			}
+
+			// Selected-member stat card
+			$(document).on('change', 'input[name="member_ids[]"], #cb-select-all', function() {
+				STSRCAdmin.updateSelectedDisplay();
+			});
+
+			// Bulk action tabs
+			$(document).on('click', '.stsrc-bulk-tab', STSRCAdmin.handleBulkTabClick);
+		},
+
+		/**
+		 * Switch between bulk action tabs (Change Status / Add Guest Passes).
+		 */
+		handleBulkTabClick: function() {
+			var $tab    = $(this);
+			var panelId = $tab.data('panel');
+			var $box    = $tab.closest('.stsrc-bulk-actions-box');
+
+			$box.find('.stsrc-bulk-tab').removeClass('is-active').attr('aria-selected', 'false');
+			$tab.addClass('is-active').attr('aria-selected', 'true');
+
+			$box.find('.stsrc-bulk-panel').attr('hidden', true);
+			$('#' + panelId).removeAttr('hidden');
+		},
+
+		/**
+		 * Update the "Selected" stat card count.
+		 */
+		updateSelectedDisplay: function() {
+			var count = $('input[name="member_ids[]"]:checked').length;
+			var $card = $('#stsrc-selected-count-display');
+			$card.text(count);
+			$card.closest('.stsrc-stat-card--selected').toggleClass('has-selection', count > 0);
 		},
 
 		/**
@@ -97,7 +162,7 @@
 
 		// Bulk members validation and confirmation.
 		if ($form.hasClass('stsrc-members-bulk-form')) {
-			const selectedCount = $form.find('input[name="member_ids[]"]:checked').length;
+			const selectedCount = $('#stsrc-members-form input[name="member_ids[]"]:checked').length;
 			if (selectedCount === 0) {
 				STSRCAdmin.showNotice(strings.noMembersSelected || 'Please select at least one member.', 'warning');
 				return;
@@ -129,6 +194,43 @@
 			if (!window.confirm(confirmMessage)) {
 				return;
 			}
+		}
+
+		// Bulk guest pass credit.
+		if ($form.hasClass('stsrc-bulk-guest-pass-form')) {
+			const selectedIds = $('#stsrc-members-form input[name="member_ids[]"]:checked').map(function () {
+				return $(this).val();
+			}).get();
+
+			if (selectedIds.length === 0) {
+				STSRCAdmin.showNotice(strings.noMembersSelected || 'Please select at least one member.', 'warning');
+				return;
+			}
+
+			const qty = parseInt($form.find('input[name="guest_pass_quantity"]').val(), 10);
+			if (!qty || qty <= 0) {
+				STSRCAdmin.showNotice('Please enter a quantity greater than 0.', 'warning');
+				return;
+			}
+
+			const confirmMessage = 'Add ' + qty + ' guest pass(es) to ' + selectedIds.length + ' selected member(s)?';
+			if (!window.confirm(confirmMessage)) {
+				return;
+			}
+
+			// Inject selected member IDs into this form before serialize().
+			$form.find('.stsrc-gp-dynamic-ids').remove();
+			$.each(selectedIds, function (i, id) {
+				$form.append('<input type="hidden" class="stsrc-gp-dynamic-ids" name="member_ids[]" value="' + parseInt(id, 10) + '">');
+			});
+		}
+
+		// Inject selected member IDs into bulk-status form (checkboxes live in #stsrc-members-form).
+		if ($form.hasClass('stsrc-members-bulk-form')) {
+			$form.find('.stsrc-bulk-dynamic-ids').remove();
+			$('#stsrc-members-form input[name="member_ids[]"]:checked').each(function() {
+				$form.append('<input type="hidden" class="stsrc-bulk-dynamic-ids" name="member_ids[]" value="' + parseInt($(this).val(), 10) + '">');
+			});
 		}
 
 		const $submitBtn = $form.find('button[type="submit"], input[type="submit"]');
@@ -171,6 +273,7 @@
 					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
 				},
 				complete: function() {
+					$form.find('.stsrc-bulk-dynamic-ids').remove();
 					$form.removeClass('stsrc-loading');
 					$submitBtn.prop('disabled', false).removeClass('disabled');
 				}
@@ -385,7 +488,7 @@
 			var self = this;
 
 		// Reset recipient list when filters change so the next submit auto-reloads.
-		$('#membership_type_id, #status, #payment_type, #date_from, #date_to').on('change', function() {
+		$('#membership_type_id, #status, #payment_type, #date_from, #date_to, #include_family_members, #include_extra_members').on('change', function() {
 			self.recipientListLoaded = false;
 			$('#stsrc-recipient-list-wrap').hide();
 			$('#stsrc-recipient-list').empty();
@@ -499,6 +602,16 @@
 				formData.append('excluded_member_ids[]', id);
 			});
 
+			// Sub-member include flags and exclusions
+			formData.append('include_family_members', $('#include_family_members').is(':checked') ? 1 : 0);
+			formData.append('include_extra_members', $('#include_extra_members').is(':checked') ? 1 : 0);
+			self.getExcludedFamilyMemberIds().forEach(function(id) {
+				formData.append('excluded_family_member_ids[]', id);
+			});
+			self.getExcludedExtraMemberIds().forEach(function(id) {
+				formData.append('excluded_extra_member_ids[]', id);
+			});
+
 			$('#email-progress').show();
 			$('#submit').prop('disabled', true);
 
@@ -523,6 +636,10 @@
 					if (response.success) {
 						$('#progress-text').text(response.data.message);
 						STSRCAdmin.showNotice(response.data.message, 'success');
+						var warnings = response.data.results && response.data.results.warnings;
+						if (warnings && warnings.length > 0) {
+							STSRCAdmin.showNotice('Skipped (no email): ' + warnings.join(', '), 'warning');
+						}
 					} else {
 						$('#progress-text').text('Error: ' + response.data.message);
 						STSRCAdmin.showNotice('Error: ' + response.data.message, 'error');
@@ -558,7 +675,9 @@
 			status: $('#status').val(),
 			payment_type: $('#payment_type').val(),
 			date_from: $('#date_from').val(),
-			date_to: $('#date_to').val()
+			date_to: $('#date_to').val(),
+			include_family_members: $('#include_family_members').is(':checked') ? 1 : 0,
+			include_extra_members: $('#include_extra_members').is(':checked') ? 1 : 0
 		};
 
 		$.ajax({
@@ -571,8 +690,7 @@
 			},
 			success: function(response) {
 				if (response.success) {
-					var count = response.data.count;
-					$('#recipient-count').text(count + ' ' + (count === 1 ? 'recipient' : 'recipients') + ' will receive this email');
+					$('#recipient-count').text(response.data.message);
 					self.renderRecipientList(response.data.recipients || []);
 					self.recipientListLoaded = true;
 					if (typeof callback === 'function') {
@@ -592,9 +710,9 @@
 	},
 
 	/**
-	 * Render the recipient checkbox list.
+	 * Render the recipient checkbox list with grouped primary + sub-member rows.
 	 *
-	 * @param {Array} recipients Array of {member_id, first_name, last_name, email}.
+	 * @param {Array} recipients Array of {member_id, first_name, last_name, email, sub_members[]}.
 	 */
 	renderRecipientList: function(recipients) {
 		var self = this;
@@ -603,47 +721,131 @@
 		var $selectAll = $('#stsrc-select-all-recipients');
 
 		$list.empty();
+		$list.off('change.stsrc').off('click.stsrc');
 
 		if (recipients.length === 0) {
 			$wrap.hide();
 			return;
 		}
 
+		var badgeBase = 'display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:6px;font-weight:600;';
+		var familyBadge = '<span style="' + badgeBase + 'background:#dff0d8;color:#3c763d;">Family</span>';
+		var extraBadge  = '<span style="' + badgeBase + 'background:#d9edf7;color:#31708f;">Extra</span>';
+
 		recipients.forEach(function(r) {
-			var label = $('<label>').css({
+			var subMembers = r.sub_members || [];
+			var hasSubMembers = subMembers.length > 0;
+
+			// Primary row
+			var $group = $('<div>').addClass('stsrc-recipient-group').css('borderBottom', '1px solid #f0f0f1');
+
+			var $primaryLabel = $('<label>').css({
 				display: 'flex',
 				alignItems: 'center',
 				gap: '8px',
-				padding: '4px 0',
-				cursor: 'pointer',
-				borderBottom: '1px solid #f0f0f1'
+				padding: '5px 0',
+				cursor: 'pointer'
 			});
 
-			var cb = $('<input>', {
+			var $cb = $('<input>', {
 				type: 'checkbox',
 				checked: true,
 				'data-member-id': r.member_id
 			}).addClass('stsrc-recipient-checkbox');
 
-			var text = $('<span>').text(r.first_name + ' ' + r.last_name + ' \u2014 ' + r.email);
+			var nameText = r.first_name + ' ' + r.last_name + ' \u2014 ' + r.email;
+			var $nameSpan = $('<span>').text(nameText);
 
-			label.append(cb).append(text);
-			$list.append(label);
+			$primaryLabel.append($cb).append($nameSpan);
+
+			if (hasSubMembers) {
+				var enabledSubs = subMembers.filter(function(s) { return s.email; }).length;
+				var $toggle = $('<span>').html(' <a href="#" class="stsrc-sub-toggle" style="font-size:12px;text-decoration:none;">\u25b6 ' + subMembers.length + ' sub-member' + (subMembers.length !== 1 ? 's' : '') + '</a>');
+				$primaryLabel.append($toggle);
+			}
+
+			$group.append($primaryLabel);
+
+			// Sub-member rows (collapsed by default)
+			if (hasSubMembers) {
+				var $subList = $('<div>').addClass('stsrc-sub-members').css({
+					display: 'none',
+					paddingLeft: '24px'
+				});
+
+				subMembers.forEach(function(s) {
+					var hasEmail = !!s.email;
+					var badge = s.type === 'family' ? familyBadge : extraBadge;
+
+					var $subLabel = $('<label>').css({
+						display: 'flex',
+						alignItems: 'center',
+						gap: '6px',
+						padding: '3px 0',
+						cursor: hasEmail ? 'pointer' : 'default',
+						color: hasEmail ? '' : '#999'
+					});
+
+					var subCbAttrs = {
+						type: 'checkbox',
+						'data-sub-type': s.type,
+						'data-sub-id': s.id,
+						'data-parent': r.member_id
+					};
+					if (hasEmail) {
+						subCbAttrs.checked = true;
+					} else {
+						subCbAttrs.disabled = true;
+					}
+					var $subCb = $('<input>', subCbAttrs).addClass('stsrc-sub-checkbox');
+
+					var subText = s.first_name + ' ' + s.last_name;
+					if (hasEmail) {
+						subText += ' \u2014 ' + s.email;
+					} else {
+						subText += ' \u2014 no email, will be skipped';
+					}
+
+					$subLabel.append($subCb).append($('<span>').text(subText)).append($(badge));
+					$subList.append($subLabel);
+				});
+
+				$group.append($subList);
+			}
+
+			$list.append($group);
 		});
 
-		// Update count whenever a checkbox changes
-		$list.off('change', '.stsrc-recipient-checkbox').on('change', '.stsrc-recipient-checkbox', function() {
+		// Primary checkbox change: cascade to sub-members
+		$list.on('change.stsrc', '.stsrc-recipient-checkbox', function() {
+			var isChecked = $(this).is(':checked');
+			var memberId = $(this).data('member-id');
+			$list.find('.stsrc-sub-checkbox[data-parent="' + memberId + '"]').not('[disabled]').prop('checked', isChecked);
 			self.updateSelectedCount();
-			// Sync the Select All checkbox state
 			var total = $list.find('.stsrc-recipient-checkbox').length;
 			var checked = $list.find('.stsrc-recipient-checkbox:checked').length;
-			$selectAll.prop('checked', total === checked);
-			$selectAll.prop('indeterminate', checked > 0 && checked < total);
+			$selectAll.prop('checked', total === checked).prop('indeterminate', checked > 0 && checked < total);
+		});
+
+		// Sub-member checkbox change: update count only
+		$list.on('change.stsrc', '.stsrc-sub-checkbox', function() {
+			self.updateSelectedCount();
+		});
+
+		// Expand/collapse toggle
+		$list.on('click.stsrc', '.stsrc-sub-toggle', function(e) {
+			e.preventDefault();
+			var $subList = $(this).closest('.stsrc-recipient-group').find('.stsrc-sub-members');
+			var isOpen = $subList.is(':visible');
+			$subList.toggle();
+			$(this).html((isOpen ? '\u25b6' : '\u25bc') + $(this).text().replace(/^[\u25b6\u25bc]\s*/, ''));
 		});
 
 		// Select All toggle
 		$selectAll.off('change').on('change', function() {
-			$list.find('.stsrc-recipient-checkbox').prop('checked', $(this).is(':checked'));
+			var isChecked = $(this).is(':checked');
+			$list.find('.stsrc-recipient-checkbox').prop('checked', isChecked);
+			$list.find('.stsrc-sub-checkbox').not('[disabled]').prop('checked', isChecked);
 			self.updateSelectedCount();
 		});
 
@@ -656,8 +858,9 @@
 	 * Update the "X selected" count displayed in the list header.
 	 */
 	updateSelectedCount: function() {
-		var checked = $('#stsrc-recipient-list .stsrc-recipient-checkbox:checked').length;
-		$('#stsrc-selected-count').text(checked);
+		var primary = $('#stsrc-recipient-list .stsrc-recipient-checkbox:checked').length;
+		var sub = $('#stsrc-recipient-list .stsrc-sub-checkbox:checked:not([disabled])').length;
+		$('#stsrc-selected-count').text(primary + sub);
 	},
 
 	/**
@@ -671,6 +874,16 @@
 			excluded.push($(this).data('member-id'));
 		});
 		return excluded;
+	},
+
+	getExcludedFamilyMemberIds: function() {
+		return $('#stsrc-recipient-list .stsrc-sub-checkbox[data-sub-type="family"]:not(:checked):not([disabled])')
+			.map(function() { return $(this).data('sub-id'); }).get();
+	},
+
+	getExcludedExtraMemberIds: function() {
+		return $('#stsrc-recipient-list .stsrc-sub-checkbox[data-sub-type="extra"]:not(:checked):not([disabled])')
+			.map(function() { return $(this).data('sub-id'); }).get();
 	},
 
 	/**
@@ -1323,6 +1536,78 @@
 		 */
 		initConfirmations: function() {
 			// Confirmation dialogs implementation
+		},
+
+		/**
+		 * Per-page selector and page persistence for the members list.
+		 *
+		 * localStorage keys:
+		 *   stsrc_members_per_page  — '10' | '25' | '50' | '100'
+		 *   stsrc_members_paged     — page number as string
+		 */
+		initMembersListPagination: function() {
+			var $select = $('#stsrc-per-page-select');
+			if ( ! $select.length ) {
+				return; // Not on the members list page.
+			}
+
+			var LS_PER_PAGE = 'stsrc_members_per_page';
+			var LS_PAGED    = 'stsrc_members_paged';
+			var urlParams   = new URLSearchParams(window.location.search);
+			var urlPerPage  = urlParams.get('per_page');
+			var urlPaged    = urlParams.get('paged');
+			var referrer    = document.referrer || '';
+			var returnFromMember = referrer.indexOf('page=stsrc-members') !== -1 &&
+				( referrer.indexOf('action=edit') !== -1 || referrer.indexOf('action=view') !== -1 );
+
+			// --- A: Save current URL state to localStorage ---
+			if ( urlPerPage ) {
+				localStorage.setItem(LS_PER_PAGE, urlPerPage);
+			}
+			localStorage.setItem(LS_PAGED, urlPaged || '1');
+
+			// --- B: Restore per_page if missing from URL ---
+			if ( ! urlPerPage ) {
+				var savedPerPage = localStorage.getItem(LS_PER_PAGE);
+				if ( savedPerPage && savedPerPage !== '10' ) {
+					urlParams.set('per_page', savedPerPage);
+					// Also restore page if returning from edit/view.
+					if ( returnFromMember ) {
+						var savedPaged = localStorage.getItem(LS_PAGED);
+						if ( savedPaged && savedPaged !== '1' ) {
+							urlParams.set('paged', savedPaged);
+						}
+					}
+					window.location.search = urlParams.toString();
+					return;
+				}
+			}
+
+			// --- C: Restore paged when returning from member edit/view ---
+			if ( urlPerPage && ! urlPaged && returnFromMember ) {
+				var savedPaged2 = localStorage.getItem(LS_PAGED);
+				if ( savedPaged2 && savedPaged2 !== '1' ) {
+					urlParams.set('paged', savedPaged2);
+					window.location.search = urlParams.toString();
+					return;
+				}
+			}
+
+			// --- Per-page dropdown change → redirect to page 1 with new value ---
+			$select.on('change', function() {
+				var val    = $(this).val();
+				var params = new URLSearchParams(window.location.search);
+				localStorage.setItem(LS_PER_PAGE, val);
+				params.set('per_page', val);
+				params.delete('paged');
+				window.location.search = params.toString();
+			});
+
+			// --- Filter form submit: clear saved page, sync hidden input ---
+			$('.stsrc-filters form').on('submit', function() {
+				localStorage.removeItem(LS_PAGED);
+				$('#stsrc-per-page-hidden').val( $select.val() );
+			});
 		},
 
 		/**

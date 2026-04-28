@@ -18,11 +18,12 @@ const DB_PORT = process.env.DB_PORT || '10010';
 const DB_NAME = process.env.DB_NAME || 'local';
 const DB_USER = process.env.DB_USER || 'root';
 const DB_PASS = process.env.DB_PASS || 'root';
+const MYSQL_BIN = process.env.MYSQL_BIN || 'mysql';
 
 function mysql(sql: string): string {
   try {
     return execFileSync(
-      'mysql',
+      MYSQL_BIN,
       [
         '-h', DB_HOST,
         '-P', DB_PORT,
@@ -141,36 +142,29 @@ function ensureMembershipTypes(): Record<MembershipType, number> {
 }
 
 function createTestWpUser(email: string, password: string, displayName: string): number {
-  const existing = mysql(
-    `SELECT ID FROM wp_users WHERE user_email='${email}' LIMIT 1`
-  );
-  if (existing) {
-    const uid = parseInt(existing, 10);
-    console.log(`  WP user "${email}" already exists (ID ${uid})`);
-    return uid;
-  }
-
   const login = email;
+  // INSERT IGNORE avoids duplicates atomically — no TOCTOU race.
   mysql(
-    `INSERT INTO wp_users (user_login, user_email, user_pass, user_nicename, display_name, user_registered)
+    `INSERT IGNORE INTO wp_users (user_login, user_email, user_pass, user_nicename, display_name, user_registered)
      VALUES ('${login}', '${email}', '', '${login}', '${displayName}', '${NOW}')`
   );
+  // Always re-SELECT so we get the canonical ID whether we just inserted or it existed.
   const uid = parseInt(
-    mysql(`SELECT ID FROM wp_users WHERE user_email='${email}' LIMIT 1`),
+    mysql(`SELECT ID FROM wp_users WHERE user_email='${email}' ORDER BY ID ASC LIMIT 1`),
     10
   );
 
-  // Set capabilities for stsrc_member role
+  // INSERT IGNORE on usermeta in case capabilities already exist.
   mysql(
-    `INSERT INTO wp_usermeta (user_id, meta_key, meta_value)
+    `INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
      VALUES (${uid}, 'wp_capabilities', 'a:1:{s:11:\\"stsrc_member\\";b:1;}')`
   );
   mysql(
-    `INSERT INTO wp_usermeta (user_id, meta_key, meta_value)
+    `INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
      VALUES (${uid}, 'wp_user_level', '0')`
   );
 
-  console.log(`  Created WP user "${email}" (ID ${uid})`);
+  console.log(`  Ensured WP user "${email}" (ID ${uid})`);
   return uid;
 }
 
@@ -195,26 +189,8 @@ function createTestMember(
   status = 'active',
   balanceOwed = 0
 ): number {
-  const existing = mysql(
-    `SELECT member_id FROM wp_stsrc_members WHERE email='${info.email}' LIMIT 1`
-  );
-  if (existing) {
-    const mid = parseInt(existing, 10);
-    mysql(
-      `UPDATE wp_stsrc_members SET
-         membership_type_id=${membershipTypeId},
-         status='${status}',
-         balance_owed=${balanceOwed},
-         expiration_date='${NEXT_YEAR}',
-         first_name='${info.first}',
-         last_name='${info.last}',
-         updated_at='${NOW}'
-       WHERE member_id=${mid}`
-    );
-    console.log(`  Reset member "${info.email}" to baseline (ID ${mid}) [${status}, balance=${balanceOwed}]`);
-    return mid;
-  }
-
+  // Atomic upsert — INSERT on first run, UPDATE on subsequent runs.
+  // ON DUPLICATE KEY fires on either the `email` or `user_id` unique key.
   mysql(
     `INSERT INTO wp_stsrc_members
        (user_id, membership_type_id, status, payment_type, first_name, last_name, email, phone,
@@ -226,13 +202,21 @@ function createTestMember(
         '123 Test St', 'Tucker', 'GA', '30084', 'US', 'other',
         '${info.first} ${info.last}', '${NOW.slice(0, 10)}',
         ${balanceOwed}, 0,
-        '${NOW}', '${NOW}', '${NEXT_YEAR}')`
+        '${NOW}', '${NOW}', '${NEXT_YEAR}')
+     ON DUPLICATE KEY UPDATE
+       membership_type_id = VALUES(membership_type_id),
+       status             = VALUES(status),
+       balance_owed       = VALUES(balance_owed),
+       expiration_date    = VALUES(expiration_date),
+       first_name         = VALUES(first_name),
+       last_name          = VALUES(last_name),
+       updated_at         = VALUES(updated_at)`
   );
   const mid = parseInt(
     mysql(`SELECT member_id FROM wp_stsrc_members WHERE email='${info.email}' LIMIT 1`),
     10
   );
-  console.log(`  Created member "${info.email}" (ID ${mid}) [${status}]`);
+  console.log(`  Upserted member "${info.email}" (ID ${mid}) [${status}, balance=${balanceOwed}]`);
   return mid;
 }
 

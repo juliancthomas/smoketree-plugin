@@ -5,9 +5,10 @@ const DB_PORT = process.env.DB_PORT || '10010';
 const DB_NAME = process.env.DB_NAME || 'local';
 const DB_USER = process.env.DB_USER || 'root';
 const DB_PASS = process.env.DB_PASS || 'root';
+const MYSQL_BIN = process.env.MYSQL_BIN || 'mysql';
 
 function mysqlCmd(): string {
-  return `mysql -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p${DB_PASS} ${DB_NAME}`;
+  return `"${MYSQL_BIN}" -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p${DB_PASS} ${DB_NAME}`;
 }
 
 export function dbQuery(sql: string): string {

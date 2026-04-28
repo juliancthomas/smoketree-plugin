@@ -106,6 +106,10 @@ class STSRC_Members_Page {
 		}
 		$filters['show_deleted'] = ! empty( $request['show_deleted'] ) ? '1' : '0';
 
+		if ( ! empty( $request['signup_month'] ) && preg_match( '/^\d{4}-\d{2}$/', $request['signup_month'] ) ) {
+			$filters['signup_month'] = sanitize_text_field( $request['signup_month'] );
+		}
+
 		$orderby = isset( $request['orderby'] ) ? sanitize_text_field( $request['orderby'] ) : 'created_at';
 		$order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
 		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
@@ -174,7 +178,19 @@ class STSRC_Members_Page {
 		// Get active member count
 		$active_count = STSRC_Member_DB::get_active_member_count();
 
-		// Build guest pass balance lookup.
+		// Paginate (post-query, after all filtering/sorting)
+		$allowed_per_page = array( 10, 25, 50, 100 );
+		$per_page         = isset( $request['per_page'] ) ? (int) $request['per_page'] : 10;
+		if ( ! in_array( $per_page, $allowed_per_page, true ) ) {
+			$per_page = 10;
+		}
+		$paged          = max( 1, intval( $request['paged'] ?? 1 ) );
+		$total_filtered = count( $members );
+		$total_pages    = max( 1, (int) ceil( $total_filtered / $per_page ) );
+		$paged          = min( $paged, $total_pages );
+		$members        = array_slice( $members, ( $paged - 1 ) * $per_page, $per_page );
+
+		// Build guest pass balance lookup (scoped to current page).
 		$guest_pass_balances = array();
 		foreach ( $members as $member ) {
 			$mid = (int) $member['member_id'];
@@ -187,6 +203,10 @@ class STSRC_Members_Page {
 			'filters'              => $filters,
 			'active_count'         => $active_count,
 			'guest_pass_balances'  => $guest_pass_balances,
+			'total_filtered'       => $total_filtered,
+			'paged'                => $paged,
+			'per_page'             => $per_page,
+			'total_pages'          => $total_pages,
 		);
 
 		// Include list template

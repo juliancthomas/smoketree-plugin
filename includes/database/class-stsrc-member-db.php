@@ -294,6 +294,24 @@ class STSRC_Member_DB {
 			}
 		}
 
+		if ( ! empty( $filters['signup_month'] ) && preg_match( '/^\d{4}-\d{2}$/', $filters['signup_month'] ) ) {
+			list( $year, $month ) = explode( '-', $filters['signup_month'] );
+			$year               = intval( $year );
+			$month              = intval( $month );
+			$renewals_table     = $wpdb->prefix . 'stsrc_member_renewals';
+			$where_clauses[]    = "(
+				( YEAR(created_at) = %d AND MONTH(created_at) = %d )
+				OR member_id IN (
+					SELECT member_id FROM {$renewals_table}
+					WHERE YEAR(completed_at) = %d AND MONTH(completed_at) = %d AND status = 'completed'
+				)
+			)";
+			$where_values[]     = $year;
+			$where_values[]     = $month;
+			$where_values[]     = $year;
+			$where_values[]     = $month;
+		}
+
 		// Build query
 		$query = "SELECT * FROM {$table_name}";
 
@@ -301,7 +319,13 @@ class STSRC_Member_DB {
 			$query .= ' WHERE ' . implode( ' AND ', $where_clauses );
 		}
 
-		$query .= ' ORDER BY created_at DESC';
+		// Dynamic ORDER BY — balance is sorted post-query; fall back to created_at for it here.
+		$allowed_cols = array( 'created_at', 'last_name', 'first_name', 'email', 'status' );
+		$orderby_col  = ( isset( $filters['orderby'] ) && in_array( $filters['orderby'], $allowed_cols, true ) )
+			? $filters['orderby']
+			: 'created_at';
+		$order_dir    = ( isset( $filters['order'] ) && 'ASC' === $filters['order'] ) ? 'ASC' : 'DESC';
+		$query       .= " ORDER BY {$orderby_col} {$order_dir}";
 
 		// Execute query with prepared statement
 		if ( ! empty( $where_values ) ) {

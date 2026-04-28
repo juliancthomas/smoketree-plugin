@@ -179,6 +179,22 @@ $templates = $data['templates'] ?? array();
 					</tr>
 				</table>
 
+			<table class="form-table" style="margin-top: 0;">
+				<tr>
+					<th><?php echo esc_html__( 'Include Sub-Members', 'smoketree-plugin' ); ?></th>
+					<td>
+						<label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 20px; cursor: pointer;">
+							<input type="checkbox" id="include_family_members" name="include_family_members" value="1" checked>
+							<?php echo esc_html__( 'Family Members', 'smoketree-plugin' ); ?>
+						</label>
+						<label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+							<input type="checkbox" id="include_extra_members" name="include_extra_members" value="1" checked>
+							<?php echo esc_html__( 'Extra Members (paid only)', 'smoketree-plugin' ); ?>
+						</label>
+					</td>
+				</tr>
+			</table>
+
 			<!-- Preview Recipient Count -->
 			<div class="stsrc-recipient-preview" style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
 				<strong><?php echo esc_html__( 'Recipient Preview:', 'smoketree-plugin' ); ?></strong>

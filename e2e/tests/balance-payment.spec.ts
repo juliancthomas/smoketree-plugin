@@ -125,4 +125,40 @@ test.describe('Balance Payment', () => {
       }
     });
   });
+
+  test.describe('Payment Redirect Notices', () => {
+
+    test.beforeEach(async ({ page }) => {
+      await loginAsMember(page, TEST_MEMBERS.withBalance.email, TEST_MEMBERS.withBalance.password);
+    });
+
+    test('shows payment success banner after Stripe redirect', async ({ page }) => {
+      await page.goto('/member-portal?payment=success');
+      const banner = page.locator('.stsrc-notice.success').filter({ hasText: 'Payment processed successfully' }).first();
+      await expect(banner).toBeVisible();
+    });
+
+    test('shows payment cancelled notice after Stripe redirect', async ({ page }) => {
+      await page.goto('/member-portal?payment=cancelled');
+      const notice = page.locator('.stsrc-notice.warning').filter({ hasText: 'Payment was cancelled' }).first();
+      await expect(notice).toBeVisible();
+    });
+
+    test('no payment notice on plain portal load', async ({ page }) => {
+      await page.goto('/member-portal');
+      await expect(page.locator('.stsrc-notice:has-text("Payment processed successfully")')).toHaveCount(0);
+      await expect(page.locator('.stsrc-notice:has-text("Payment was cancelled")')).toHaveCount(0);
+    });
+
+    test('balance card still shows on success redirect before webhook fires', async ({ page }) => {
+      // Regression: the Stripe redirect fires before the async webhook updates the DB.
+      // The portal renders stale data — balance card remains visible even though
+      // the success banner is shown via URL param. This documents the race condition.
+      await page.goto('/member-portal?payment=success');
+      const banner = page.locator('.stsrc-notice.success').filter({ hasText: 'Payment processed successfully' }).first();
+      await expect(banner).toBeVisible();
+      const balanceCard = page.locator('.stsrc-balance-card, .stsrc-outstanding-balance, [class*="balance-card"]').first();
+      await expect(balanceCard).toBeVisible();
+    });
+  });
 });

@@ -75,11 +75,86 @@
 }
 
 /* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.stsrc-pagination {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin: 8px 0 16px;
+}
+
+.stsrc-pagination-left {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: #3c434a;
+}
+
+.stsrc-pagination-left select {
+	margin: 0 4px;
+}
+
+.stsrc-pagination .tablenav-pages {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* ==========================================================================
    Bulk Status & Season Reset
    ========================================================================== */
 
+/* Consolidated bulk actions box */
+.stsrc-bulk-actions-box {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.stsrc-bulk-actions-box h2 {
+	margin: 0 0 4px;
+}
+
+.stsrc-bulk-tabs {
+	display: flex;
+	gap: 0;
+	border-bottom: 2px solid #ccd0d4;
+	margin: 16px 0 20px;
+}
+
+.stsrc-bulk-tab {
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.stsrc-bulk-tab:hover {
+	color: #2271b1;
+}
+
+.stsrc-bulk-tab.is-active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+.stsrc-bulk-panel {
+	padding-top: 4px;
+}
+
 .stsrc-bulk-status-box,
-.stsrc-season-reset-box {
+.stsrc-season-reset-box,
+.stsrc-bulk-guest-pass-box {
 	background: #fff;
 	border: 1px solid #ccd0d4;
 	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -88,7 +163,8 @@
 }
 
 .stsrc-bulk-status-box h2,
-.stsrc-season-reset-box h2 {
+.stsrc-season-reset-box h2,
+.stsrc-bulk-guest-pass-box h2 {
 	margin-top: 0;
 }
 
@@ -114,6 +190,51 @@
 
 .stsrc-bulk-status-actions {
 	margin-top: 16px;
+}
+
+/* Collapsible panels
+   ========================================================================== */
+
+.stsrc-collapsible-toggle {
+	background: none;
+	border: none;
+	padding: 0;
+	font-size: 1em;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: inherit;
+	width: 100%;
+	text-align: left;
+}
+
+.stsrc-collapsible-toggle:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.stsrc-collapse-icon {
+	font-size: 0.7em;
+	display: inline-block;
+	transition: transform 0.2s ease;
+}
+
+.stsrc-collapsible-body {
+	overflow: hidden;
+	max-height: 800px;
+	opacity: 1;
+	transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.stsrc-collapsible.is-collapsed .stsrc-collapsible-body {
+	max-height: 0;
+	opacity: 0;
+}
+
+.stsrc-collapsible.is-collapsed .stsrc-collapse-icon {
+	transform: rotate(-90deg);
 }
 
 /* ==========================================================================
@@ -242,11 +363,17 @@
 	border-bottom: none;
 }
 
-/* Members list: guest pass column */
+/* Members list: auto-renewal and guest pass columns */
+.stsrc-auto-renewal-column {
+	text-align: center;
+	white-space: nowrap;
+	width: 110px;
+}
+
 .stsrc-guest-pass-column {
 	text-align: center;
 	white-space: nowrap;
-	width: 40px;
+	width: 100px;
 }
 
 /* Members list: quick edit inline row */
@@ -436,6 +563,68 @@
 }
 
 /* ==========================================================================
+   Stat Cards
+   ========================================================================== */
+
+.stsrc-stat-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 16px 0;
+}
+
+.stsrc-stat-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 12px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 120px;
+}
+
+.stsrc-stat-card .stsrc-stat-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #2271b1;
+	line-height: 1.2;
+}
+
+.stsrc-stat-card .stsrc-stat-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #50575e;
+	margin-top: 4px;
+	white-space: nowrap;
+}
+
+.stsrc-stat-card--selected .stsrc-stat-value {
+	color: #1d2327;
+}
+
+.stsrc-stat-card--selected.has-selection .stsrc-stat-value {
+	color: #2271b1;
+}
+
+.stsrc-stats-toolbar {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.stsrc-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-bottom: 2px;
+}
+
+/* ==========================================================================
    Filter Styles
    ========================================================================== */
 
@@ -478,7 +667,21 @@
 	max-width: 200px;
 }
 
-.stsrc-filter-group:last-child {
+.stsrc-filter-row + .stsrc-filter-row {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.stsrc-filter-group--checkbox {
+	justify-content: flex-end;
+}
+
+.stsrc-filter-group--checkbox .stsrc-inline-checkbox {
+	margin: 0;
+}
+
+.stsrc-filter-actions {
 	display: flex;
 	flex-direction: row;
 	align-items: flex-end;
@@ -502,7 +705,7 @@
 		max-width: 100%;
 	}
 
-	.stsrc-filter-group:last-child {
+	.stsrc-filter-actions {
 		margin-left: 0;
 	}
 }
