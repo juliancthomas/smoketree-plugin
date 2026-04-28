@@ -192,16 +192,6 @@ class STSRC_Settings_Page {
 		// Community Links
 		$settings['whatsapp_url'] = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
 
-		// Banner Settings
-		$settings['banner_enabled']     = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_enabled', 'option' ) : get_option( 'stsrc_banner_enabled', '0' );
-		$settings['banner_message']     = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_message', 'option' ) : get_option( 'stsrc_banner_message', '' );
-		$settings['banner_type']        = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_type', 'option' ) : get_option( 'stsrc_banner_type', 'info' );
-		$settings['banner_audience']    = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_audience', 'option' ) : get_option( 'stsrc_banner_audience', 'all' );
-		$settings['banner_dismissible'] = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_dismissible', 'option' ) : get_option( 'stsrc_banner_dismissible', '1' );
-		$settings['banner_expiry_date'] = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_expiry_date', 'option' ) : get_option( 'stsrc_banner_expiry_date', '' );
-		$settings['banner_link_label']  = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_link_label', 'option' ) : get_option( 'stsrc_banner_link_label', '' );
-		$settings['banner_link_url']    = function_exists( 'get_field' ) ? get_field( 'stsrc_banner_link_url', 'option' ) : get_option( 'stsrc_banner_link_url', '' );
-
 		return $settings;
 	}
 }

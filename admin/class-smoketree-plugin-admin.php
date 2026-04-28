@@ -363,6 +363,16 @@ class Smoketree_Plugin_Admin {
 			array( $this, 'render_email_page' )
 		);
 
+		// Banner
+		add_submenu_page(
+			'stsrc-dashboard',
+			__( 'Banner', 'smoketree-plugin' ),
+			__( 'Banner', 'smoketree-plugin' ),
+			'manage_options',
+			'stsrc-banner',
+			array( $this, 'render_banner_page' )
+		);
+
 		// Access Codes
 		add_submenu_page(
 			'stsrc-dashboard',
@@ -431,6 +441,18 @@ class Smoketree_Plugin_Admin {
 	public function render_email_page(): void {
 		require_once plugin_dir_path( __FILE__ ) . 'pages/class-stsrc-email-page.php';
 		$page = new STSRC_Email_Page();
+		$page->render();
+	}
+
+	/**
+	 * Render banner page.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function render_banner_page(): void {
+		require_once plugin_dir_path( __FILE__ ) . 'pages/class-stsrc-banner-page.php';
+		$page = new STSRC_Banner_Page();
 		$page->render();
 	}
 
