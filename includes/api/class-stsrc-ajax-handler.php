@@ -1005,11 +1005,11 @@ class STSRC_Ajax_Handler {
 		);
 
 		// Email to admin/treasurer
-		$president_email = get_field( 'stsrc_president_email', 'option' );
+		$president_email      = get_field( 'stsrc_president_email', 'option' );
 		$vice_president_email = get_field( 'stsrc_vice_president_email', 'option' );
-		$treasurer_email = get_field( 'stsrc_treasurer_email', 'option' );
-		$secretary_emails = array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) );
-		$admin_emails = array_filter( array_merge( array( $president_email, $vice_president_email, $treasurer_email ), $secretary_emails ) );
+		$treasurer_email      = get_field( 'stsrc_treasurer_email', 'option' );
+		$secretary_emails     = array_map( 'trim', explode( ',', (string) get_field( 'stsrc_secretary_email', 'option' ) ) );
+		$admin_emails         = array_values( array_unique( array_filter( array_merge( array( $president_email, $vice_president_email, $treasurer_email ), $secretary_emails ), 'is_email' ) ) );
 
 		foreach ( $admin_emails as $admin_email_address ) {
 			$email_service->send_email(
