@@ -2728,6 +2728,71 @@ class STSRC_Ajax_Handler {
 		}
 		$recipients = array_merge( $recipients, $manual_emails );
 
+		// Append family and extra members if requested.
+		$include_family      = ! empty( $_POST['include_family_members'] );
+		$include_extra       = ! empty( $_POST['include_extra_members'] );
+		$excluded_family_ids = array();
+		$excluded_extra_ids  = array();
+		$skipped_no_email    = array();
+
+		if ( $include_family || $include_extra ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+
+			if ( ! empty( $_POST['excluded_family_member_ids'] ) && is_array( $_POST['excluded_family_member_ids'] ) ) {
+				$excluded_family_ids = array_map( 'intval', $_POST['excluded_family_member_ids'] );
+			}
+			if ( ! empty( $_POST['excluded_extra_member_ids'] ) && is_array( $_POST['excluded_extra_member_ids'] ) ) {
+				$excluded_extra_ids = array_map( 'intval', $_POST['excluded_extra_member_ids'] );
+			}
+
+			foreach ( $members as $member ) {
+				$primary_id   = (int) $member['member_id'];
+				$primary_name = $member['first_name'];
+
+				if ( $include_family ) {
+					$family = STSRC_Family_Member_DB::get_by_member_id( $primary_id );
+					foreach ( $family as $fm ) {
+						if ( in_array( (int) $fm['family_member_id'], $excluded_family_ids, true ) ) {
+							continue;
+						}
+						if ( empty( $fm['email'] ) ) {
+							$skipped_no_email[] = $fm['first_name'] . ' ' . $fm['last_name'] . ' (family of ' . $primary_name . ')';
+							continue;
+						}
+						$recipients[] = array(
+							'email'      => $fm['email'],
+							'first_name' => $fm['first_name'],
+							'last_name'  => $fm['last_name'],
+							'member_id'  => $primary_id,
+						);
+					}
+				}
+
+				if ( $include_extra ) {
+					$extras = STSRC_Extra_Member_DB::get_by_member_id( $primary_id );
+					foreach ( $extras as $em ) {
+						if ( ( $em['payment_status'] ?? '' ) !== 'completed' ) {
+							continue;
+						}
+						if ( in_array( (int) $em['extra_member_id'], $excluded_extra_ids, true ) ) {
+							continue;
+						}
+						if ( empty( $em['email'] ) ) {
+							$skipped_no_email[] = $em['first_name'] . ' ' . $em['last_name'] . ' (extra member of ' . $primary_name . ')';
+							continue;
+						}
+						$recipients[] = array(
+							'email'      => $em['email'],
+							'first_name' => $em['first_name'],
+							'last_name'  => $em['last_name'],
+							'member_id'  => $primary_id,
+						);
+					}
+				}
+			}
+		}
+
 		// Handle attachments
 		$attachments = array();
 		if ( ! empty( $_FILES['attachments'] ) ) {
@@ -2779,6 +2844,8 @@ class STSRC_Ajax_Handler {
 				unlink( $attachment );
 			}
 		}
+
+		$results['warnings'] = $skipped_no_email;
 
 		wp_send_json_success(
 			array(
@@ -2883,25 +2950,89 @@ class STSRC_Ajax_Handler {
 			$filters['date_to'] = sanitize_text_field( $_POST['filters']['date_to'] );
 		}
 
+		$include_family = ! empty( $_POST['filters']['include_family_members'] );
+		$include_extra  = ! empty( $_POST['filters']['include_extra_members'] );
+
 		// Get members
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
 		$members = STSRC_Member_DB::get_members( $filters );
-		$count   = count( $members );
+
+		$family_count = 0;
+		$extra_count  = 0;
+
+		if ( $include_family || $include_extra ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+		}
 
 		$recipient_list = array();
 		foreach ( $members as $member ) {
+			$sub_members = array();
+
+			if ( $include_family ) {
+				$family = STSRC_Family_Member_DB::get_by_member_id( (int) $member['member_id'] );
+				foreach ( $family as $fm ) {
+					$sub_members[] = array(
+						'type'       => 'family',
+						'id'         => (int) $fm['family_member_id'],
+						'first_name' => $fm['first_name'],
+						'last_name'  => $fm['last_name'],
+						'email'      => $fm['email'] ?? '',
+					);
+					if ( ! empty( $fm['email'] ) ) {
+						$family_count++;
+					}
+				}
+			}
+
+			if ( $include_extra ) {
+				$extras = STSRC_Extra_Member_DB::get_by_member_id( (int) $member['member_id'] );
+				foreach ( $extras as $em ) {
+					if ( ( $em['payment_status'] ?? '' ) !== 'completed' ) {
+						continue;
+					}
+					$sub_members[] = array(
+						'type'       => 'extra',
+						'id'         => (int) $em['extra_member_id'],
+						'first_name' => $em['first_name'],
+						'last_name'  => $em['last_name'],
+						'email'      => $em['email'] ?? '',
+					);
+					if ( ! empty( $em['email'] ) ) {
+						$extra_count++;
+					}
+				}
+			}
+
 			$recipient_list[] = array(
-				'member_id'  => (int) $member['member_id'],
-				'first_name' => $member['first_name'],
-				'last_name'  => $member['last_name'],
-				'email'      => $member['email'],
+				'member_id'   => (int) $member['member_id'],
+				'first_name'  => $member['first_name'],
+				'last_name'   => $member['last_name'],
+				'email'       => $member['email'],
+				'sub_members' => $sub_members,
 			);
 		}
 
+		$member_count = count( $members );
+		$total_count  = $member_count + $family_count + $extra_count;
+
+		$parts = array( sprintf( '%d %s', $member_count, $member_count === 1 ? 'member' : 'members' ) );
+		if ( $family_count > 0 ) {
+			$parts[] = sprintf( '%d family', $family_count );
+		}
+		if ( $extra_count > 0 ) {
+			$parts[] = sprintf( '%d extra', $extra_count );
+		}
+		$message = implode( ' + ', $parts );
+		if ( count( $parts ) > 1 ) {
+			$message .= sprintf( ' = %d total', $total_count );
+		}
+		$message .= ' will receive this email';
+
 		wp_send_json_success(
 			array(
-				'count'     => $count,
-				'message'   => sprintf( '%d %s will receive this email', $count, $count === 1 ? 'recipient' : 'recipients' ),
+				'count'      => $total_count,
+				'message'    => $message,
 				'recipients' => $recipient_list,
 			)
 		);

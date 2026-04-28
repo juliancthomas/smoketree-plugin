@@ -488,7 +488,7 @@
 			var self = this;
 
 		// Reset recipient list when filters change so the next submit auto-reloads.
-		$('#membership_type_id, #status, #payment_type, #date_from, #date_to').on('change', function() {
+		$('#membership_type_id, #status, #payment_type, #date_from, #date_to, #include_family_members, #include_extra_members').on('change', function() {
 			self.recipientListLoaded = false;
 			$('#stsrc-recipient-list-wrap').hide();
 			$('#stsrc-recipient-list').empty();
@@ -602,6 +602,16 @@
 				formData.append('excluded_member_ids[]', id);
 			});
 
+			// Sub-member include flags and exclusions
+			formData.append('include_family_members', $('#include_family_members').is(':checked') ? 1 : 0);
+			formData.append('include_extra_members', $('#include_extra_members').is(':checked') ? 1 : 0);
+			self.getExcludedFamilyMemberIds().forEach(function(id) {
+				formData.append('excluded_family_member_ids[]', id);
+			});
+			self.getExcludedExtraMemberIds().forEach(function(id) {
+				formData.append('excluded_extra_member_ids[]', id);
+			});
+
 			$('#email-progress').show();
 			$('#submit').prop('disabled', true);
 
@@ -626,6 +636,10 @@
 					if (response.success) {
 						$('#progress-text').text(response.data.message);
 						STSRCAdmin.showNotice(response.data.message, 'success');
+						var warnings = response.data.results && response.data.results.warnings;
+						if (warnings && warnings.length > 0) {
+							STSRCAdmin.showNotice('Skipped (no email): ' + warnings.join(', '), 'warning');
+						}
 					} else {
 						$('#progress-text').text('Error: ' + response.data.message);
 						STSRCAdmin.showNotice('Error: ' + response.data.message, 'error');
@@ -661,7 +675,9 @@
 			status: $('#status').val(),
 			payment_type: $('#payment_type').val(),
 			date_from: $('#date_from').val(),
-			date_to: $('#date_to').val()
+			date_to: $('#date_to').val(),
+			include_family_members: $('#include_family_members').is(':checked') ? 1 : 0,
+			include_extra_members: $('#include_extra_members').is(':checked') ? 1 : 0
 		};
 
 		$.ajax({
@@ -674,8 +690,7 @@
 			},
 			success: function(response) {
 				if (response.success) {
-					var count = response.data.count;
-					$('#recipient-count').text(count + ' ' + (count === 1 ? 'recipient' : 'recipients') + ' will receive this email');
+					$('#recipient-count').text(response.data.message);
 					self.renderRecipientList(response.data.recipients || []);
 					self.recipientListLoaded = true;
 					if (typeof callback === 'function') {
@@ -695,9 +710,9 @@
 	},
 
 	/**
-	 * Render the recipient checkbox list.
+	 * Render the recipient checkbox list with grouped primary + sub-member rows.
 	 *
-	 * @param {Array} recipients Array of {member_id, first_name, last_name, email}.
+	 * @param {Array} recipients Array of {member_id, first_name, last_name, email, sub_members[]}.
 	 */
 	renderRecipientList: function(recipients) {
 		var self = this;
@@ -706,47 +721,131 @@
 		var $selectAll = $('#stsrc-select-all-recipients');
 
 		$list.empty();
+		$list.off('change.stsrc').off('click.stsrc');
 
 		if (recipients.length === 0) {
 			$wrap.hide();
 			return;
 		}
 
+		var badgeBase = 'display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:6px;font-weight:600;';
+		var familyBadge = '<span style="' + badgeBase + 'background:#dff0d8;color:#3c763d;">Family</span>';
+		var extraBadge  = '<span style="' + badgeBase + 'background:#d9edf7;color:#31708f;">Extra</span>';
+
 		recipients.forEach(function(r) {
-			var label = $('<label>').css({
+			var subMembers = r.sub_members || [];
+			var hasSubMembers = subMembers.length > 0;
+
+			// Primary row
+			var $group = $('<div>').addClass('stsrc-recipient-group').css('borderBottom', '1px solid #f0f0f1');
+
+			var $primaryLabel = $('<label>').css({
 				display: 'flex',
 				alignItems: 'center',
 				gap: '8px',
-				padding: '4px 0',
-				cursor: 'pointer',
-				borderBottom: '1px solid #f0f0f1'
+				padding: '5px 0',
+				cursor: 'pointer'
 			});
 
-			var cb = $('<input>', {
+			var $cb = $('<input>', {
 				type: 'checkbox',
 				checked: true,
 				'data-member-id': r.member_id
 			}).addClass('stsrc-recipient-checkbox');
 
-			var text = $('<span>').text(r.first_name + ' ' + r.last_name + ' \u2014 ' + r.email);
+			var nameText = r.first_name + ' ' + r.last_name + ' \u2014 ' + r.email;
+			var $nameSpan = $('<span>').text(nameText);
 
-			label.append(cb).append(text);
-			$list.append(label);
+			$primaryLabel.append($cb).append($nameSpan);
+
+			if (hasSubMembers) {
+				var enabledSubs = subMembers.filter(function(s) { return s.email; }).length;
+				var $toggle = $('<span>').html(' <a href="#" class="stsrc-sub-toggle" style="font-size:12px;text-decoration:none;">\u25b6 ' + subMembers.length + ' sub-member' + (subMembers.length !== 1 ? 's' : '') + '</a>');
+				$primaryLabel.append($toggle);
+			}
+
+			$group.append($primaryLabel);
+
+			// Sub-member rows (collapsed by default)
+			if (hasSubMembers) {
+				var $subList = $('<div>').addClass('stsrc-sub-members').css({
+					display: 'none',
+					paddingLeft: '24px'
+				});
+
+				subMembers.forEach(function(s) {
+					var hasEmail = !!s.email;
+					var badge = s.type === 'family' ? familyBadge : extraBadge;
+
+					var $subLabel = $('<label>').css({
+						display: 'flex',
+						alignItems: 'center',
+						gap: '6px',
+						padding: '3px 0',
+						cursor: hasEmail ? 'pointer' : 'default',
+						color: hasEmail ? '' : '#999'
+					});
+
+					var subCbAttrs = {
+						type: 'checkbox',
+						'data-sub-type': s.type,
+						'data-sub-id': s.id,
+						'data-parent': r.member_id
+					};
+					if (hasEmail) {
+						subCbAttrs.checked = true;
+					} else {
+						subCbAttrs.disabled = true;
+					}
+					var $subCb = $('<input>', subCbAttrs).addClass('stsrc-sub-checkbox');
+
+					var subText = s.first_name + ' ' + s.last_name;
+					if (hasEmail) {
+						subText += ' \u2014 ' + s.email;
+					} else {
+						subText += ' \u2014 no email, will be skipped';
+					}
+
+					$subLabel.append($subCb).append($('<span>').text(subText)).append($(badge));
+					$subList.append($subLabel);
+				});
+
+				$group.append($subList);
+			}
+
+			$list.append($group);
 		});
 
-		// Update count whenever a checkbox changes
-		$list.off('change', '.stsrc-recipient-checkbox').on('change', '.stsrc-recipient-checkbox', function() {
+		// Primary checkbox change: cascade to sub-members
+		$list.on('change.stsrc', '.stsrc-recipient-checkbox', function() {
+			var isChecked = $(this).is(':checked');
+			var memberId = $(this).data('member-id');
+			$list.find('.stsrc-sub-checkbox[data-parent="' + memberId + '"]').not('[disabled]').prop('checked', isChecked);
 			self.updateSelectedCount();
-			// Sync the Select All checkbox state
 			var total = $list.find('.stsrc-recipient-checkbox').length;
 			var checked = $list.find('.stsrc-recipient-checkbox:checked').length;
-			$selectAll.prop('checked', total === checked);
-			$selectAll.prop('indeterminate', checked > 0 && checked < total);
+			$selectAll.prop('checked', total === checked).prop('indeterminate', checked > 0 && checked < total);
+		});
+
+		// Sub-member checkbox change: update count only
+		$list.on('change.stsrc', '.stsrc-sub-checkbox', function() {
+			self.updateSelectedCount();
+		});
+
+		// Expand/collapse toggle
+		$list.on('click.stsrc', '.stsrc-sub-toggle', function(e) {
+			e.preventDefault();
+			var $subList = $(this).closest('.stsrc-recipient-group').find('.stsrc-sub-members');
+			var isOpen = $subList.is(':visible');
+			$subList.toggle();
+			$(this).html((isOpen ? '\u25b6' : '\u25bc') + $(this).text().replace(/^[\u25b6\u25bc]\s*/, ''));
 		});
 
 		// Select All toggle
 		$selectAll.off('change').on('change', function() {
-			$list.find('.stsrc-recipient-checkbox').prop('checked', $(this).is(':checked'));
+			var isChecked = $(this).is(':checked');
+			$list.find('.stsrc-recipient-checkbox').prop('checked', isChecked);
+			$list.find('.stsrc-sub-checkbox').not('[disabled]').prop('checked', isChecked);
 			self.updateSelectedCount();
 		});
 
@@ -759,8 +858,9 @@
 	 * Update the "X selected" count displayed in the list header.
 	 */
 	updateSelectedCount: function() {
-		var checked = $('#stsrc-recipient-list .stsrc-recipient-checkbox:checked').length;
-		$('#stsrc-selected-count').text(checked);
+		var primary = $('#stsrc-recipient-list .stsrc-recipient-checkbox:checked').length;
+		var sub = $('#stsrc-recipient-list .stsrc-sub-checkbox:checked:not([disabled])').length;
+		$('#stsrc-selected-count').text(primary + sub);
 	},
 
 	/**
@@ -774,6 +874,16 @@
 			excluded.push($(this).data('member-id'));
 		});
 		return excluded;
+	},
+
+	getExcludedFamilyMemberIds: function() {
+		return $('#stsrc-recipient-list .stsrc-sub-checkbox[data-sub-type="family"]:not(:checked):not([disabled])')
+			.map(function() { return $(this).data('sub-id'); }).get();
+	},
+
+	getExcludedExtraMemberIds: function() {
+		return $('#stsrc-recipient-list .stsrc-sub-checkbox[data-sub-type="extra"]:not(:checked):not([disabled])')
+			.map(function() { return $(this).data('sub-id'); }).get();
 	},
 
 	/**
