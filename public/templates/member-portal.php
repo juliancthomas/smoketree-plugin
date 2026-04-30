@@ -112,8 +112,10 @@ $data['renewal_context'] = $renewal_context;
 $is_renewal_active = ! empty( $renewal_context['show_section'] );
 
 // Detect a stale initiated (Stripe-abandoned) renewal so the UI can offer self-cancel.
+// Check whenever renewal is enabled — member is ineligible precisely because of the
+// initiated record, so we cannot gate this on $is_renewal_active.
 $initiated_renewal = null;
-if ( $is_renewal_active && ! empty( $renewal_context['season_key'] ) ) {
+if ( ! empty( $renewal_context['enabled'] ) && ! empty( $renewal_context['season_key'] ) ) {
 	require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-renewal-db.php';
 	$initiated_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
 		(int) ( $member['member_id'] ?? 0 ),
@@ -162,8 +164,8 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/pay-balance-modal.php'; ?>
 
-		<!-- Renewal Section -->
-		<?php if ( ! empty( $renewal_context['show_section'] ) ) : ?>
+		<!-- Renewal Section: shown when eligible, or when member has an abandoned Stripe checkout to cancel -->
+		<?php if ( ! empty( $renewal_context['show_section'] ) || ! empty( $initiated_renewal ) ) : ?>
 			<?php
 			$renewal_partial = plugin_dir_path( __FILE__ ) . '../partials/renewal-section.php';
 			if ( file_exists( $renewal_partial ) ) {
