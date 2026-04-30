@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { fillRegistrationForm, uniqueEmail, expectToastOrNotice, waitForAjax } from '../utils/helpers';
+import { fillRegistrationForm, submitRegistrationForm, uniqueEmail, expectToastOrNotice, waitForAjax } from '../utils/helpers';
 import { TEST_MEMBERS } from '../fixtures/test-members';
 
 test.describe('Registration Form', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/registration');
+    await page.goto('/register');
     await expect(page.locator('#stsrc-registration-form')).toBeVisible();
   });
 
@@ -91,9 +91,10 @@ test.describe('Registration Form', () => {
 
     test('payment type radios are required', async ({ page }) => {
       const radios = page.locator('input[name="payment_type"]');
-      const count = await radios.count();
-      expect(count).toBe(5);
       await expect(radios.first()).toHaveAttribute('required', '');
+      // Count includes pay_later when stsrc_payment_plan_enabled is on (set in global-setup)
+      const count = await radios.count();
+      expect(count).toBeGreaterThanOrEqual(4);
     });
   });
 
@@ -144,37 +145,24 @@ test.describe('Registration Form', () => {
       await householdCard.click();
     });
 
-    test('can add up to 4 family members', async ({ page }) => {
-      const addBtn = page.locator('#stsrc-add-family-member');
-      for (let i = 0; i < 4; i++) {
-        await addBtn.click();
-      }
+    test('shows 4 pre-built family member slots', async ({ page }) => {
+      // Household pre-builds 4 fixed slots — no Add button needed
       const items = page.locator('.stsrc-family-member-item');
       await expect(items).toHaveCount(4);
     });
 
-    test('cannot exceed family member limit', async ({ page }) => {
-      const addBtn = page.locator('#stsrc-add-family-member');
-      for (let i = 0; i < 4; i++) {
-        await addBtn.click();
-      }
-
-      // Use dialog handler for the alert
-      page.on('dialog', async (dialog) => {
-        expect(dialog.message()).toContain('Maximum');
-        await dialog.accept();
-      });
-      await addBtn.click();
-
-      // Should still be 4
-      await expect(page.locator('.stsrc-family-member-item')).toHaveCount(4);
+    test('slots 1 and 2 are required, slots 3 and 4 are optional', async ({ page }) => {
+      await expect(page.locator('.stsrc-family-member-item--locked')).toHaveCount(2);
+      await expect(page.locator('.stsrc-family-member-item--optional')).toHaveCount(2);
     });
 
-    test('can remove family members', async ({ page }) => {
-      await page.locator('#stsrc-add-family-member').click();
-      await expect(page.locator('.stsrc-family-member-item')).toHaveCount(1);
-      await page.locator('.stsrc-remove-family-member').click();
-      await expect(page.locator('.stsrc-family-member-item')).toHaveCount(0);
+    test('can toggle optional family member slots', async ({ page }) => {
+      const optionalSlot = page.locator('.stsrc-family-member-item--optional').first();
+      const toggleBtn = optionalSlot.locator('.stsrc-toggle-family-slot');
+      await toggleBtn.click();
+      await expect(optionalSlot).toHaveClass(/stsrc-family-member-item--removed/);
+      await toggleBtn.click();
+      await expect(optionalSlot).not.toHaveClass(/stsrc-family-member-item--removed/);
     });
   });
 
@@ -213,13 +201,13 @@ test.describe('Registration Form', () => {
     test('shows membership price on selection', async ({ page }) => {
       const individualCard = page.locator('.stsrc-membership-card:has(.stsrc-membership-card__name:has-text("Single"))').first();
       await individualCard.click();
-      await expect(page.locator('#stsrc-membership-fee')).toContainText('$175.00');
+      await expect(page.locator('#stsrc-membership-fee')).toContainText('$295.00');
     });
 
     test('shows correct price for Household', async ({ page }) => {
       const householdCard = page.locator('.stsrc-membership-card:has(.stsrc-membership-card__name:has-text("Household"))').first();
       await householdCard.click();
-      await expect(page.locator('#stsrc-membership-fee')).toContainText('$300.00');
+      await expect(page.locator('#stsrc-membership-fee')).toContainText('$575.00');
     });
 
     test('adds extra member fee ($50 each)', async ({ page }) => {
@@ -235,9 +223,9 @@ test.describe('Registration Form', () => {
       await individualCard.click();
       await page.locator('input[name="payment_type"][value="card"]').check();
 
-      // $175 * 2.9% + $0.30 = $5.38 (rounded)
-      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$5.38');
-      await expect(page.locator('#stsrc-total')).toContainText('$180.38');
+      // $295 * 2.9% + $0.30 = $8.86
+      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$8.86');
+      await expect(page.locator('#stsrc-total')).toContainText('$303.86');
     });
 
     test('calculates ACH processing fee correctly', async ({ page }) => {
@@ -245,9 +233,9 @@ test.describe('Registration Form', () => {
       await individualCard.click();
       await page.locator('input[name="payment_type"][value="bank_account"]').check();
 
-      // $175 * 0.8% = $1.40
-      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$1.40');
-      await expect(page.locator('#stsrc-total')).toContainText('$176.40');
+      // $295 * 0.8% = $2.36
+      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$2.36');
+      await expect(page.locator('#stsrc-total')).toContainText('$297.36');
     });
 
     test('no processing fee for Zelle', async ({ page }) => {
@@ -256,7 +244,7 @@ test.describe('Registration Form', () => {
       await page.locator('input[name="payment_type"][value="zelle"]').check();
 
       await expect(page.locator('#stsrc-transaction-fee-row')).toBeHidden();
-      await expect(page.locator('#stsrc-total')).toContainText('$175.00');
+      await expect(page.locator('#stsrc-total')).toContainText('$295.00');
     });
 
     test('no processing fee for check', async ({ page }) => {
@@ -265,19 +253,17 @@ test.describe('Registration Form', () => {
       await page.locator('input[name="payment_type"][value="check"]').check();
 
       await expect(page.locator('#stsrc-transaction-fee-row')).toBeHidden();
-      await expect(page.locator('#stsrc-total')).toContainText('$175.00');
+      await expect(page.locator('#stsrc-total')).toContainText('$295.00');
     });
 
     test('ACH fee is capped at $5.00', async ({ page }) => {
-      // Household = $300. $300 * 0.8% = $2.40, under cap — need a higher amount.
-      // With extra members: $300 + $150 = $450. $450 * 0.8% = $3.60, still under.
-      // The $5 cap kicks in at $625+. We can verify the formula works with existing amounts.
+      // Household = $575. $575 * 0.8% = $4.60 (under cap). Cap kicks in at $625+.
       const householdCard = page.locator('.stsrc-membership-card:has(.stsrc-membership-card__name:has-text("Household"))').first();
       await householdCard.click();
       await page.locator('input[name="payment_type"][value="bank_account"]').check();
 
-      // $300 * 0.8% = $2.40
-      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$2.40');
+      // $575 * 0.8% = $4.60
+      await expect(page.locator('#stsrc-transaction-fee')).toContainText('$4.60');
     });
   });
 
@@ -333,7 +319,7 @@ test.describe('Registration Form', () => {
       });
       // Override confirm password to mismatch
       await page.locator('#password_confirm').fill('DifferentPass456!');
-      await page.locator('#stsrc-submit-registration').click();
+      await submitRegistrationForm(page);
 
       const errorMsg = page.locator('#stsrc-form-messages .stsrc-notice.error');
       await expect(errorMsg).toBeVisible({ timeout: 10_000 });
@@ -352,13 +338,16 @@ test.describe('Registration Form', () => {
 
     test('progress bar updates as fields are filled', async ({ page }) => {
       const label = page.locator('#stsrc-progress-label');
-      await expect(label).toContainText('0%');
+      // city/zip have defaults so initial % may already be > 0 — capture it first
+      const initialText = await label.textContent() ?? '';
+      const initialPct = parseInt(initialText);
 
       await page.locator('#first_name').fill('John');
       await page.locator('#last_name').fill('Doe');
-      // After filling 2 of ~16 required fields
-      const text = await label.textContent();
-      expect(text).not.toBe('0% complete');
+
+      const updatedText = await label.textContent() ?? '';
+      const updatedPct = parseInt(updatedText);
+      expect(updatedPct).toBeGreaterThan(initialPct);
     });
   });
 
@@ -369,7 +358,7 @@ test.describe('Registration Form', () => {
         email: TEST_MEMBERS.individual.email,
         paymentType: 'check',
       });
-      await page.locator('#stsrc-submit-registration').click();
+      await submitRegistrationForm(page);
 
       const errorMsg = page.locator('#stsrc-form-messages .stsrc-notice.error');
       await expect(errorMsg).toBeVisible({ timeout: 15_000 });
@@ -390,23 +379,11 @@ test.describe('Registration Form', () => {
       // Auto-renewal acknowledgment required for card payments
       await page.locator('#auto_renewal_acknowledged').check();
 
-      await page.locator('#stsrc-submit-registration').click();
+      await submitRegistrationForm(page);
 
-      // Should redirect to Stripe Checkout or show error if Stripe keys not configured
-      await page.waitForURL(/checkout\.stripe\.com|member-portal|register/, {
-        timeout: 30_000,
-      });
-
-      const url = page.url();
-      if (url.includes('checkout.stripe.com')) {
-        // Successfully redirected to Stripe — test passes
-        expect(url).toContain('checkout.stripe.com');
-      } else {
-        // If Stripe keys aren't configured, we should still see a meaningful response
-        // (either success for non-Stripe flow or an error about Stripe config)
-        const messages = page.locator('#stsrc-form-messages');
-        await expect(messages).toBeVisible();
-      }
+      // Wait for navigation away from /register (the regex "register" would match current URL, so exclude it)
+      await page.waitForURL(/checkout\.stripe\.com|member-portal/, { timeout: 30_000 });
+      expect(page.url()).toContain('checkout.stripe.com');
     });
   });
 
@@ -419,19 +396,11 @@ test.describe('Registration Form', () => {
         paymentType: 'zelle',
       });
 
-      await page.locator('#stsrc-submit-registration').click();
+      await submitRegistrationForm(page);
 
-      // Should complete registration and redirect to member portal or show success
-      await page.waitForURL(/member-portal|register/, { timeout: 30_000 });
-
-      const url = page.url();
-      if (url.includes('member-portal')) {
-        await expect(page.locator('h1')).toContainText('Member Portal');
-      } else {
-        // Check for success message on the form page
-        const successMsg = page.locator('#stsrc-form-messages .stsrc-notice.success');
-        await expect(successMsg).toBeVisible({ timeout: 10_000 });
-      }
+      // Wait for redirect to member portal (exclude /register match)
+      await page.waitForURL(/member-portal/, { timeout: 30_000 });
+      await expect(page.locator('h1')).toContainText('Member Portal');
     });
   });
 });

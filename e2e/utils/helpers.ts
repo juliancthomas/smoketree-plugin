@@ -40,12 +40,22 @@ export async function fillRegistrationForm(
   await page.locator('#email').fill(email);
   await page.locator('#phone').fill(overrides.phone || '(555) 555-1234');
 
-  await page.locator('#street_1').fill(overrides.street || '123 Test Street');
+  // #street_1 may be hidden by the Google Places autocomplete widget — set directly
+  const streetVal = overrides.street || '123 Test Street';
+  const streetVisible = await page.locator('#street_1').isVisible().catch(() => false);
+  if (streetVisible) {
+    await page.locator('#street_1').fill(streetVal);
+  } else {
+    await page.evaluate((val) => {
+      const el = document.getElementById('street_1') as HTMLInputElement;
+      if (el) { el.value = val; el.dispatchEvent(new Event('change', { bubbles: true })); }
+    }, streetVal);
+  }
   await page.locator('#city').fill(overrides.city || 'Tucker');
   await page.locator('#state').selectOption(overrides.state || 'GA');
   await page.locator('#zip').fill(overrides.zip || '30084');
 
-  const cardIndex = overrides.membershipTypeIndex ?? 0;
+  const cardIndex = overrides.membershipTypeIndex ?? 2; // 0=Household, 1=Duo, 2=Single, 3=Civic
   await page.locator('.stsrc-membership-card').nth(cardIndex).click();
 
   await page.locator('#password').fill(password);
@@ -74,6 +84,15 @@ export async function expectToastOrNotice(
   if (textMatch) {
     await expect(notice).toContainText(textMatch);
   }
+}
+
+// Trigger jQuery's submit handler directly, bypassing native browser validation.
+// Needed because the form's submit button is type="submit" and native validation
+// may block the jQuery handler (e.g. when Google Places hides required inputs).
+export async function submitRegistrationForm(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (window as any).jQuery('#stsrc-registration-form').trigger('submit');
+  });
 }
 
 export async function waitForAjax(page: Page, timeout = 10_000): Promise<void> {
