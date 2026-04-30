@@ -111,6 +111,18 @@ $renewal_context = STSRC_Member_Portal::get_renewal_context( $member );
 $data['renewal_context'] = $renewal_context;
 $is_renewal_active = ! empty( $renewal_context['show_section'] );
 
+// Detect a stale initiated (Stripe-abandoned) renewal so the UI can offer self-cancel.
+$initiated_renewal = null;
+if ( $is_renewal_active && ! empty( $renewal_context['season_key'] ) ) {
+	require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-renewal-db.php';
+	$initiated_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
+		(int) ( $member['member_id'] ?? 0 ),
+		$renewal_context['season_key'],
+		array( STSRC_Renewal_DB::STATUS_INITIATED )
+	);
+}
+$data['initiated_renewal'] = $initiated_renewal;
+
 $request_params        = wp_unslash( $_GET );
 $payment_status        = isset( $request_params['payment'] ) ? sanitize_text_field( $request_params['payment'] ) : '';
 $extra_member_state    = isset( $request_params['extra_member'] ) ? sanitize_text_field( $request_params['extra_member'] ) : '';

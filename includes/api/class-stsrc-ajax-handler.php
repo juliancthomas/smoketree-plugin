@@ -1066,6 +1066,10 @@ class STSRC_Ajax_Handler {
 	 * @return bool True when processing may continue.
 	 */
 	private function enforce_rate_limit( string $action, int $limit, int $window, string $error_message ): bool {
+		if ( defined( 'STSRC_DISABLE_RATE_LIMIT' ) && STSRC_DISABLE_RATE_LIMIT ) {
+			return true;
+		}
+
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-captcha-service.php';
 		$captcha_service = new STSRC_Captcha_Service();
 

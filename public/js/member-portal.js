@@ -12,6 +12,7 @@
 
 	$(document).ready(function() {
 		initTransactionToggle();
+		initRenewalCancelButton();
 		initRenewalSection();
 		initReferralCopyButton();
 	});
@@ -681,6 +682,53 @@
 			$(this).closest('.stsrc-renewal-card').addClass('is-current');
 			updateAddButtons();
 			updateFamilyHint();
+		});
+	}
+
+	function initRenewalCancelButton() {
+		var $notice = $('#stsrc-renewal-cancel-notice');
+		if ($notice.length === 0) {
+			return;
+		}
+
+		var $btn     = $('#stsrc-renewal-cancel-btn');
+		var $spinner = $notice.find('.stsrc-renewal-cancel-spinner');
+		var $wrap    = $('#stsrc-renewal-form-wrap');
+		var ajaxUrl  = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) ? window.stsrcPublic.ajaxUrl : '';
+		var renewalId = parseInt($notice.data('renewal-id'), 10);
+		var nonce     = $('#stsrc-renewal-form input[name="nonce"]').val();
+
+		$btn.on('click', function() {
+			$btn.prop('disabled', true);
+			$spinner.show();
+
+			$.ajax({
+				url: ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'stsrc_renewal_member_cancel',
+					nonce: nonce,
+					renewal_id: renewalId
+				}
+			}).done(function(response) {
+				if (response && response.success) {
+					$notice.slideUp(200, function() {
+						$notice.remove();
+						$wrap.slideDown(200);
+					});
+				} else {
+					var msg = (response && response.data && response.data.message)
+						? response.data.message
+						: 'Unable to cancel. Please try again or contact the club.';
+					$notice.find('p').text(msg);
+					$btn.prop('disabled', false);
+					$spinner.hide();
+				}
+			}).fail(function() {
+				$notice.find('p').text('Something went wrong. Please try again or contact the club.');
+				$btn.prop('disabled', false);
+				$spinner.hide();
+			});
 		});
 	}
 

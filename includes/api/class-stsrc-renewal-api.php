@@ -165,6 +165,72 @@ class STSRC_Renewal_API {
 	}
 
 	/**
+	 * Allow a member to cancel their own initiated (Stripe-pending) renewal.
+	 *
+	 * Only cancels renewals with status 'initiated'. Offline pending_payment
+	 * renewals require admin intervention.
+	 *
+	 * @return void
+	 */
+	public function member_cancel_renewal(): void {
+		$member = $this->get_authenticated_member_context();
+		if ( null === $member ) {
+			return;
+		}
+
+		$post_data  = wp_unslash( $_POST );
+		$renewal_id = absint( $post_data['renewal_id'] ?? 0 );
+
+		if ( $renewal_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid renewal ID.', 'smoketree-plugin' ) ), 400 );
+			return;
+		}
+
+		$renewal = STSRC_Renewal_DB::get_renewal( $renewal_id );
+		if ( empty( $renewal ) ) {
+			wp_send_json_error( array( 'message' => __( 'Renewal record not found.', 'smoketree-plugin' ) ), 404 );
+			return;
+		}
+
+		if ( (int) ( $renewal['member_id'] ?? 0 ) !== (int) ( $member['member_id'] ?? 0 ) ) {
+			wp_send_json_error( array( 'message' => __( 'Access denied.', 'smoketree-plugin' ) ), 403 );
+			return;
+		}
+
+		if ( STSRC_Renewal_DB::STATUS_INITIATED !== ( $renewal['status'] ?? '' ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Only a pending Stripe checkout can be cancelled here. Contact the club for other renewal statuses.', 'smoketree-plugin' ) ),
+				409
+			);
+			return;
+		}
+
+		$applied = STSRC_Renewal_DB::transition_status(
+			$renewal_id,
+			array( STSRC_Renewal_DB::STATUS_INITIATED ),
+			STSRC_Renewal_DB::STATUS_CANCELLED,
+			array( 'notes' => sprintf( 'Cancelled by member (user %d).', get_current_user_id() ) )
+		);
+
+		if ( ! $applied ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to cancel renewal. Please try again.', 'smoketree-plugin' ) ), 500 );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Member self-cancelled initiated renewal.',
+			array(
+				'method'     => __METHOD__,
+				'renewal_id' => $renewal_id,
+				'member_id'  => (int) ( $member['member_id'] ?? 0 ),
+				'user_id'    => get_current_user_id(),
+			)
+		);
+
+		wp_send_json_success( array( 'message' => __( 'Checkout cancelled. You can now start your renewal again.', 'smoketree-plugin' ) ) );
+	}
+
+	/**
 	 * Cancel a stuck or stale renewal from admin.
 	 *
 	 * @return void

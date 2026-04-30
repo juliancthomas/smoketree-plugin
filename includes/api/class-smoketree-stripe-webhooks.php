@@ -167,6 +167,9 @@ class Smoketree_Stripe_Webhooks {
 			case 'checkout.session.completed':
 				return self::handle_checkout_session_completed( $event, $is_live_event );
 
+			case 'checkout.session.expired':
+				return self::handle_checkout_session_expired( $event );
+
 			case 'payment_intent.succeeded':
 				return self::handle_payment_intent_succeeded( $event );
 
@@ -178,6 +181,54 @@ class Smoketree_Stripe_Webhooks {
 				error_log( 'Unhandled Stripe webhook event type: ' . $event_type );
 				return true; // Return true to acknowledge receipt
 		}
+	}
+
+	/**
+	 * Handle checkout.session.expired event.
+	 *
+	 * Auto-cancels any initiated renewal tied to the expired session so the
+	 * member is not locked out of restarting the renewal flow.
+	 *
+	 * @param array $event Stripe event data.
+	 * @return bool
+	 */
+	private static function handle_checkout_session_expired( array $event ): bool {
+		$session    = $event['data']['object'] ?? null;
+		$session_id = $session['id'] ?? '';
+		$metadata   = $session['metadata'] ?? array();
+
+		if ( 'renewal' !== ( $metadata['payment_context'] ?? '' ) || '' === $session_id ) {
+			return true;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-renewal-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-logger.php';
+
+		$renewal = STSRC_Renewal_DB::get_by_checkout_session_id( $session_id );
+		if ( empty( $renewal ) || STSRC_Renewal_DB::STATUS_INITIATED !== ( $renewal['status'] ?? '' ) ) {
+			return true;
+		}
+
+		$renewal_id = (int) $renewal['renewal_id'];
+		$applied    = STSRC_Renewal_DB::transition_status(
+			$renewal_id,
+			array( STSRC_Renewal_DB::STATUS_INITIATED ),
+			STSRC_Renewal_DB::STATUS_CANCELLED,
+			array( 'notes' => 'Stripe checkout session expired.' )
+		);
+
+		STSRC_Logger::info(
+			'Renewal auto-cancelled on checkout.session.expired.',
+			array(
+				'method'     => __METHOD__,
+				'event_id'   => (string) ( $event['id'] ?? '' ),
+				'session_id' => $session_id,
+				'renewal_id' => $renewal_id,
+				'applied'    => $applied,
+			)
+		);
+
+		return true;
 	}
 
 	/**

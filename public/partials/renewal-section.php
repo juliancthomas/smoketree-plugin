@@ -24,6 +24,8 @@ $current_price   = (float) ( $membership_type['price'] ?? 0.00 );
 $balance_owed    = (float) ( $member['balance_owed'] ?? 0.00 );
 $renewal_nonce   = wp_create_nonce( 'stsrc_renewal_nonce' );
 
+$initiated_renewal = $data['initiated_renewal'] ?? null;
+
 $use_acf           = function_exists( 'get_field' );
 $auto_renewal_text = $use_acf ? get_field( 'stsrc_auto_renewal_text', 'option' ) : get_option( 'stsrc_auto_renewal_text', '' );
 
@@ -45,6 +47,21 @@ if ( function_exists( 'get_field' ) ) {
 ?>
 
 <section class="stsrc-portal-section stsrc-renewal-section" id="stsrc-renewal-section">
+
+	<?php if ( ! empty( $initiated_renewal ) ) : ?>
+	<div class="stsrc-renewal-notice stsrc-renewal-notice--warning" id="stsrc-renewal-cancel-notice"
+		data-renewal-id="<?php echo esc_attr( (string) (int) $initiated_renewal['renewal_id'] ); ?>">
+		<p>
+			<?php echo esc_html__( 'You started a renewal checkout but did not complete it. Cancel the pending checkout below to start fresh.', 'smoketree-plugin' ); ?>
+		</p>
+		<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-renewal-cancel-btn">
+			<?php echo esc_html__( 'Cancel Checkout &amp; Start Over', 'smoketree-plugin' ); ?>
+		</button>
+		<span class="stsrc-renewal-cancel-spinner" style="display:none;" aria-hidden="true"></span>
+	</div>
+	<?php endif; ?>
+
+	<div id="stsrc-renewal-form-wrap"<?php echo ! empty( $initiated_renewal ) ? ' style="display:none;"' : ''; ?>>
 	<div class="stsrc-renewal-header">
 		<h2><?php echo esc_html__( 'Renew Membership', 'smoketree-plugin' ); ?></h2>
 		<p class="stsrc-description">
@@ -312,5 +329,6 @@ if ( function_exists( 'get_field' ) ) {
 			</div>
 		</div>
 	</form>
+	</div><!-- /#stsrc-renewal-form-wrap -->
 </section>
 
