@@ -40,6 +40,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		$stsrc_banner_active = true;
 		$stsrc_banner        = array(
 			'message'     => $stsrc_banner_message,
+			'size'        => get_option( 'stsrc_banner_size', 'medium' ),
 			'type'        => get_option( 'stsrc_banner_type', 'info' ),
 			'dismissible' => '1' === get_option( 'stsrc_banner_dismissible', '1' ),
 			'link_label'  => get_option( 'stsrc_banner_link_label', '' ),
@@ -233,9 +234,11 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	}
 
 	.stsrc-banner--info    { background-color: #dbeafe; color: #1e40af; }
-	.stsrc-banner--warning { background-color: #fef9c3; color: #854d0e; }
+	.stsrc-banner--warning { background-color: #ffedd5; color: #9a3412; }
 	.stsrc-banner--alert   { background-color: #fee2e2; color: #991b1b; }
 	.stsrc-banner--success { background-color: #dcfce7; color: #166534; }
+
+	.stsrc-banner--large { font-size: 1rem; padding: 0.75rem 1rem; font-weight: 600; }
 
 	.stsrc-banner-content {
 		display: flex;
@@ -277,7 +280,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 
 	<?php if ( $stsrc_banner_active ) : ?>
 	<div id="stsrc-banner"
-		class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?>"
+		class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?> stsrc-banner--<?php echo esc_attr( $stsrc_banner['size'] ); ?>"
 		role="alert"
 		<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>"<?php endif; ?>>
 		<div class="stsrc-banner-content">

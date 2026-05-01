@@ -15,6 +15,7 @@
     "test:balance": "npx playwright test balance-payment.spec.ts",
     "test:renewal": "npx playwright test portal-renewal.spec.ts",
     "test:referral": "npx playwright test referral-code.spec.ts",
+    "test:banner": "npx playwright test banner.spec.ts",
     "seed": "npx tsx fixtures/seed-data.ts",
     "seed:reset": "npx tsx fixtures/seed-data.ts --reset"
   },

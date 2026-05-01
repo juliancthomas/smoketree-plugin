@@ -3314,6 +3314,11 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_banner_type', $banner_type );
 		}
 
+		$banner_size = sanitize_text_field( $post_data['banner_size'] ?? 'medium' );
+		if ( in_array( $banner_size, array( 'medium', 'large' ), true ) ) {
+			update_option( 'stsrc_banner_size', $banner_size );
+		}
+
 		$banner_audience = sanitize_text_field( $post_data['banner_audience'] ?? 'all' );
 		if ( in_array( $banner_audience, array( 'all', 'members', 'public' ), true ) ) {
 			update_option( 'stsrc_banner_audience', $banner_audience );

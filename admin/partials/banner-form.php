@@ -43,6 +43,15 @@ $banner = $data['banner'] ?? array();
 				</td>
 			</tr>
 			<tr>
+				<th><label for="banner_size"><?php echo esc_html__( 'Size', 'smoketree-plugin' ); ?></label></th>
+				<td>
+					<select name="banner_size" id="banner_size">
+						<option value="medium" <?php selected( $banner['size'] ?? 'medium', 'medium' ); ?>><?php echo esc_html__( 'Medium (default)', 'smoketree-plugin' ); ?></option>
+						<option value="large"  <?php selected( $banner['size'] ?? '', 'large' ); ?>><?php echo esc_html__( 'Large', 'smoketree-plugin' ); ?></option>
+					</select>
+				</td>
+			</tr>
+			<tr>
 				<th><label for="banner_type"><?php echo esc_html__( 'Banner Type', 'smoketree-plugin' ); ?></label></th>
 				<td>
 					<select name="banner_type" id="banner_type">

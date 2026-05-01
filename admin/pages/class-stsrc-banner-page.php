@@ -25,6 +25,7 @@ class STSRC_Banner_Page {
 		return array(
 			'enabled'     => get_option( 'stsrc_banner_enabled', '0' ),
 			'message'     => get_option( 'stsrc_banner_message', '' ),
+			'size'        => get_option( 'stsrc_banner_size', 'medium' ),
 			'type'        => get_option( 'stsrc_banner_type', 'info' ),
 			'audience'    => get_option( 'stsrc_banner_audience', 'all' ),
 			'dismissible' => get_option( 'stsrc_banner_dismissible', '1' ),
