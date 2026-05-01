@@ -235,9 +235,11 @@ jQuery(document).ready(function($) {
 			backgroundColor: c.bg,
 			color: c.text,
 			fontSize: s.fontSize,
-			padding: s.padding,
 			fontWeight: s.fontWeight,
 			minHeight: s.minHeight || '',
+			padding: s.padding,
+			paddingLeft: '100px',
+			paddingRight: '60px',
 		});
 
 		var iconSize = s.dismissIcon + 'px';
