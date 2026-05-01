@@ -39,12 +39,15 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	if ( ! empty( $stsrc_banner_message ) && ! $stsrc_banner_expired && $stsrc_audience_match ) {
 		$stsrc_banner_active = true;
 		$stsrc_banner        = array(
-			'message'     => $stsrc_banner_message,
-			'size'        => get_option( 'stsrc_banner_size', 'medium' ),
-			'type'        => get_option( 'stsrc_banner_type', 'info' ),
-			'dismissible' => '1' === get_option( 'stsrc_banner_dismissible', '1' ),
-			'link_label'  => get_option( 'stsrc_banner_link_label', '' ),
-			'link_url'    => get_option( 'stsrc_banner_link_url', '' ),
+			'message'         => $stsrc_banner_message,
+			'size'            => get_option( 'stsrc_banner_size', 'small' ),
+			'type'            => get_option( 'stsrc_banner_type', 'info' ),
+			'dismissible'     => '1' === get_option( 'stsrc_banner_dismissible', '1' ),
+			'link_label'      => get_option( 'stsrc_banner_link_label', '' ),
+			'link_url'        => get_option( 'stsrc_banner_link_url', '' ),
+			'star_text'       => get_option( 'stsrc_banner_star_text', '' ),
+			'star_bg_color'   => get_option( 'stsrc_banner_star_bg_color', '#facc15' ),
+			'star_text_color' => get_option( 'stsrc_banner_star_text_color', '#1a1a1a' ),
 		);
 		$stsrc_banner_key = substr( md5( $stsrc_banner_message ), 0, 8 );
 	}
@@ -223,6 +226,11 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 
 	/* Announcement Banner */
 	.stsrc-banner {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		z-index: 9999;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -231,6 +239,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		font-size: 0.875rem;
 		line-height: 1.4;
 		text-align: center;
+		overflow: visible;
 	}
 
 	.stsrc-banner--info    { background-color: #dbeafe; color: #1e40af; }
@@ -238,7 +247,67 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	.stsrc-banner--alert   { background-color: #fee2e2; color: #991b1b; }
 	.stsrc-banner--success { background-color: #dcfce7; color: #166534; }
 
-	.stsrc-banner--large { font-size: 1rem; padding: 0.75rem 1rem; font-weight: 600; }
+	/* size modifiers — small is the base style above */
+	.stsrc-banner--medium     { font-size: 1.5rem; padding: 1.25rem 1.5rem; font-weight: 700; }
+	.stsrc-banner--large      { font-size: 2.5rem; padding: 2.5rem 2rem;  font-weight: 800; }
+	.stsrc-banner--xl         { font-size: 4rem;   min-height: 33vh;      font-weight: 900; padding: 2rem; }
+	.stsrc-banner--fullscreen {
+		top: 5px;
+		left: 5px;
+		width: calc(100% - 10px);
+		min-height: calc(100vh - 10px);
+		font-size: 4rem;
+		font-weight: 900;
+		border-radius: 6px;
+	}
+
+	/* Dismiss button — absolutely positioned top-right, scales with banner size */
+	.stsrc-banner-dismiss {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		display: flex;
+		align-items: center;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: inherit;
+		opacity: 0.6;
+		padding: 0.25rem;
+	}
+	.stsrc-banner-dismiss:hover { opacity: 1; }
+	.stsrc-banner-dismiss svg   { width: 14px; height: 14px; }
+
+	.stsrc-banner--medium .stsrc-banner-dismiss            { top: 12px; right: 12px; }
+	.stsrc-banner--medium .stsrc-banner-dismiss svg        { width: 16px; height: 16px; }
+	.stsrc-banner--large .stsrc-banner-dismiss             { top: 20px; right: 20px; }
+	.stsrc-banner--large .stsrc-banner-dismiss svg         { width: 28px; height: 28px; }
+	.stsrc-banner--xl .stsrc-banner-dismiss                { top: 24px; right: 24px; }
+	.stsrc-banner--xl .stsrc-banner-dismiss svg            { width: 36px; height: 36px; }
+	.stsrc-banner--fullscreen .stsrc-banner-dismiss        { top: 28px; right: 28px; }
+	.stsrc-banner--fullscreen .stsrc-banner-dismiss svg    { width: 44px; height: 44px; }
+
+	/* Star sticker */
+	@media (max-width: 767px) { .stsrc-banner-star { display: none !important; } }
+
+	.stsrc-banner-star {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		left: 16px;
+		width: 68px;
+		height: 68px;
+		clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.6rem;
+		font-weight: 800;
+		text-align: center;
+		line-height: 1.1;
+		padding: 18px 10px 10px;
+		z-index: 1;
+	}
 
 	.stsrc-banner-content {
 		display: flex;
@@ -256,46 +325,36 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	}
 
 	.stsrc-banner-link:hover { opacity: 0.8; }
-
-	.stsrc-banner-dismiss {
-		display: flex;
-		align-items: center;
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: inherit;
-		opacity: 0.6;
-		padding: 0.125rem;
-		margin-left: 0.25rem;
-		flex-shrink: 0;
-	}
-
-	.stsrc-banner-dismiss:hover { opacity: 1; }
 </style>
 
 <body <?php body_class( 'stsrc-site-body' ); ?>>
 <?php wp_body_open(); ?>
 
-<header class="stsrc-header">
-
-	<?php if ( $stsrc_banner_active ) : ?>
-	<div id="stsrc-banner"
-		class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?> stsrc-banner--<?php echo esc_attr( $stsrc_banner['size'] ); ?>"
-		role="alert"
-		<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>"<?php endif; ?>>
-		<div class="stsrc-banner-content">
-			<span><?php echo esc_html( $stsrc_banner['message'] ); ?></span>
-			<?php if ( ! empty( $stsrc_banner['link_url'] ) && ! empty( $stsrc_banner['link_label'] ) ) : ?>
-				<a href="<?php echo esc_url( $stsrc_banner['link_url'] ); ?>" class="stsrc-banner-link"><?php echo esc_html( $stsrc_banner['link_label'] ); ?></a>
-			<?php endif; ?>
-		</div>
-		<?php if ( $stsrc_banner['dismissible'] ) : ?>
-			<button type="button" class="stsrc-banner-dismiss" aria-label="<?php echo esc_attr__( 'Dismiss announcement', 'smoketree-plugin' ); ?>">
-				<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-			</button>
+<?php if ( $stsrc_banner_active ) : ?>
+<div id="stsrc-banner"
+	class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?> stsrc-banner--<?php echo esc_attr( $stsrc_banner['size'] ); ?>"
+	role="alert"
+	<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>"<?php endif; ?>>
+	<div class="stsrc-banner-content">
+		<span><?php echo esc_html( $stsrc_banner['message'] ); ?></span>
+		<?php if ( ! empty( $stsrc_banner['link_url'] ) && ! empty( $stsrc_banner['link_label'] ) ) : ?>
+			<a href="<?php echo esc_url( $stsrc_banner['link_url'] ); ?>" class="stsrc-banner-link"><?php echo esc_html( $stsrc_banner['link_label'] ); ?></a>
 		<?php endif; ?>
 	</div>
+	<?php if ( $stsrc_banner['dismissible'] ) : ?>
+		<button type="button" class="stsrc-banner-dismiss" aria-label="<?php echo esc_attr__( 'Dismiss announcement', 'smoketree-plugin' ); ?>">
+			<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+		</button>
 	<?php endif; ?>
+	<?php if ( ! empty( $stsrc_banner['star_text'] ) ) : ?>
+		<div class="stsrc-banner-star" aria-hidden="true" style="background-color:<?php echo esc_attr( $stsrc_banner['star_bg_color'] ); ?>;color:<?php echo esc_attr( $stsrc_banner['star_text_color'] ); ?>;">
+			<?php echo esc_html( $stsrc_banner['star_text'] ); ?>
+		</div>
+	<?php endif; ?>
+</div>
+<?php endif; ?>
+
+<header class="stsrc-header">
 
 	<div class="stsrc-header-container">
 		<!-- Logo -->

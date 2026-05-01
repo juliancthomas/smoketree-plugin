@@ -3314,9 +3314,23 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_banner_type', $banner_type );
 		}
 
-		$banner_size = sanitize_text_field( $post_data['banner_size'] ?? 'medium' );
-		if ( in_array( $banner_size, array( 'medium', 'large' ), true ) ) {
+		$banner_size = sanitize_text_field( $post_data['banner_size'] ?? 'small' );
+		if ( in_array( $banner_size, array( 'small', 'medium', 'large', 'xl', 'fullscreen' ), true ) ) {
 			update_option( 'stsrc_banner_size', $banner_size );
+		}
+
+		if ( isset( $post_data['banner_star_text'] ) ) {
+			update_option( 'stsrc_banner_star_text', sanitize_text_field( $post_data['banner_star_text'] ) );
+		}
+
+		$star_bg = sanitize_hex_color( $post_data['banner_star_bg_color'] ?? '#facc15' );
+		if ( $star_bg ) {
+			update_option( 'stsrc_banner_star_bg_color', $star_bg );
+		}
+
+		$star_text_color = sanitize_hex_color( $post_data['banner_star_text_color'] ?? '#1a1a1a' );
+		if ( $star_text_color ) {
+			update_option( 'stsrc_banner_star_text_color', $star_text_color );
 		}
 
 		$banner_audience = sanitize_text_field( $post_data['banner_audience'] ?? 'all' );
