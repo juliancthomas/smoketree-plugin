@@ -81,6 +81,20 @@ export const TEST_MEMBERS = {
     first: 'Test',
     last: 'Balance',
   },
+  referrer: {
+    email: 'testreferrer@example.com',
+    password: 'TestPass123!',
+    first: 'Test',
+    last: 'Referrer',
+    affiliateCode: 'REF-TESTREF-001',
+  },
+  inactiveReferrer: {
+    email: 'testinactive@example.com',
+    password: 'TestPass123!',
+    first: 'Test',
+    last: 'Inactive',
+    affiliateCode: 'REF-INACTIVE-001',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -245,6 +259,31 @@ function ensureAccessCodes(): void {
   }
 }
 
+function setAffiliateCode(email: string, code: string): void {
+  mysql(`UPDATE wp_stsrc_members SET affiliate_code='${code}' WHERE email='${email}'`);
+  console.log(`  Set affiliate code "${code}" for ${email}`);
+}
+
+function ensureAffiliateDiscounts(typeIds: Record<string, number>): void {
+  const discountMap: Record<string, number> = {};
+  for (const id of Object.values(typeIds)) {
+    discountMap[String(id)] = 25;
+  }
+  const json = JSON.stringify(discountMap);
+
+  // Set under both the plain WP option key and the ACF option-page key so
+  // the discount is found whether or not ACF is active.
+  for (const key of ['stsrc_affiliate_type_discounts', 'options_stsrc_affiliate_type_discounts']) {
+    const existing = mysql(`SELECT COUNT(*) FROM wp_options WHERE option_name='${key}'`);
+    if (parseInt(existing, 10) > 0) {
+      mysql(`UPDATE wp_options SET option_value='${json}' WHERE option_name='${key}'`);
+    } else {
+      mysql(`INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('${key}', '${json}', 'yes')`);
+    }
+  }
+  console.log(`  Affiliate discounts set: $25 per membership type`);
+}
+
 function enableRegistration(): void {
   const existing = mysql(
     `SELECT option_value FROM wp_options WHERE option_name='stsrc_registration_enabled' LIMIT 1`
@@ -288,6 +327,7 @@ export async function seedTestData(): Promise<void> {
       mysql(`DELETE FROM wp_users WHERE user_email='${m.email}'`);
     }
     mysql(`DELETE FROM wp_stsrc_access_codes WHERE code IN ('TESTCODE2026','POOLCODE2026')`);
+    mysql(`DELETE FROM wp_stsrc_affiliate_referrals WHERE referral_code IN ('${TEST_MEMBERS.referrer.affiliateCode}','${TEST_MEMBERS.inactiveReferrer.affiliateCode}')`);
     console.log('Test data cleaned up.\n');
   }
 
@@ -354,6 +394,29 @@ export async function seedTestData(): Promise<void> {
     'active',
     75.00
   );
+
+  // Active referrer — used by referral code E2E tests
+  const refUserId = createTestWpUser(
+    TEST_MEMBERS.referrer.email,
+    TEST_MEMBERS.referrer.password,
+    'Test Referrer'
+  );
+  setWpPassword(refUserId, TEST_MEMBERS.referrer.password);
+  createTestMember(refUserId, typeIds['Single'], TEST_MEMBERS.referrer);
+  setAffiliateCode(TEST_MEMBERS.referrer.email, TEST_MEMBERS.referrer.affiliateCode);
+
+  // Inactive referrer — validates that suspended/pending codes are rejected
+  const inactiveUserId = createTestWpUser(
+    TEST_MEMBERS.inactiveReferrer.email,
+    TEST_MEMBERS.inactiveReferrer.password,
+    'Test Inactive'
+  );
+  setWpPassword(inactiveUserId, TEST_MEMBERS.inactiveReferrer.password);
+  createTestMember(inactiveUserId, typeIds['Single'], TEST_MEMBERS.inactiveReferrer, 'pending');
+  setAffiliateCode(TEST_MEMBERS.inactiveReferrer.email, TEST_MEMBERS.inactiveReferrer.affiliateCode);
+
+  console.log('\n[Affiliate Discounts]');
+  ensureAffiliateDiscounts(typeIds);
 
   console.log('\nSeed complete!');
 }
