@@ -14,6 +14,7 @@ async function saveBanner(
     type?: 'info' | 'warning' | 'alert' | 'success';
     audience?: 'all' | 'members' | 'public';
     dismissible?: boolean;
+    resession?: boolean;
     expiryDate?: string;
     linkLabel?: string;
     linkUrl?: string;
@@ -50,6 +51,15 @@ async function saveBanner(
       await dismissCb.check();
     } else {
       await dismissCb.uncheck();
+    }
+  }
+
+  if (opts.resession !== undefined) {
+    const resessionCb = page.locator('#banner_resession');
+    if (opts.resession) {
+      await resessionCb.check();
+    } else {
+      await resessionCb.uncheck();
     }
   }
 
@@ -375,8 +385,8 @@ test.describe('Announcement Banner', () => {
       await expect(page.locator('#stsrc-banner')).not.toBeVisible();
     });
 
-    test('dismissed banner stays hidden after page reload', async ({ page }) => {
-      await saveBanner(page, { message: 'Stays gone', dismissible: true });
+    test('X button writes to localStorage when resession is off', async ({ page }) => {
+      await saveBanner(page, { message: 'Permanent dismiss', dismissible: true, resession: false });
       await page.goto('/');
       await page.locator('.stsrc-banner-dismiss').click();
 
@@ -389,11 +399,76 @@ test.describe('Announcement Banner', () => {
       await expect(page.locator('#stsrc-banner')).not.toBeVisible();
     });
 
+    test('X button writes to sessionStorage when resession is on', async ({ page }) => {
+      await saveBanner(page, { message: 'Session dismiss', dismissible: true, resession: true });
+      await page.goto('/');
+      await page.locator('.stsrc-banner-dismiss').click();
+
+      const inSession = await page.evaluate(() =>
+        Object.keys(sessionStorage).some(k => k.startsWith('stsrc_banner_'))
+      );
+      const inLocal = await page.evaluate(() =>
+        Object.keys(localStorage).some(k => k.startsWith('stsrc_banner_'))
+      );
+      expect(inSession).toBe(true);
+      expect(inLocal).toBe(false);
+    });
+
     test('non-dismissible banner has no dismiss button', async ({ page }) => {
       await saveBanner(page, { message: 'Cannot dismiss', dismissible: false });
       await page.goto('/');
       await expect(page.locator('#stsrc-banner')).toBeVisible();
       await expect(page.locator('.stsrc-banner-dismiss')).not.toBeVisible();
+    });
+
+  });
+
+  test.describe("Don't show again", () => {
+
+    test.afterEach(async ({ page }) => {
+      await cleanupBanner(page);
+    });
+
+    test("'don't show again' button is visible when resession is enabled", async ({ page }) => {
+      await saveBanner(page, { message: 'Resession on', dismissible: true, resession: true });
+      await page.goto('/');
+      await expect(page.locator('.stsrc-banner-no-show')).toBeVisible();
+    });
+
+    test("'don't show again' button is not shown when resession is disabled", async ({ page }) => {
+      await saveBanner(page, { message: 'Resession off', dismissible: true, resession: false });
+      await page.goto('/');
+      await expect(page.locator('.stsrc-banner-no-show')).not.toBeVisible();
+    });
+
+    test("clicking 'don't show again' hides the banner", async ({ page }) => {
+      await saveBanner(page, { message: 'Permanent close', dismissible: true, resession: true });
+      await page.goto('/');
+      await page.locator('.stsrc-banner-no-show').click();
+      await expect(page.locator('#stsrc-banner')).not.toBeVisible();
+    });
+
+    test("'don't show again' always writes to localStorage", async ({ page }) => {
+      await saveBanner(page, { message: 'Always local', dismissible: true, resession: true });
+      await page.goto('/');
+      await page.locator('.stsrc-banner-no-show').click();
+
+      const inLocal = await page.evaluate(() =>
+        Object.keys(localStorage).some(k => k.startsWith('stsrc_banner_'))
+      );
+      const inSession = await page.evaluate(() =>
+        Object.keys(sessionStorage).some(k => k.startsWith('stsrc_banner_'))
+      );
+      expect(inLocal).toBe(true);
+      expect(inSession).toBe(false);
+    });
+
+    test("banner stays hidden after reload when 'don't show again' was clicked", async ({ page }) => {
+      await saveBanner(page, { message: 'Gone for good', dismissible: true, resession: true });
+      await page.goto('/');
+      await page.locator('.stsrc-banner-no-show').click();
+      await page.reload();
+      await expect(page.locator('#stsrc-banner')).not.toBeVisible();
     });
 
   });

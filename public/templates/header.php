@@ -263,11 +263,28 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		border-radius: 6px;
 	}
 
-	/* Dismiss button — absolutely positioned top-right, scales with banner size */
-	.stsrc-banner-dismiss {
+	/* Dismiss group — absolutely positioned top-right, scales with banner size */
+	.stsrc-banner-dismiss-group {
 		position: absolute;
 		top: 10px;
 		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.stsrc-banner-no-show {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: inherit;
+		opacity: 0.6;
+		font-size: 0.7em;
+		text-decoration: underline;
+		padding: 0;
+		white-space: nowrap;
+	}
+	.stsrc-banner-no-show:hover  { opacity: 1; }
+	.stsrc-banner-dismiss {
 		display: flex;
 		align-items: center;
 		background: none;
@@ -280,14 +297,14 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	.stsrc-banner-dismiss:hover { opacity: 1; }
 	.stsrc-banner-dismiss svg   { width: 14px; height: 14px; }
 
-	.stsrc-banner--medium .stsrc-banner-dismiss            { top: 12px; right: 12px; }
-	.stsrc-banner--medium .stsrc-banner-dismiss svg        { width: 16px; height: 16px; }
-	.stsrc-banner--large .stsrc-banner-dismiss             { top: 20px; right: 20px; }
-	.stsrc-banner--large .stsrc-banner-dismiss svg         { width: 28px; height: 28px; }
-	.stsrc-banner--xl .stsrc-banner-dismiss                { top: 24px; right: 24px; }
-	.stsrc-banner--xl .stsrc-banner-dismiss svg            { width: 36px; height: 36px; }
-	.stsrc-banner--fullscreen .stsrc-banner-dismiss        { top: 28px; right: 28px; }
-	.stsrc-banner--fullscreen .stsrc-banner-dismiss svg    { width: 44px; height: 44px; }
+	.stsrc-banner--medium .stsrc-banner-dismiss-group        { top: 12px; right: 12px; }
+	.stsrc-banner--medium .stsrc-banner-dismiss svg          { width: 16px; height: 16px; }
+	.stsrc-banner--large .stsrc-banner-dismiss-group         { top: 20px; right: 20px; }
+	.stsrc-banner--large .stsrc-banner-dismiss svg           { width: 28px; height: 28px; }
+	.stsrc-banner--xl .stsrc-banner-dismiss-group            { top: 24px; right: 24px; }
+	.stsrc-banner--xl .stsrc-banner-dismiss svg              { width: 36px; height: 36px; }
+	.stsrc-banner--fullscreen .stsrc-banner-dismiss-group    { top: 28px; right: 28px; }
+	.stsrc-banner--fullscreen .stsrc-banner-dismiss svg      { width: 44px; height: 44px; }
 
 	/* Star sticker */
 	@media (max-width: 767px) { .stsrc-banner-star { display: none !important; } }
@@ -344,9 +361,14 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		<?php endif; ?>
 	</div>
 	<?php if ( $stsrc_banner['dismissible'] ) : ?>
-		<button type="button" class="stsrc-banner-dismiss" aria-label="<?php echo esc_attr__( 'Dismiss announcement', 'smoketree-plugin' ); ?>">
-			<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-		</button>
+		<div class="stsrc-banner-dismiss-group">
+			<?php if ( $stsrc_banner['resession'] ) : ?>
+				<button type="button" class="stsrc-banner-no-show"><?php echo esc_html__( "Don't show again", 'smoketree-plugin' ); ?></button>
+			<?php endif; ?>
+			<button type="button" class="stsrc-banner-dismiss" aria-label="<?php echo esc_attr__( 'Dismiss announcement', 'smoketree-plugin' ); ?>">
+				<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+			</button>
+		</div>
 	<?php endif; ?>
 	<?php if ( ! empty( $stsrc_banner['star_text'] ) ) : ?>
 		<div class="stsrc-banner-star" aria-hidden="true" style="background-color:<?php echo esc_attr( $stsrc_banner['star_bg_color'] ); ?>;color:<?php echo esc_attr( $stsrc_banner['star_text_color'] ); ?>;">
@@ -419,12 +441,24 @@ window.addEventListener('resize', stsrcSyncPadding);
 		return;
 	}
 
+	function hideBanner() {
+		banner.style.display = 'none';
+		stsrcSyncPadding();
+	}
+
 	var btn = banner.querySelector('.stsrc-banner-dismiss');
 	if (btn && key) {
 		btn.addEventListener('click', function() {
 			storage.setItem('stsrc_banner_' + key, '1');
-			banner.style.display = 'none';
-			stsrcSyncPadding();
+			hideBanner();
+		});
+	}
+
+	var noShow = banner.querySelector('.stsrc-banner-no-show');
+	if (noShow && key) {
+		noShow.addEventListener('click', function() {
+			localStorage.setItem('stsrc_banner_' + key, '1');
+			hideBanner();
 		});
 	}
 })();
