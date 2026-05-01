@@ -86,6 +86,16 @@ $banner = $data['banner'] ?? array();
 					</td>
 				</tr>
 				<tr>
+					<th><label for="banner_resession"><?php echo esc_html__( 'Re-show on Tab Reopen', 'smoketree-plugin' ); ?></label></th>
+					<td>
+						<label>
+							<input type="checkbox" name="banner_resession" id="banner_resession" value="1" <?php checked( $banner['resession'] ?? '0', '1' ); ?>>
+							<?php echo esc_html__( 'Re-show the banner when the visitor reopens the tab or browser', 'smoketree-plugin' ); ?>
+						</label>
+						<p class="description"><?php echo esc_html__( 'When checked, dismissal only lasts for the current tab session. When unchecked, dismissal is remembered permanently.', 'smoketree-plugin' ); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th><label for="banner_expiry_date"><?php echo esc_html__( 'Expiry Date', 'smoketree-plugin' ); ?></label></th>
 					<td>
 						<input type="date" name="banner_expiry_date" id="banner_expiry_date" value="<?php echo esc_attr( $banner['expiry_date'] ?? '' ); ?>" class="regular-text">

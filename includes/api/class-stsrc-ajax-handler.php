@@ -3304,6 +3304,7 @@ class STSRC_Ajax_Handler {
 
 		update_option( 'stsrc_banner_enabled', isset( $post_data['banner_enabled'] ) ? '1' : '0' );
 		update_option( 'stsrc_banner_dismissible', isset( $post_data['banner_dismissible'] ) ? '1' : '0' );
+		update_option( 'stsrc_banner_resession', isset( $post_data['banner_resession'] ) ? '1' : '0' );
 
 		if ( isset( $post_data['banner_message'] ) ) {
 			update_option( 'stsrc_banner_message', sanitize_textarea_field( $post_data['banner_message'] ) );

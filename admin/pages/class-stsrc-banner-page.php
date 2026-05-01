@@ -29,6 +29,7 @@ class STSRC_Banner_Page {
 			'type'             => get_option( 'stsrc_banner_type', 'info' ),
 			'audience'         => get_option( 'stsrc_banner_audience', 'all' ),
 			'dismissible'      => get_option( 'stsrc_banner_dismissible', '1' ),
+			'resession'        => get_option( 'stsrc_banner_resession', '0' ),
 			'expiry_date'      => get_option( 'stsrc_banner_expiry_date', '' ),
 			'link_label'       => get_option( 'stsrc_banner_link_label', '' ),
 			'link_url'         => get_option( 'stsrc_banner_link_url', '' ),

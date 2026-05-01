@@ -43,6 +43,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 			'size'            => get_option( 'stsrc_banner_size', 'small' ),
 			'type'            => get_option( 'stsrc_banner_type', 'info' ),
 			'dismissible'     => '1' === get_option( 'stsrc_banner_dismissible', '1' ),
+			'resession'       => '1' === get_option( 'stsrc_banner_resession', '0' ),
 			'link_label'      => get_option( 'stsrc_banner_link_label', '' ),
 			'link_url'        => get_option( 'stsrc_banner_link_url', '' ),
 			'star_text'       => get_option( 'stsrc_banner_star_text', '' ),
@@ -248,9 +249,9 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 	.stsrc-banner--success { background-color: #dcfce7; color: #166534; }
 
 	/* size modifiers — small is the base style above */
-	.stsrc-banner--medium     { font-size: 1.5rem; padding: 1.25rem 1.5rem; font-weight: 700; }
-	.stsrc-banner--large      { font-size: 2.5rem; padding: 2.5rem 2rem;  font-weight: 800; }
-	.stsrc-banner--xl         { font-size: 4rem;   min-height: 33vh;      font-weight: 900; padding: 2rem; }
+	.stsrc-banner--medium     { font-size: 1.5rem; padding: 1.25rem 1.5rem; font-weight: 700; line-height: 1.3; }
+	.stsrc-banner--large      { font-size: 2.5rem; padding: 2.5rem 2rem;   font-weight: 800; line-height: 1.15; }
+	.stsrc-banner--xl         { font-size: 4rem;   min-height: 33vh;       font-weight: 900; padding: 2rem;    line-height: 1.1; }
 	.stsrc-banner--fullscreen {
 		top: 5px;
 		left: 5px;
@@ -258,6 +259,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		min-height: calc(100vh - 10px);
 		font-size: 4rem;
 		font-weight: 900;
+		line-height: 1.1;
 		border-radius: 6px;
 	}
 
@@ -334,7 +336,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 <div id="stsrc-banner"
 	class="stsrc-banner stsrc-banner--<?php echo esc_attr( $stsrc_banner['type'] ); ?> stsrc-banner--<?php echo esc_attr( $stsrc_banner['size'] ); ?>"
 	role="alert"
-	<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>"<?php endif; ?>>
+	<?php if ( $stsrc_banner['dismissible'] ) : ?>data-banner-key="<?php echo esc_attr( $stsrc_banner_key ); ?>" data-resession="<?php echo $stsrc_banner['resession'] ? '1' : '0'; ?>"<?php endif; ?>>
 	<div class="stsrc-banner-content">
 		<span><?php echo esc_html( $stsrc_banner['message'] ); ?></span>
 		<?php if ( ! empty( $stsrc_banner['link_url'] ) && ! empty( $stsrc_banner['link_label'] ) ) : ?>
@@ -407,10 +409,11 @@ window.addEventListener('resize', stsrcSyncPadding);
 	var banner = document.getElementById('stsrc-banner');
 	if (!banner) return;
 
-	var key = banner.getAttribute('data-banner-key');
+	var key       = banner.getAttribute('data-banner-key');
+	var storage   = banner.getAttribute('data-resession') === '1' ? sessionStorage : localStorage;
 
 	// Hide immediately if previously dismissed
-	if (key && localStorage.getItem('stsrc_banner_' + key) === '1') {
+	if (key && storage.getItem('stsrc_banner_' + key) === '1') {
 		banner.style.display = 'none';
 		stsrcSyncPadding();
 		return;
@@ -419,7 +422,7 @@ window.addEventListener('resize', stsrcSyncPadding);
 	var btn = banner.querySelector('.stsrc-banner-dismiss');
 	if (btn && key) {
 		btn.addEventListener('click', function() {
-			localStorage.setItem('stsrc_banner_' + key, '1');
+			storage.setItem('stsrc_banner_' + key, '1');
 			banner.style.display = 'none';
 			stsrcSyncPadding();
 		});
