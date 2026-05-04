@@ -452,8 +452,9 @@
 
 			$('#stsrc-settings-form').on('submit', function(e) {
 				e.preventDefault();
-				
+
 				const $form = $(this);
+				if (typeof tinyMCE !== 'undefined') { tinyMCE.triggerSave(); }
 				const formData = $form.serialize();
 				const $submitBtn = $('#submit');
 				$submitBtn.prop('disabled', true).val('Saving...');

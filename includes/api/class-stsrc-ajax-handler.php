@@ -3512,6 +3512,11 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_whatsapp_url', esc_url_raw( $post_data['whatsapp_url'] ) );
 		}
 
+		// Save portal announcement
+		if ( isset( $post_data['portal_announcement'] ) ) {
+			update_option( 'stsrc_portal_announcement', wp_kses_post( $post_data['portal_announcement'] ) );
+		}
+
 		// Save payment settings (v1.1.0+)
 		if ( isset( $post_data['minimum_balance_payment'] ) ) {
 			$minimum_payment = floatval( $post_data['minimum_balance_payment'] );

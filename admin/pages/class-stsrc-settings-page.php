@@ -192,6 +192,9 @@ class STSRC_Settings_Page {
 		// Community Links
 		$settings['whatsapp_url'] = function_exists( 'get_field' ) ? get_field( 'stsrc_whatsapp_url', 'option' ) : get_option( 'stsrc_whatsapp_url', '' );
 
+		// Member Portal Announcement
+		$settings['portal_announcement'] = get_option( 'stsrc_portal_announcement', '' );
+
 		return $settings;
 	}
 }

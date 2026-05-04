@@ -220,6 +220,31 @@ $membership_types = $data['membership_types'] ?? array();
 					</table>
 				</div>
 
+				<!-- Member Portal Announcement -->
+				<div class="stsrc-form-section">
+					<h2><?php echo esc_html__( 'Member Portal Announcement', 'smoketree-plugin' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="portal_announcement"><?php echo esc_html__( 'Announcement Content', 'smoketree-plugin' ); ?></label></th>
+							<td>
+								<?php
+								wp_editor(
+									wp_kses_post( $settings['portal_announcement'] ?? '' ),
+									'portal_announcement',
+									array(
+										'textarea_name' => 'portal_announcement',
+										'media_buttons' => true,
+										'textarea_rows' => 10,
+										'teeny'         => false,
+									)
+								);
+								?>
+								<p class="description"><?php echo esc_html__( 'Content shown to members at the top of the Member Portal. Use this for important links, announcements, or seasonal notices. Leave blank to hide the section.', 'smoketree-plugin' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
 				<!-- Waiver Settings -->
 				<div class="stsrc-form-section">
 					<h2><?php echo esc_html__( 'Waiver Agreement', 'smoketree-plugin' ); ?></h2>

@@ -160,6 +160,15 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 		<div id="stsrc-portal-messages"></div>
 
+		<?php
+		$portal_announcement = get_option( 'stsrc_portal_announcement', '' );
+		if ( ! empty( trim( $portal_announcement ) ) ) :
+		?>
+			<div class="stsrc-portal-section stsrc-portal-announcement">
+				<?php echo wp_kses_post( $portal_announcement ); ?>
+			</div>
+		<?php endif; ?>
+
 		<!-- Outstanding Balance Card -->
 		<?php STSRC_Member_Portal::render_balance_card( (int) $member['member_id'] ); ?>
 		<?php include plugin_dir_path( __FILE__ ) . '../partials/pay-balance-modal.php'; ?>
