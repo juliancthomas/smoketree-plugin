@@ -278,7 +278,7 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		cursor: pointer;
 		color: inherit;
 		opacity: 0.6;
-		font-size: 0.7em;
+		font-size: 0.7rem;
 		text-decoration: underline;
 		padding: 0;
 		white-space: nowrap;
@@ -334,7 +334,11 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		gap: 0.5rem;
 		flex-wrap: wrap;
 		justify-content: center;
+		padding: 0 140px;
 	}
+	.stsrc-banner--large .stsrc-banner-content      { padding: 0 180px; }
+	.stsrc-banner--xl .stsrc-banner-content,
+	.stsrc-banner--fullscreen .stsrc-banner-content { padding: 0 220px; }
 
 	.stsrc-banner-link {
 		font-weight: 600;
@@ -431,8 +435,8 @@ window.addEventListener('resize', stsrcSyncPadding);
 	var banner = document.getElementById('stsrc-banner');
 	if (!banner) return;
 
-	var key       = banner.getAttribute('data-banner-key');
-	var storage   = banner.getAttribute('data-resession') === '1' ? sessionStorage : localStorage;
+	var key     = banner.getAttribute('data-banner-key');
+	var storage = <?php echo ( $stsrc_banner_active && ! empty( $stsrc_banner['resession'] ) ) ? 'sessionStorage' : 'localStorage'; ?>;
 
 	// Hide immediately if previously dismissed
 	if (key && storage.getItem('stsrc_banner_' + key) === '1') {
