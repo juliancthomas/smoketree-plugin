@@ -244,27 +244,18 @@ class STSRC_Payment_Service {
 			$grand_total       = round( $discounted_total + $processing_fee, 2 );
 			$product_name      = sanitize_text_field( (string) ( $data['product_name'] ?? 'Membership' ) );
 			$discount_code     = sanitize_text_field( (string) ( $discount_data['code'] ?? '' ) );
+			$discount_label    = $discount_code !== '' ? $discount_code : __( 'Applied Discount', 'smoketree-plugin' );
 			$membership_line   = array(
 				'price_data' => array(
 					'currency'     => 'usd',
 					'product_data' => array(
-						'name' => $product_name,
+						'name' => sprintf( '%s (Discount: %s applied)', $product_name, $discount_label ),
 					),
-					'unit_amount'  => (int) round( $base_amount * 100 ),
+					'unit_amount'  => (int) round( $discounted_total * 100 ),
 				),
 				'quantity'   => 1,
 			);
-			$discount_line     = array(
-				'price_data' => array(
-					'currency'     => 'usd',
-					'product_data' => array(
-						'name' => sprintf( 'Discount: %s', $discount_code !== '' ? $discount_code : __( 'Applied Discount', 'smoketree-plugin' ) ),
-					),
-					'unit_amount'  => -absint( round( $discount_amount * 100 ) ),
-				),
-				'quantity'   => 1,
-			);
-			$line_items        = array( $membership_line, $discount_line );
+			$line_items        = array( $membership_line );
 
 			if ( $processing_fee > 0 ) {
 				$line_items[] = array(

@@ -33,4 +33,18 @@ export const TEST_MEMBERS = {
     first: 'Test',
     last: 'Balance',
   },
+  referrer: {
+    email: 'testreferrer@example.com',
+    password: 'TestPass123!',
+    first: 'Test',
+    last: 'Referrer',
+    affiliateCode: 'REF-TESTREF-001',
+  },
+  inactiveReferrer: {
+    email: 'testinactive@example.com',
+    password: 'TestPass123!',
+    first: 'Test',
+    last: 'Inactive',
+    affiliateCode: 'REF-INACTIVE-001',
+  },
 };

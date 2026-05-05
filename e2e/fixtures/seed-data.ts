@@ -274,12 +274,7 @@ function ensureAffiliateDiscounts(typeIds: Record<string, number>): void {
   // Set under both the plain WP option key and the ACF option-page key so
   // the discount is found whether or not ACF is active.
   for (const key of ['stsrc_affiliate_type_discounts', 'options_stsrc_affiliate_type_discounts']) {
-    const existing = mysql(`SELECT COUNT(*) FROM wp_options WHERE option_name='${key}'`);
-    if (parseInt(existing, 10) > 0) {
-      mysql(`UPDATE wp_options SET option_value='${json}' WHERE option_name='${key}'`);
-    } else {
-      mysql(`INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('${key}', '${json}', 'yes')`);
-    }
+    mysql(`INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('${key}', '${json}', 'yes') ON DUPLICATE KEY UPDATE option_value='${json}'`);
   }
   console.log(`  Affiliate discounts set: $25 per membership type`);
 }

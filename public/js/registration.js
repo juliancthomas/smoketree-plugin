@@ -142,8 +142,15 @@
 					return;
 				}
 				onSuccess(response.data || {});
-			}).fail(function() {
-				onError('Unable to validate code.');
+			}).fail(function(jqXHR) {
+				var msg = 'Unable to validate code.';
+				try {
+					var resp = JSON.parse(jqXHR.responseText);
+					if (resp && resp.data && resp.data.message) {
+						msg = resp.data.message;
+					}
+				} catch (e) {}
+				onError(msg);
 			});
 		}
 
@@ -206,6 +213,13 @@
 				validatePromo(true);
 			} else if (appliedState && appliedState.type === 'affiliate') {
 				validateAffiliate(true);
+			}
+		});
+
+		$('input[name="payment_type"]').on('change', function() {
+			if (appliedState) {
+				baselineTotal = null;
+				updateSummaryDiscount(appliedState.amount, appliedState.label);
 			}
 		});
 
