@@ -82,7 +82,7 @@ $instructions_content = $payment_instructions ?? '';
 							<?php if ( ! empty( $instructions_content ) ) : ?>
 								<div class="instructions">
 									<strong><?php echo esc_html__( 'How to submit payment:', 'smoketree-plugin' ); ?></strong>
-									<p style="margin:12px 0 0; line-height:1.6;"><?php echo esc_html( $instructions_content ); ?></p>
+									<div style="margin:12px 0 0; line-height:1.6;"><?php echo wp_kses_post( $instructions_content ); ?></div>
 								</div>
 							<?php endif; ?>
 

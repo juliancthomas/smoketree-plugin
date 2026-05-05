@@ -40,27 +40,7 @@ $acf_instructions    = (string) ( $payment_instructions ?? '' );
 				<div style="margin: 20px 0; padding: 16px; border-left: 4px solid #2271b1; background: #f0f6fc; border-radius: 0 4px 4px 0;">
 					<strong style="display: block; margin-bottom: 10px; font-size: 15px;"><?php echo esc_html__( 'Payment Instructions', 'smoketree-plugin' ); ?></strong>
 
-					<?php if ( 'zelle' === $payment_method_key ) : ?>
-						<p style="margin: 0;"><?php echo esc_html__( 'Please send your Zelle payment to:', 'smoketree-plugin' ); ?></p>
-						<p style="margin: 6px 0 0; font-size: 15px;"><strong>treasurer.smoketree@gmail.com</strong></p>
-						<p style="margin: 8px 0 0; font-size: 13px; color: #646970;"><?php echo esc_html__( 'Please include your name in the Zelle memo so we can match your payment to your account.', 'smoketree-plugin' ); ?></p>
-
-					<?php elseif ( 'check' === $payment_method_key ) : ?>
-						<p style="margin: 0;"><?php echo esc_html__( 'Please make your check payable to Smoketree Swim and Recreation Club and deliver it to:', 'smoketree-plugin' ); ?></p>
-						<p style="margin: 6px 0 0; font-size: 15px;"><strong>843 Arlington Dr.</strong></p>
-						<p style="margin: 8px 0 0; font-size: 13px; color: #646970;"><?php echo esc_html__( 'Drop your check in the mailbox at the address above.', 'smoketree-plugin' ); ?></p>
-
-					<?php elseif ( 'cash' === $payment_method_key ) : ?>
-						<p style="margin: 0;"><?php echo esc_html__( 'A board member will reach out to you to make arrangements for your cash payment.', 'smoketree-plugin' ); ?></p>
-
-					<?php elseif ( 'payment_plan' === $payment_method_key ) : ?>
-						<p style="margin: 0;"><?php echo esc_html__( 'A board member will reach out to you to make arrangements for your payment plan.', 'smoketree-plugin' ); ?></p>
-						<p style="margin: 10px 0 0; padding: 10px 12px; background: #ffffff; border: 1px solid #c3c4c7; border-radius: 4px; font-size: 13px;">
-							<strong><?php echo esc_html__( 'Please note:', 'smoketree-plugin' ); ?></strong>
-							<?php echo esc_html__( 'The full dues payment must be received before pool access will be given. Payment plans can be started and are accepted anytime during the off-season (November through April/May).', 'smoketree-plugin' ); ?>
-						</p>
-
-					<?php elseif ( ! empty( $acf_instructions ) ) : ?>
+					<?php if ( ! empty( $acf_instructions ) ) : ?>
 						<?php echo wp_kses_post( $acf_instructions ); ?>
 					<?php endif; ?>
 				</div>

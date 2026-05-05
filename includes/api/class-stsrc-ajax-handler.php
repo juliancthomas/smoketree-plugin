@@ -1037,22 +1037,16 @@ class STSRC_Ajax_Handler {
 	 * @return   string                      Payment instructions
 	 */
 	private function get_payment_instructions( string $payment_type ): string {
-		$instructions = get_option( 'stsrc_payment_instructions_' . $payment_type, '' );
-		if ( ! empty( $instructions ) ) {
-			return $instructions;
+		$option_key = 'stsrc_payment_instructions_' . $payment_type;
+
+		if ( function_exists( 'get_field' ) ) {
+			$value = get_field( $option_key, 'option' );
+			if ( null !== $value && '' !== $value ) {
+				return (string) $value;
+			}
 		}
 
-		// Default instructions
-		switch ( $payment_type ) {
-			case 'zelle':
-				return 'Please send payment via Zelle to the email address provided in your confirmation email.';
-			case 'check':
-				return 'Please mail your check to the address provided in your confirmation email.';
-			case 'pay_later':
-				return 'Payment arrangements will be made with club administration.';
-			default:
-				return 'Please contact the club for payment instructions.';
-		}
+		return (string) get_option( $option_key, '' );
 	}
 
 	/**

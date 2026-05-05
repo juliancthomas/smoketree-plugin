@@ -968,10 +968,10 @@ class STSRC_Email_Service {
 		);
 
 		$acf_field_map = array(
-			'zelle'        => 'zelle_instructions',
-			'check'        => 'check_instructions',
-			'cash'         => 'cash_instructions',
-			'payment_plan' => 'payment_plan_instructions',
+			'zelle'        => 'stsrc_payment_instructions_zelle',
+			'check'        => 'stsrc_payment_instructions_check',
+			'cash'         => 'stsrc_payment_instructions_cash',
+			'payment_plan' => 'stsrc_payment_instructions_pay_later',
 		);
 
 		$payment_instructions = '';
@@ -1034,9 +1034,15 @@ class STSRC_Email_Service {
 			$template = 'email/renewal-confirmation-civic.php';
 		}
 
+		$offline_field_map = array(
+			'zelle'        => 'stsrc_payment_instructions_zelle',
+			'check'        => 'stsrc_payment_instructions_check',
+			'cash'         => 'stsrc_payment_instructions_cash',
+			'payment_plan' => 'stsrc_payment_instructions_pay_later',
+		);
 		$payment_instructions = '';
-		if ( in_array( $method, array( 'zelle', 'check' ), true ) ) {
-			$payment_instructions = (string) get_option( 'stsrc_payment_instructions_' . $method, '' );
+		if ( isset( $offline_field_map[ $method ] ) ) {
+			$payment_instructions = (string) $this->get_option_or_field( $offline_field_map[ $method ] );
 		}
 
 		$data = array(
