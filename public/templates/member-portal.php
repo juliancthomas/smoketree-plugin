@@ -116,7 +116,7 @@ $is_renewal_active = ! empty( $renewal_context['show_section'] );
 // initiated record, so we cannot gate this on $is_renewal_active.
 $initiated_renewal = null;
 if ( ! empty( $renewal_context['enabled'] ) && ! empty( $renewal_context['season_key'] ) ) {
-	require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/database/class-stsrc-renewal-db.php';
+	require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/database/class-stsrc-renewal-db.php';
 	$initiated_renewal = STSRC_Renewal_DB::get_latest_by_member_and_season(
 		(int) ( $member['member_id'] ?? 0 ),
 		$renewal_context['season_key'],
