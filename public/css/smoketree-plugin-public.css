@@ -605,25 +605,19 @@
 
 .stsrc-sponsors__grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: 1fr;
 	gap: 2.5rem;
 }
 
 @media (min-width: 640px) {
 	.stsrc-sponsors__grid {
-		grid-template-columns: repeat(3, 1fr);
-	}
-}
-
-@media (min-width: 768px) {
-	.stsrc-sponsors__grid {
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(2, 1fr);
 	}
 }
 
 @media (min-width: 1024px) {
 	.stsrc-sponsors__grid {
-		grid-template-columns: repeat(5, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 	}
 }
 
@@ -634,10 +628,16 @@
 }
 
 .stsrc-sponsors__logo {
-	max-width: 150px;
-	max-height: 100px;
-	width: 100%;
+	width: 50%;
+	max-width: 100%;
+	max-height: 200px;
 	object-fit: contain;
+}
+
+@media (min-width: 640px) {
+	.stsrc-sponsors__logo {
+		width: 100%;
+	}
 }
 
 /* ==========================================================================
