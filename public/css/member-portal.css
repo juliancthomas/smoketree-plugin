@@ -227,6 +227,39 @@
 	text-align: center;
 }
 
+/* Access code credential cards */
+.stsrc-access-code-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.stsrc-access-code-card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 20px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	min-width: 160px;
+}
+
+.stsrc-access-code-card__value {
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #1d2327;
+	line-height: 1.2;
+}
+
+.stsrc-access-code-card__description {
+	font-size: 13px;
+	color: #50575e;
+	line-height: 1.4;
+}
+
 /* Pay balance modal */
 .stsrc-portal-modal {
 	position: fixed;

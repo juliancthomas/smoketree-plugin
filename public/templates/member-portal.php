@@ -265,21 +265,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 		<?php if ( ! $is_renewal_active ) : ?>
 			<!-- Access Codes Section -->
-			<?php if ( ! empty( $access_codes ) ) : ?>
-				<div class="stsrc-portal-section">
-					<h2><?php echo esc_html__( 'Access Codes', 'smoketree-plugin' ); ?></h2>
-					<div class="stsrc-access-codes">
-						<?php foreach ( $access_codes as $code ) : ?>
-							<div class="stsrc-access-code-item">
-								<strong><?php echo esc_html( $code['code'] ); ?></strong>
-								<?php if ( ! empty( $code['description'] ) ) : ?>
-									<p><?php echo esc_html( $code['description'] ); ?></p>
-								<?php endif; ?>
-							</div>
-						<?php endforeach; ?>
-					</div>
-				</div>
-			<?php endif; ?>
+			<?php include plugin_dir_path( __FILE__ ) . '../partials/member-access-codes.php'; ?>
 
 			<!-- Transaction History Section -->
 			<?php include plugin_dir_path( __FILE__ ) . '../partials/member-transaction-history.php'; ?>
