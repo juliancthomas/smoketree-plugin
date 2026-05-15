@@ -73,6 +73,7 @@ class STSRC_Access_Codes_Page {
 				$code['is_expired'] = true;
 			}
 		}
+		unset( $code );
 
 		$data = array(
 			'access_codes' => $access_codes,
