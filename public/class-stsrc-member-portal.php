@@ -121,21 +121,26 @@ class STSRC_Member_Portal {
 
 		echo '<div class="stsrc-notice success">';
 		echo '<p><strong>' . esc_html__( 'Welcome! Your registration was successful.', 'smoketree-plugin' ) . '</strong></p>';
-		echo '<p>' . esc_html__( 'Your membership is pending until payment is received. You will receive an email confirmation shortly.', 'smoketree-plugin' ) . '</p>';
 
-		$acf_field_map = array(
-			'zelle'     => 'stsrc_payment_instructions_zelle',
-			'check'     => 'stsrc_payment_instructions_check',
-			'pay_later' => 'stsrc_payment_instructions_pay_later',
-		);
+		if ( 'cash' === $payment_type ) {
+			echo '<p>' . esc_html__( 'Your membership is pending. A member of our board will reach out to you shortly to arrange your cash payment.', 'smoketree-plugin' ) . '</p>';
+		} else {
+			echo '<p>' . esc_html__( 'Your membership is pending until payment is received. You will receive an email confirmation shortly.', 'smoketree-plugin' ) . '</p>';
 
-		if ( isset( $acf_field_map[ $payment_type ] ) && function_exists( 'get_field' ) ) {
-			$instructions = get_field( $acf_field_map[ $payment_type ], 'option' );
-			if ( ! empty( $instructions ) ) {
-				echo '<div style="margin-top: 10px; padding: 12px; background: #f9f9f9; border-left: 3px solid #0073aa; border-radius: 3px;">';
-				echo '<strong>' . esc_html__( 'Payment Instructions:', 'smoketree-plugin' ) . '</strong>';
-				echo '<div style="margin-top: 6px;">' . wp_kses_post( $instructions ) . '</div>';
-				echo '</div>';
+			$acf_field_map = array(
+				'zelle'     => 'stsrc_payment_instructions_zelle',
+				'check'     => 'stsrc_payment_instructions_check',
+				'pay_later' => 'stsrc_payment_instructions_pay_later',
+			);
+
+			if ( isset( $acf_field_map[ $payment_type ] ) && function_exists( 'get_field' ) ) {
+				$instructions = get_field( $acf_field_map[ $payment_type ], 'option' );
+				if ( ! empty( $instructions ) ) {
+					echo '<div style="margin-top: 10px; padding: 12px; background: #f9f9f9; border-left: 3px solid #0073aa; border-radius: 3px;">';
+					echo '<strong>' . esc_html__( 'Payment Instructions:', 'smoketree-plugin' ) . '</strong>';
+					echo '<div style="margin-top: 6px;">' . wp_kses_post( $instructions ) . '</div>';
+					echo '</div>';
+				}
 			}
 		}
 

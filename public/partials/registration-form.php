@@ -297,6 +297,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
 					</span>
 				</label>
+				<label class="stsrc-pay-balance-method">
+					<input type="radio" name="payment_type" value="cash" required>
+					<span class="stsrc-pay-balance-method__label">
+						<?php echo esc_html__( 'Cash', 'smoketree-plugin' ); ?>
+						<span class="stsrc-pay-balance-method__fee"><?php echo esc_html__( 'No processing fee', 'smoketree-plugin' ); ?></span>
+					</span>
+				</label>
 				<?php if ( ! empty( $payment_plan_enabled ) ) : ?>
 					<label class="stsrc-pay-balance-method">
 						<input type="radio" name="payment_type" value="pay_later" required>
@@ -634,6 +641,7 @@ jQuery(document).ready(function($) {
 		bank_account: '<?php echo esc_js( __( 'Proceed to Payment', 'smoketree-plugin' ) ); ?>',
 		zelle: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>',
 		check: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>',
+		cash: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>',
 		pay_later: '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>'
 	};
 	var defaultSubmitLabel = '<?php echo esc_js( __( 'Complete Registration', 'smoketree-plugin' ) ); ?>';

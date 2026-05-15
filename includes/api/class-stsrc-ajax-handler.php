@@ -991,18 +991,32 @@ class STSRC_Ajax_Handler {
 		$email_service = new STSRC_Email_Service();
 
 		// Email to member
-		$email_service->send_email(
-			'thank-you-pay-later.php',
-			array(
-				'first_name'           => $data['first_name'],
-				'last_name'            => $data['last_name'],
-				'email'                => $data['email'],
-				'amount_due'           => '$' . number_format( $amount_due, 2 ),
-				'payment_instructions' => $this->get_payment_instructions( $data['payment_type'] ),
-			),
-			$data['email'],
-			'Thank You for Your Registration - Smoketree Swim and Recreation Club'
-		);
+		if ( 'cash' === $data['payment_type'] ) {
+			$email_service->send_email(
+				'thank-you-cash.php',
+				array(
+					'first_name' => $data['first_name'],
+					'last_name'  => $data['last_name'],
+					'email'      => $data['email'],
+					'amount_due' => '$' . number_format( $amount_due, 2 ),
+				),
+				$data['email'],
+				'Thank You for Your Registration - Smoketree Swim and Recreation Club'
+			);
+		} else {
+			$email_service->send_email(
+				'thank-you-pay-later.php',
+				array(
+					'first_name'           => $data['first_name'],
+					'last_name'            => $data['last_name'],
+					'email'                => $data['email'],
+					'amount_due'           => '$' . number_format( $amount_due, 2 ),
+					'payment_instructions' => $this->get_payment_instructions( $data['payment_type'] ),
+				),
+				$data['email'],
+				'Thank You for Your Registration - Smoketree Swim and Recreation Club'
+			);
+		}
 
 		// Email to admin/treasurer
 		$president_email      = get_field( 'stsrc_president_email', 'option' );
