@@ -48,7 +48,8 @@ require_once plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'includes/datab
 $member = STSRC_Member_DB::get_member_by_email( $current_user->user_email );
 
 if ( ! $member ) {
-	wp_die( esc_html__( 'Member account not found. Please contact support.', 'smoketree-plugin' ) );
+	wp_safe_redirect( home_url( '/' ) );
+	exit;
 }
 
 // Get membership type
@@ -140,7 +141,12 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 <div class="stsrc-member-portal">
 	<div class="stsrc-container">
 		<div class="stsrc-portal-header">
-			<h1><?php echo esc_html__( 'Member Portal', 'smoketree-plugin' ); ?></h1>
+			<div class="stsrc-portal-greeting">
+				<h1><?php echo esc_html( sprintf( __( 'Welcome back, %s', 'smoketree-plugin' ), $member['first_name'] ) ); ?></h1>
+				<span class="stsrc-status-badge <?php echo esc_attr( $member['status'] ); ?>">
+					<?php echo esc_html( ucfirst( $member['status'] ) ); ?>
+				</span>
+			</div>
 			<div class="stsrc-portal-actions">
 				<a href="<?php echo esc_url( wp_logout_url( home_url( '/login?loggedout=true' ) ) ); ?>" class="stsrc-button stsrc-button-secondary">
 					<?php echo esc_html__( 'Log Out', 'smoketree-plugin' ); ?>
