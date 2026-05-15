@@ -13,8 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $member = $data['member'] ?? array();
 $membership_type = $data['membership_type'] ?? null;
-$auto_renewal_enabled = ! empty( $member['auto_renewal_enabled'] );
-$auto_renewal_nonce = wp_create_nonce( 'stsrc_auto_renewal_nonce' );
 $is_active_member = 'active' === ( $member['status'] ?? '' );
 $affiliate_code   = sanitize_text_field( (string) ( $member['affiliate_code'] ?? '' ) );
 
@@ -59,7 +57,26 @@ if ( $is_active_member && '' !== $affiliate_code ) {
 			<strong><?php echo esc_html__( 'Phone:', 'smoketree-plugin' ); ?></strong>
 			<span><?php echo esc_html( $member['phone'] ?? '' ); ?></span>
 		</div>
-		
+
+		<?php
+		$addr_line1 = trim( $member['street_1'] ?? '' );
+		$addr_line2 = trim( $member['street_2'] ?? '' );
+		$addr_city  = trim( $member['city'] ?? '' );
+		$addr_state = trim( $member['state'] ?? '' );
+		$addr_zip   = trim( $member['zip'] ?? '' );
+		if ( $addr_line1 || $addr_line2 || $addr_city || $addr_state || $addr_zip ) :
+			$addr_parts = array_filter( array( $addr_line1, $addr_line2 ) );
+			$city_state_zip = trim( $addr_city . ( $addr_state ? ', ' . $addr_state : '' ) . ( $addr_zip ? ' ' . $addr_zip : '' ) );
+			if ( $city_state_zip ) {
+				$addr_parts[] = $city_state_zip;
+			}
+		?>
+			<div class="stsrc-info-row">
+				<strong><?php echo esc_html__( 'Address:', 'smoketree-plugin' ); ?></strong>
+				<span><?php echo esc_html( implode( ', ', $addr_parts ) ); ?></span>
+			</div>
+		<?php endif; ?>
+
 		<?php if ( ! empty( $membership_type ) ) : ?>
 			<div class="stsrc-info-row">
 				<strong><?php echo esc_html__( 'Membership Type:', 'smoketree-plugin' ); ?></strong>
@@ -74,43 +91,6 @@ if ( $is_active_member && '' !== $affiliate_code ) {
 			</span>
 		</div>
 
-		<div class="stsrc-info-row stsrc-auto-renewal-row">
-			<strong><?php echo esc_html__( 'Auto-Renewal:', 'smoketree-plugin' ); ?></strong>
-			<div class="stsrc-auto-renewal-control">
-				<form id="stsrc-auto-renewal-form">
-					<input type="hidden" name="action" value="stsrc_toggle_auto_renewal">
-					<input type="hidden" name="nonce" value="<?php echo esc_attr( $auto_renewal_nonce ); ?>">
-					<input type="hidden" name="enabled" value="<?php echo $auto_renewal_enabled ? '1' : '0'; ?>">
-					<label for="stsrc-auto-renewal-toggle">
-						<input type="checkbox"
-							id="stsrc-auto-renewal-toggle"
-							name="auto_renewal_toggle"
-							<?php checked( $auto_renewal_enabled ); ?>
-							<?php disabled( empty( $member['stripe_customer_id'] ) ); ?>>
-						<?php echo esc_html__( 'Enable automatic renewal', 'smoketree-plugin' ); ?>
-					</label>
-				</form>
-				<span
-					id="stsrc-auto-renewal-status"
-					class="stsrc-auto-renewal-status"
-					role="status"
-					aria-live="polite"
-					data-enabled-text="<?php echo esc_attr__( 'Enabled', 'smoketree-plugin' ); ?>"
-					data-disabled-text="<?php echo esc_attr__( 'Disabled', 'smoketree-plugin' ); ?>"
-				>
-					<?php echo esc_html( $auto_renewal_enabled ? __( 'Enabled', 'smoketree-plugin' ) : __( 'Disabled', 'smoketree-plugin' ) ); ?>
-				</span>
-			</div>
-			<p class="stsrc-description stsrc-auto-renewal-note">
-				<?php
-				if ( empty( $member['stripe_customer_id'] ) ) {
-					echo esc_html__( 'Add a saved payment method to enable auto-renewal.', 'smoketree-plugin' );
-				} else {
-					echo esc_html__( 'When enabled, your saved payment method will be charged automatically on the renewal date.', 'smoketree-plugin' );
-				}
-				?>
-			</p>
-		</div>
 		
 		<?php if ( ! empty( $member['expires_at'] ) ) : ?>
 			<div class="stsrc-info-row">
@@ -150,11 +130,6 @@ if ( $is_active_member && '' !== $affiliate_code ) {
 		<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-change-password-btn">
 			<?php echo esc_html__( 'Change Password', 'smoketree-plugin' ); ?>
 		</button>
-		<?php if ( ! empty( $member['stripe_customer_id'] ) ) : ?>
-			<button type="button" class="stsrc-button stsrc-button-secondary" id="stsrc-stripe-portal-btn">
-				<?php echo esc_html__( 'Manage Payment Methods', 'smoketree-plugin' ); ?>
-			</button>
-		<?php endif; ?>
 	</div>
 </div>
 
