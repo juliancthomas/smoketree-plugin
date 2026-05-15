@@ -5084,6 +5084,119 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Return transaction list HTML for the member portal year selector.
+	 *
+	 * @since    1.19.0
+	 * @return   void
+	 */
+	public function get_member_transactions(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => 'Not logged in.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+		$nonce     = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_portal_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-transaction-db.php';
+
+		$member = STSRC_Member_DB::get_member_by_email( wp_get_current_user()->user_email );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		$member_id    = (int) $member['member_id'];
+		$current_year = (int) gmdate( 'Y' );
+		$year         = isset( $post_data['year'] ) ? (int) $post_data['year'] : $current_year;
+
+		$transactions  = STSRC_Transaction_DB::get_transactions( $member_id, $year, 1, 200 );
+		$visible_count = 5;
+
+		$type_label_map = array(
+			'payment'    => __( 'Payment', 'smoketree-plugin' ),
+			'adjustment' => __( 'Adjustment', 'smoketree-plugin' ),
+			'fee'        => __( 'Fee', 'smoketree-plugin' ),
+			'refund'     => __( 'Refund', 'smoketree-plugin' ),
+			'initial'    => __( 'Initial', 'smoketree-plugin' ),
+		);
+		$method_label_map = array(
+			'card'             => __( 'Card', 'smoketree-plugin' ),
+			'us_bank_account'  => __( 'Bank Account', 'smoketree-plugin' ),
+			'check'            => __( 'Check', 'smoketree-plugin' ),
+			'zelle'            => __( 'Zelle', 'smoketree-plugin' ),
+			'cash'             => __( 'Cash', 'smoketree-plugin' ),
+			'admin_adjustment' => __( 'Admin Adjustment', 'smoketree-plugin' ),
+			'initial'          => __( 'Initial', 'smoketree-plugin' ),
+		);
+
+		ob_start();
+
+		if ( empty( $transactions ) ) {
+			echo '<div class="stsrc-transaction-history__empty">' . esc_html__( 'No transactions recorded for this year yet.', 'smoketree-plugin' ) . '</div>';
+		} else {
+			$collapsible = count( $transactions ) > $visible_count ? '1' : '0';
+			echo '<div class="stsrc-transaction-list" data-collapsible="' . esc_attr( $collapsible ) . '">';
+
+			foreach ( $transactions as $index => $transaction ) {
+				$amount      = (float) ( $transaction['amount'] ?? 0 );
+				$type        = (string) ( $transaction['transaction_type'] ?? '' );
+				$method      = (string) ( $transaction['payment_method'] ?? '' );
+				$description = (string) ( $transaction['description'] ?? '' );
+
+				$type_label   = $type_label_map[ $type ] ?? ucfirst( $type );
+				$method_label = $method_label_map[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) );
+
+				if ( in_array( $type, array( 'payment', 'fee', 'initial' ), true ) ) {
+					$amount_class = 'stsrc-transaction-amount--debit';
+					$amount_sign  = '–';
+				} elseif ( 'refund' === $type ) {
+					$amount_class = 'stsrc-transaction-amount--credit';
+					$amount_sign  = '+';
+				} else {
+					$amount_class = $amount >= 0 ? 'stsrc-transaction-amount--credit' : 'stsrc-transaction-amount--debit';
+					$amount_sign  = $amount >= 0 ? '+' : '–';
+				}
+
+				$formatted_amount = number_format( abs( $amount ), 2 );
+				$is_hidden        = $index >= $visible_count;
+				$item_class       = 'stsrc-transaction-item' . ( $is_hidden ? ' stsrc-transaction-item--hidden' : '' );
+				$aria_hidden      = $is_hidden ? ' aria-hidden="true"' : '';
+				$date_str         = date_i18n( get_option( 'date_format' ), strtotime( (string) ( $transaction['created_at'] ?? '' ) ) );
+
+				echo '<div class="' . esc_attr( $item_class ) . '"' . $aria_hidden . '>';
+				echo '<div class="stsrc-transaction-item__meta">';
+				echo '<div class="stsrc-transaction-item__date">' . esc_html( $date_str ) . '</div>';
+				echo '<div class="stsrc-transaction-item__badges">';
+				echo '<span class="stsrc-transaction-badge stsrc-transaction-badge--type">' . esc_html( $type_label ) . '</span>';
+				echo '<span class="stsrc-transaction-badge stsrc-transaction-badge--method">' . esc_html( $method_label ) . '</span>';
+				echo '</div></div>';
+				echo '<div class="stsrc-transaction-item__content">';
+				echo '<div class="stsrc-transaction-item__description">' . esc_html( $description ) . '</div>';
+				echo '<div class="stsrc-transaction-item__amount ' . esc_attr( $amount_class ) . '">' . esc_html( $amount_sign . '$' . $formatted_amount ) . '</div>';
+				echo '</div></div>';
+			}
+
+			echo '</div>';
+
+			if ( count( $transactions ) > $visible_count ) {
+				echo '<div class="stsrc-transaction-history__actions">';
+				echo '<button type="button" class="stsrc-button stsrc-button-secondary stsrc-transaction-toggle" data-open="0">' . esc_html__( 'Show More', 'smoketree-plugin' ) . '</button>';
+				echo '</div>';
+			}
+		}
+
+		$html = ob_get_clean();
+
+		wp_send_json_success( array( 'html' => $html ) );
+	}
+
+	/**
 	 * Manually trigger auto-renewal payment processing (admin only).
 	 *
 	 * @since    1.0.0

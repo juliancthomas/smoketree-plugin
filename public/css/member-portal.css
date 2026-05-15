@@ -107,7 +107,33 @@
 
 /* Transaction history */
 .stsrc-transaction-history__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
 	margin-bottom: 12px;
+}
+
+.stsrc-transaction-year-selector {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.stsrc-transaction-year-selector select {
+	padding: 4px 8px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	font-size: 14px;
+	background: #fff;
+	cursor: pointer;
+}
+
+#stsrc-transaction-list-container {
+	transition: opacity 0.15s;
 }
 
 .stsrc-transaction-history__empty {

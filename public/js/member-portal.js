@@ -12,22 +12,23 @@
 
 	$(document).ready(function() {
 		initTransactionToggle();
+		initTransactionYearSelector();
 		initRenewalCancelButton();
 		initRenewalSection();
 		initReferralCopyButton();
 	});
 
 	function initTransactionToggle() {
-		const $toggle = $('.stsrc-transaction-toggle');
+		var $container = $('#stsrc-transaction-list-container');
+		var $toggle = $container.find('.stsrc-transaction-toggle');
 		if ($toggle.length === 0) {
 			return;
 		}
 
 		$toggle.on('click', function() {
-			const $button = $(this);
-			const isOpen = $button.attr('data-open') === '1';
-			const $history = $('#stsrc-member-transaction-history');
-			const $hiddenItems = $history.find('.stsrc-transaction-item--hidden');
+			var $button = $(this);
+			var isOpen = $button.attr('data-open') === '1';
+			var $hiddenItems = $container.find('.stsrc-transaction-item--hidden');
 
 			if (isOpen) {
 				$hiddenItems.attr('aria-hidden', 'true').slideUp(180);
@@ -36,6 +37,37 @@
 				$hiddenItems.attr('aria-hidden', 'false').slideDown(180);
 				$button.attr('data-open', '1').text('Show Less');
 			}
+		});
+	}
+
+	function initTransactionYearSelector() {
+		var $select = $('#stsrc-transaction-year-select');
+		if ($select.length === 0) {
+			return;
+		}
+
+		$select.on('change', function() {
+			var year = $(this).val();
+			var $container = $('#stsrc-transaction-list-container');
+			var ajaxUrl = (window.stsrcPublic && window.stsrcPublic.ajaxUrl) ? window.stsrcPublic.ajaxUrl : '';
+			var nonce   = (window.stsrcPublic && window.stsrcPublic.portalNonce) ? window.stsrcPublic.portalNonce : '';
+
+			$container.css('opacity', '0.5');
+
+			$.post(ajaxUrl, {
+				action: 'stsrc_get_member_transactions',
+				nonce:  nonce,
+				year:   year
+			}, function(response) {
+				if (response && response.success && response.data && response.data.html) {
+					$container.html(response.data.html).css('opacity', '1');
+					initTransactionToggle();
+				} else {
+					$container.css('opacity', '1');
+				}
+			}).fail(function() {
+				$container.css('opacity', '1');
+			});
 		});
 	}
 

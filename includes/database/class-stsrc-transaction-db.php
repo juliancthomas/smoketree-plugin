@@ -388,6 +388,28 @@ class STSRC_Transaction_DB {
 	}
 
 	/**
+	 * Get distinct years that have transactions for a member, newest first.
+	 *
+	 * @since    1.19.0
+	 * @param    int    $member_id    Member ID
+	 * @return   int[]                Array of years, descending
+	 */
+	public static function get_transaction_years( int $member_id ): array {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'stsrc_transactions';
+
+		$results = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT YEAR(created_at) FROM {$table_name} WHERE member_id = %d ORDER BY YEAR(created_at) DESC",
+				$member_id
+			)
+		);
+
+		return array_map( 'intval', $results ?: array() );
+	}
+
+	/**
 	 * Backfill initial transactions for existing members.
 	 *
 	 * Creates initial transaction records for all members who don't have any transactions yet.

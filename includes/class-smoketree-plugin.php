@@ -408,6 +408,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_renewal_quote', $renewal_api, 'quote' );
 		$this->loader->add_action( 'wp_ajax_stsrc_renewal_submit', $renewal_api, 'submit' );
 		$this->loader->add_action( 'wp_ajax_stsrc_renewal_member_cancel', $renewal_api, 'member_cancel_renewal' );
+		$this->loader->add_action( 'wp_ajax_stsrc_get_member_transactions', $ajax_handler, 'get_member_transactions' );
 
 		// Admin endpoints (admin capability required)
 		$this->loader->add_action( 'wp_ajax_stsrc_create_member', $ajax_handler, 'create_member' );
