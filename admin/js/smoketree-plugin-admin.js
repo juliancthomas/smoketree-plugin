@@ -1006,6 +1006,10 @@
 			e.preventDefault();
 
 			const $button = $(this);
+			if ($button.data('deleting')) {
+				return;
+			}
+
 			const codeId = $button.data('id');
 			const code = $button.data('code');
 
@@ -1013,7 +1017,7 @@
 				return;
 			}
 
-			$button.prop('disabled', true).addClass('disabled');
+			$button.data('deleting', true).addClass('disabled');
 
 			$.ajax({
 				url: STSRCAdmin.ajaxUrl,
@@ -1031,12 +1035,12 @@
 						});
 					} else {
 						STSRCAdmin.showNotice(response.data.message || 'Failed to delete access code.', 'error');
-						$button.prop('disabled', false).removeClass('disabled');
+						$button.data('deleting', false).removeClass('disabled');
 					}
 				},
 				error: function() {
 					STSRCAdmin.showNotice('An error occurred. Please try again.', 'error');
-					$button.prop('disabled', false).removeClass('disabled');
+					$button.data('deleting', false).removeClass('disabled');
 				}
 			});
 		},
@@ -1103,7 +1107,11 @@
 						if (response.success) {
 							STSRCAdmin.showNotice(response.data.message || 'Access code saved successfully.', 'success');
 							setTimeout(function() {
-								location.reload();
+								if (response.data.redirect_url) {
+									window.location.href = response.data.redirect_url;
+								} else {
+									location.reload();
+								}
 							}, 1000);
 						} else {
 							STSRCAdmin.showNotice(response.data.message || 'Failed to save access code.', 'error');
