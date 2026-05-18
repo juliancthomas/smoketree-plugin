@@ -1574,6 +1574,32 @@ body.admin-bar .stsrc-progress-bar {
 	margin-top: var(--stsrc-spacing-xl);
 }
 
+.stsrc-use-pass-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--stsrc-spacing-md);
+	flex-wrap: wrap;
+}
+
+.stsrc-qty-input {
+	width: 5rem;
+	padding: var(--stsrc-spacing-sm) var(--stsrc-spacing-md);
+	border: 1px solid var(--stsrc-border);
+	border-radius: var(--stsrc-radius-md);
+	background: var(--stsrc-bg-primary);
+	color: var(--stsrc-text-primary);
+	font-size: 1.1rem;
+	text-align: center;
+	transition: var(--stsrc-transition);
+}
+
+.stsrc-qty-input:focus {
+	outline: 2px solid var(--stsrc-primary);
+	outline-offset: 2px;
+	border-color: var(--stsrc-primary);
+}
+
 /* ==========================================================================
    Family/Extra Members
    ========================================================================== */
