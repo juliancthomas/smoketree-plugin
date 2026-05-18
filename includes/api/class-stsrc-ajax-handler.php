@@ -2246,13 +2246,16 @@ class STSRC_Ajax_Handler {
 		}
 
 		$member_id = (int) $member['member_id'];
-		$notes = sanitize_text_field( $post_data['notes'] ?? '' );
+		$notes     = sanitize_text_field( $post_data['notes'] ?? '' );
+		$quantity  = max( 1, (int) ( $post_data['quantity'] ?? 1 ) );
 
 		// Use guest pass
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-guest-pass-db.php';
-		$result = STSRC_Guest_Pass_DB::use_guest_pass( $member_id, $notes );
+		$result = STSRC_Guest_Pass_DB::use_guest_pass( $member_id, $notes, $quantity );
 
 		if ( $result ) {
+			$new_balance = STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id );
+
 			// Send admin notification
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
 			$email_service = new STSRC_Email_Service();
@@ -2269,17 +2272,19 @@ class STSRC_Ajax_Handler {
 						'first_name' => $member['first_name'],
 						'last_name'  => $member['last_name'],
 						'email'      => $member['email'],
-						'balance'    => STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id ),
+						'quantity'   => $quantity,
+						'balance'    => $new_balance,
 					),
 					$admin_email_address,
 					'Guest Pass Used - Smoketree Swim and Recreation Club'
 				);
 			}
 
+			$pass_word = 1 === $quantity ? 'pass' : 'passes';
 			wp_send_json_success(
 				array(
-					'message' => 'Guest pass used successfully.',
-					'balance' => STSRC_Guest_Pass_DB::get_guest_pass_balance( $member_id ),
+					'message' => "{$quantity} guest {$pass_word} used successfully.",
+					'balance' => $new_balance,
 				)
 			);
 		} else {
@@ -2288,9 +2293,10 @@ class STSRC_Ajax_Handler {
 				array(
 					'method'    => __METHOD__,
 					'member_id' => $member_id,
+					'quantity'  => $quantity,
 				)
 			);
-			wp_send_json_error( array( 'message' => 'Failed to use guest pass. You may not have any passes available.' ) );
+			wp_send_json_error( array( 'message' => 'Failed to use guest pass. Please check your available balance.' ) );
 		}
 	}
 

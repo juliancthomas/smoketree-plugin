@@ -97,9 +97,12 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 			<?php else : ?>
 				<div class="stsrc-use-pass-section">
 					<p class="stsrc-description"><?php echo esc_html__( 'Scan this page when a guest arrives to use a guest pass.', 'smoketree-plugin' ); ?></p>
-					<button type="button" class="stsrc-button stsrc-button-primary stsrc-button-large" id="stsrc-use-guest-pass-btn">
-						<?php echo esc_html__( 'Use Guest Pass', 'smoketree-plugin' ); ?>
-					</button>
+					<div class="stsrc-use-pass-controls">
+						<input type="number" id="stsrc-use-guest-pass-qty" min="1" max="<?php echo esc_attr( $guest_pass_balance ); ?>" value="1" class="stsrc-qty-input">
+						<button type="button" class="stsrc-button stsrc-button-primary stsrc-button-large" id="stsrc-use-guest-pass-btn">
+							<?php echo esc_html__( 'Use Guest Pass', 'smoketree-plugin' ); ?>
+						</button>
+					</div>
 				</div>
 			<?php endif; ?>
 		</div>
@@ -256,23 +259,31 @@ jQuery(document).ready(function($) {
 	// Use guest pass
 	$('#stsrc-use-guest-pass-btn').on('click', function(e) {
 		e.preventDefault();
-		
-		if (!confirm('<?php echo esc_js( __( 'Are you sure you want to use a guest pass?', 'smoketree-plugin' ) ); ?>')) {
+
+		const balance = <?php echo (int) $guest_pass_balance; ?>;
+		let quantity = parseInt($('#stsrc-use-guest-pass-qty').val()) || 1;
+		if (quantity < 1) quantity = 1;
+		if (quantity > balance) quantity = balance;
+		$('#stsrc-use-guest-pass-qty').val(quantity);
+
+		const passWord = quantity === 1 ? 'guest pass' : 'guest passes';
+		if (!confirm('Are you sure you want to use ' + quantity + ' ' + passWord + '?')) {
 			return;
 		}
-		
+
 		const $button = $(this);
 		const $messages = $('#stsrc-portal-messages');
-		
+
 		$button.prop('disabled', true).text('<?php echo esc_js( __( 'Processing...', 'smoketree-plugin' ) ); ?>');
 		$messages.html('');
-		
+
 		$.ajax({
 			url: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
 			type: 'POST',
 			data: {
 				action: 'stsrc_use_guest_pass',
-				nonce: '<?php echo esc_js( wp_create_nonce( 'stsrc_guest_pass_nonce' ) ); ?>'
+				nonce: '<?php echo esc_js( wp_create_nonce( 'stsrc_guest_pass_nonce' ) ); ?>',
+				quantity: quantity
 			},
 			success: function(response) {
 				if (response.success) {

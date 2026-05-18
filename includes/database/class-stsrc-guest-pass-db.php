@@ -97,12 +97,12 @@ class STSRC_Guest_Pass_DB {
 	 * @param    string    $notes        Optional notes about the usage
 	 * @return   bool                    True on success, false on failure
 	 */
-	public static function use_guest_pass( int $member_id, string $notes = '' ): bool {
+	public static function use_guest_pass( int $member_id, string $notes = '', int $quantity = 1 ): bool {
 		global $wpdb;
 
 		$current_balance = self::get_guest_pass_balance( $member_id );
 
-		if ( $current_balance <= 0 ) {
+		if ( $current_balance <= 0 || $quantity < 1 || $quantity > $current_balance ) {
 			return false;
 		}
 
@@ -111,7 +111,7 @@ class STSRC_Guest_Pass_DB {
 		$data = array(
 			'member_id'      => $member_id,
 			'type'           => 'usage',
-			'quantity'       => 1,
+			'quantity'       => $quantity,
 			'amount'         => 0.00,
 			'used_at'        => current_time( 'mysql' ),
 			'payment_status' => 'paid',
