@@ -663,6 +663,7 @@ jQuery(document).ready(function($) {
 		if (rate.cap !== null && fee > rate.cap) fee = rate.cap;
 		return Math.round(fee * 100) / 100;
 	}
+	window.stsrc_calculateFee = calculateFee;
 
 	function formatCurrency(val) {
 		return '$' + Number(val).toFixed(2);
@@ -1039,47 +1040,47 @@ jQuery(document).ready(function($) {
 			});
 		}
 	});
-	const firstName = faker.name.firstName();
-	const lastName = faker.name.lastName();
-	document.querySelector('#first_name').value = firstName;
-	document.querySelector('#last_name').value = lastName;
-	document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
-	document.querySelector('#phone').value = faker.phone.phoneNumber();
-	document.querySelector('#street_1').value = faker.address.streetAddress();
-	document.querySelector('#street_2').value = faker.address.secondaryAddress();
-	document.querySelector('#password').value = 'abc123123';
-	document.querySelector('#password_confirm').value = 'abc123123';
-	document.querySelector('#referral_source').value = 'other';
-	document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
-	document.querySelector('label[data-value="1"] input[name="membership_card_radio"]').click();
+	// const firstName = faker.name.firstName();
+	// const lastName = faker.name.lastName();
+	// document.querySelector('#first_name').value = firstName;
+	// document.querySelector('#last_name').value = lastName;
+	// document.querySelector('#email').value = `${firstName}.${lastName}@example.com`;
+	// document.querySelector('#phone').value = faker.phone.phoneNumber();
+	// document.querySelector('#street_1').value = faker.address.streetAddress();
+	// document.querySelector('#street_2').value = faker.address.secondaryAddress();
+	// document.querySelector('#password').value = 'abc123123';
+	// document.querySelector('#password_confirm').value = 'abc123123';
+	// document.querySelector('#referral_source').value = 'other';
+	// document.querySelector('#waiver_full_name').value = `${firstName} ${lastName}`;
+	// document.querySelector('label[data-value="1"] input[name="membership_card_radio"]').click();
 
-	const familyMember1FirstName = faker.name.firstName();
-	const familyMember1LastName = faker.name.lastName();
-	const familyMember1Email = `${familyMember1FirstName}.${familyMember1LastName}@example.com`;
-	const familyMember2FirstName = faker.name.firstName();
-	const familyMember2LastName = faker.name.lastName();
-	const familyMember2Email = `${familyMember2FirstName}.${familyMember2LastName}@example.com`;
-	const familyMember3FirstName = faker.name.firstName();
-	const familyMember3LastName = faker.name.lastName();
-	const familyMember3Email = `${familyMember3FirstName}.${familyMember3LastName}@example.com`;
-	const familyMember4FirstName = faker.name.firstName();
-	const familyMember4LastName = faker.name.lastName();
-	const familyMember4Email = `${familyMember4FirstName}.${familyMember4LastName}@example.com`;
+	// const familyMember1FirstName = faker.name.firstName();
+	// const familyMember1LastName = faker.name.lastName();
+	// const familyMember1Email = `${familyMember1FirstName}.${familyMember1LastName}@example.com`;
+	// const familyMember2FirstName = faker.name.firstName();
+	// const familyMember2LastName = faker.name.lastName();
+	// const familyMember2Email = `${familyMember2FirstName}.${familyMember2LastName}@example.com`;
+	// const familyMember3FirstName = faker.name.firstName();
+	// const familyMember3LastName = faker.name.lastName();
+	// const familyMember3Email = `${familyMember3FirstName}.${familyMember3LastName}@example.com`;
+	// const familyMember4FirstName = faker.name.firstName();
+	// const familyMember4LastName = faker.name.lastName();
+	// const familyMember4Email = `${familyMember4FirstName}.${familyMember4LastName}@example.com`;
 
-	setTimeout(() => {
-		document.querySelector('input[name="family_members[1][first_name]"]').value = familyMember1FirstName;
-		document.querySelector('input[name="family_members[1][last_name]"]').value = familyMember1LastName;
-		document.querySelector('input[name="family_members[1][email]"]').value = familyMember1Email;
-		document.querySelector('input[name="family_members[2][first_name]"]').value = familyMember2FirstName;
-		document.querySelector('input[name="family_members[2][last_name]"]').value = familyMember2LastName;
-		document.querySelector('input[name="family_members[2][email]"]').value = familyMember2Email;
-		document.querySelector('input[name="family_members[3][first_name]"]').value = familyMember3FirstName;
-		document.querySelector('input[name="family_members[3][last_name]"]').value = familyMember3LastName;
-		document.querySelector('input[name="family_members[3][email]"]').value = familyMember3Email;
-		document.querySelector('input[name="family_members[4][first_name]"]').value = familyMember4FirstName;
-		document.querySelector('input[name="family_members[4][last_name]"]').value = familyMember4LastName;
-		document.querySelector('input[name="family_members[4][email]"]').value = familyMember4Email;
-	}, 1000);
+	// setTimeout(() => {
+	// 	document.querySelector('input[name="family_members[1][first_name]"]').value = familyMember1FirstName;
+	// 	document.querySelector('input[name="family_members[1][last_name]"]').value = familyMember1LastName;
+	// 	document.querySelector('input[name="family_members[1][email]"]').value = familyMember1Email;
+	// 	document.querySelector('input[name="family_members[2][first_name]"]').value = familyMember2FirstName;
+	// 	document.querySelector('input[name="family_members[2][last_name]"]').value = familyMember2LastName;
+	// 	document.querySelector('input[name="family_members[2][email]"]').value = familyMember2Email;
+	// 	document.querySelector('input[name="family_members[3][first_name]"]').value = familyMember3FirstName;
+	// 	document.querySelector('input[name="family_members[3][last_name]"]').value = familyMember3LastName;
+	// 	document.querySelector('input[name="family_members[3][email]"]').value = familyMember3Email;
+	// 	document.querySelector('input[name="family_members[4][first_name]"]').value = familyMember4FirstName;
+	// 	document.querySelector('input[name="family_members[4][last_name]"]').value = familyMember4LastName;
+	// 	document.querySelector('input[name="family_members[4][email]"]').value = familyMember4Email;
+	// }, 1000);
 
 	updateProgressBar()
 });

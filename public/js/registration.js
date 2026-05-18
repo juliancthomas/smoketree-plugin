@@ -15,7 +15,6 @@
 		var $referralBanner = $('#stsrc-referral-banner');
 		var cookieName = stsrc_registration.ref_cookie_name || 'stsrc_ref_code';
 		var appliedState = null;
-		var baselineTotal = null;
 
 		function parseMoney(text) {
 			var normalized = String(text || '').replace(/[^0-9.\-]/g, '');
@@ -50,11 +49,23 @@
 			$row.find('.stsrc-pay-balance-summary__label').text(label);
 			$row.find('.stsrc-pay-balance-summary__value').text('$' + Number(discountAmount || 0).toFixed(2));
 
-			if (baselineTotal === null) {
-				baselineTotal = parseMoney($('#stsrc-total').text());
+			var membershipPrice = parseFloat($('#membership_type_id').find('option:selected').data('price')) || 0;
+			var extraFee = $('#stsrc-extra-fee-row').is(':visible') ? parseMoney($('#stsrc-extra-fee').text()) : 0;
+			var subtotal = membershipPrice + extraFee;
+			var discountedSubtotal = Math.max(0, subtotal - Number(discountAmount || 0));
+			var paymentMethod = $('input[name="payment_type"]:checked').val() || '';
+			var fee = typeof window.stsrc_calculateFee === 'function' ? window.stsrc_calculateFee(discountedSubtotal, paymentMethod) : 0;
+
+			if (fee > 0) {
+				$('#stsrc-transaction-fee-row').show();
+				$('#stsrc-transaction-fee').text('$' + fee.toFixed(2));
+				$('#stsrc-fee-note').show();
+			} else {
+				$('#stsrc-transaction-fee-row').hide();
+				$('#stsrc-fee-note').hide();
 			}
-			var newTotal = Math.max(0, baselineTotal - Number(discountAmount || 0));
-			$('#stsrc-total').text('$' + newTotal.toFixed(2));
+
+			$('#stsrc-total').text('$' + (discountedSubtotal + fee).toFixed(2));
 		}
 
 		function clearSummaryDiscount() {
