@@ -444,6 +444,14 @@ $is_demo = $is_edit && 1 === (int) ( $member['is_demo'] ?? 0 );
 							</td>
 						</tr>
 					</table>
+					<p style="margin-top: 12px;">
+						<button type="button" class="button" id="stsrc-send-password-reset-btn"
+							data-member-id="<?php echo esc_attr( $member_id ); ?>"
+							data-nonce="<?php echo esc_attr( wp_create_nonce( 'stsrc_admin_nonce' ) ); ?>">
+							<?php echo esc_html__( 'Send Password Reset Email', 'smoketree-plugin' ); ?>
+						</button>
+						<span id="stsrc-password-reset-status" style="margin-left: 10px; font-style: italic;"></span>
+					</p>
 				</div>
 			<?php endif; ?>
 		</div>
@@ -798,6 +806,44 @@ jQuery(document).ready(function($) {
 			error: function() {
 				alert('An error occurred. Please try again.');
 				$button.prop('disabled', false).text('Confirm Payment & Activate');
+			}
+		});
+	});
+
+	$('#stsrc-send-password-reset-btn').on('click', function(e) {
+		e.preventDefault();
+
+		if (!confirm('Send a password reset email to this member?')) {
+			return;
+		}
+
+		const $button = $(this);
+		const $status = $('#stsrc-password-reset-status');
+		const memberIdVal = $button.data('member-id');
+		const nonceVal = $button.data('nonce');
+
+		$button.prop('disabled', true).text('Sending...');
+		$status.text('').css('color', '');
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'stsrc_admin_send_password_reset',
+				nonce: nonceVal,
+				member_id: memberIdVal
+			},
+			success: function(response) {
+				if (response.success) {
+					$status.text(response.data.message || 'Email sent.').css('color', '#00a32a');
+				} else {
+					$status.text((response.data && response.data.message) ? response.data.message : 'Failed to send email.').css('color', '#d63638');
+				}
+				$button.prop('disabled', false).text('Send Password Reset Email');
+			},
+			error: function() {
+				$status.text('An error occurred. Please try again.').css('color', '#d63638');
+				$button.prop('disabled', false).text('Send Password Reset Email');
 			}
 		});
 	});

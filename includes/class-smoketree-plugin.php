@@ -417,6 +417,7 @@ class Smoketree_Plugin {
 		$this->loader->add_action( 'wp_ajax_stsrc_soft_delete_member', $ajax_handler, 'soft_delete_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_member', $ajax_handler, 'delete_member' );
 		$this->loader->add_action( 'wp_ajax_stsrc_reactivate_member', $ajax_handler, 'reactivate_member_admin' );
+		$this->loader->add_action( 'wp_ajax_stsrc_admin_send_password_reset', $ajax_handler, 'admin_send_password_reset' );
 		$this->loader->add_action( 'wp_ajax_stsrc_create_membership_type', $ajax_handler, 'create_membership_type' );
 		$this->loader->add_action( 'wp_ajax_stsrc_update_membership_type', $ajax_handler, 'update_membership_type' );
 		$this->loader->add_action( 'wp_ajax_stsrc_delete_membership_type', $ajax_handler, 'delete_membership_type' );

@@ -5065,6 +5065,91 @@ class STSRC_Ajax_Handler {
 	}
 
 	/**
+	 * Send a password reset email to a member (admin only).
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function admin_send_password_reset(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+			return;
+		}
+
+		$post_data = wp_unslash( $_POST );
+
+		$nonce = sanitize_text_field( $post_data['nonce'] ?? '' );
+		if ( ! wp_verify_nonce( $nonce, 'stsrc_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid security token.' ) );
+			return;
+		}
+
+		$member_id = isset( $post_data['member_id'] ) ? intval( $post_data['member_id'] ) : 0;
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid member ID.' ) );
+			return;
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		$member = STSRC_Member_DB::get_member( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => 'Member not found.' ) );
+			return;
+		}
+
+		$user = get_user_by( 'email', $member['email'] );
+		if ( ! $user ) {
+			wp_send_json_error( array( 'message' => 'No WordPress user account found for this member.' ) );
+			return;
+		}
+
+		$reset_token = wp_generate_password( 32, false );
+		$expiration  = time() + HOUR_IN_SECONDS;
+
+		update_user_meta( $user->ID, 'stsrc_password_reset_token', $reset_token );
+		update_user_meta( $user->ID, 'stsrc_password_reset_expiration', $expiration );
+
+		$reset_url = add_query_arg(
+			array(
+				'token' => $reset_token,
+				'email' => urlencode( $member['email'] ),
+			),
+			home_url( '/reset-password' )
+		);
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+		$email_service = new STSRC_Email_Service();
+		$sent = $email_service->send_email(
+			'password-reset.php',
+			array(
+				'first_name'      => $member['first_name'],
+				'last_name'       => $member['last_name'],
+				'email'           => $member['email'],
+				'reset_link'      => $reset_url,
+				'expiration_time' => '1 hour',
+			),
+			$member['email'],
+			'Password Reset Request - Smoketree Swim and Recreation Club'
+		);
+
+		if ( ! $sent ) {
+			wp_send_json_error( array( 'message' => 'Failed to send password reset email.' ) );
+			return;
+		}
+
+		STSRC_Logger::info(
+			'Admin sent password reset email to member.',
+			array(
+				'method'    => __METHOD__,
+				'member_id' => $member_id,
+				'admin_id'  => get_current_user_id(),
+			)
+		);
+
+		wp_send_json_success( array( 'message' => 'Password reset email sent to ' . $member['email'] . '.' ) );
+	}
+
+	/**
 	 * Manually trigger auto-renewal notification emails (admin only).
 	 *
 	 * @since    1.0.0
