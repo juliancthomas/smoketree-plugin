@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc -l /c/Users/Julian.Thomas/Desktop/smoketree-plugin/includes/api/*.php)"
+      "Bash(wc -l /c/Users/Julian.Thomas/Desktop/smoketree-plugin/includes/api/*.php)",
+      "Skill(caveman:caveman)",
+      "Skill(caveman:caveman:*)"
     ]
   }
 }

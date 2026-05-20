@@ -82,14 +82,13 @@ test.describe('Member Portal – Renewal Section', () => {
       await loginAsMember(page, TEST_MEMBERS.withBalance.email, TEST_MEMBERS.withBalance.password);
     });
 
-    test('renewal section visibility is consistent with server-rendered eligibility', async ({ page }) => {
+    test('renewal section is hidden when member has an outstanding balance', async ({ page }) => {
       await page.goto('/member-portal');
       const renewalSection = page.locator('#stsrc-renewal-section');
+      // Members with balance_owed > 0 must not see the renewal section.
       const count = await renewalSection.count();
-      // The section either shows (eligible) or doesn't (not eligible / disabled).
-      // Either outcome is valid — this asserts we don't get a broken partial render.
       if (count > 0) {
-        await expect(renewalSection.first()).toBeVisible();
+        await expect(renewalSection.first()).toBeHidden();
       }
     });
 
@@ -103,17 +102,12 @@ test.describe('Member Portal – Renewal Section', () => {
       const banner = page.locator('.stsrc-notice.success').filter({ hasText: 'Payment processed successfully' }).first();
       await expect(banner).toBeVisible();
 
-      // Renewal section state reflects whatever the DB says at render time.
-      // If it is visible alongside the success banner, that confirms the race condition.
+      // Members with an outstanding balance must not see the renewal section,
+      // regardless of URL params.
       const renewalSection = page.locator('#stsrc-renewal-section');
       const renewalCount = await renewalSection.count();
       if (renewalCount > 0) {
-        const isVisible = await renewalSection.first().isVisible();
-        // Document the state — a visible renewal section here means the DB was not
-        // updated before the page rendered (webhook hasn't fired yet).
-        // This assertion intentionally passes in both states so the test stays green
-        // while the bug is tracked; update to `toBe(false)` once the fix ships.
-        expect(typeof isVisible).toBe('boolean');
+        await expect(renewalSection.first()).toBeHidden();
       }
     });
 
@@ -130,18 +124,11 @@ test.describe('Member Portal – Renewal Section', () => {
       const balanceVisible = await balanceCard.isVisible().catch(() => false);
       const renewalVisible = await renewalSection.isVisible().catch(() => false);
 
-      // Both showing simultaneously is the bug state; at least one should be false
-      // once the member's account is in a consistent state.
-      // For the test member (still has $75 balance), both can coexist — log it.
-      if (balanceVisible && renewalVisible) {
-        console.warn(
-          'BUG: balance card and renewal section both visible for member ' +
-          TEST_MEMBERS.withBalance.email +
-          ' — outstanding balance should suppress or defer the renewal section.'
-        );
+      // A member with an outstanding balance must never see the renewal section.
+      if (balanceVisible) {
+        expect(renewalVisible).toBe(false);
       }
 
-      // The page must at minimum load without error.
       await expect(page.locator('.stsrc-member-portal')).toBeVisible();
     });
   });

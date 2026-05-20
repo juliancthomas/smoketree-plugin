@@ -62,6 +62,11 @@ class STSRC_Member_Portal {
 			return false;
 		}
 
+		// Don't show renewal to members who still owe a balance (e.g. check-payment new members).
+		if ( (float) ( $member['balance_owed'] ?? 0 ) > 0.01 ) {
+			return false;
+		}
+
 		return STSRC_Renewal_Helpers::is_member_eligible_for_current_season( $member );
 	}
 
