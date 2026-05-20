@@ -118,7 +118,17 @@ class STSRC_Member_Portal {
 	 * @return void
 	 */
 	public static function render_registration_notice( string $registration_status, string $payment_type ): void {
-		if ( 'success' !== sanitize_text_field( $registration_status ) ) {
+		$registration_status = sanitize_text_field( $registration_status );
+
+		if ( 'stripe_abandoned' === $registration_status ) {
+			echo '<div class="stsrc-notice warning">';
+			echo '<p><strong>' . esc_html__( 'Your account was created, but we didn\'t receive payment from Stripe.', 'smoketree-plugin' ) . '</strong></p>';
+			echo '<p>' . esc_html__( 'Please use the payment section below to complete your registration.', 'smoketree-plugin' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+
+		if ( 'success' !== $registration_status ) {
 			return;
 		}
 

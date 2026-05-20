@@ -448,6 +448,26 @@ class STSRC_Ajax_Handler {
 				return;
 			}
 
+			// Auto-login so they're authenticated when Stripe redirects back (cancel or success).
+			if ( $member_record && ! empty( $member_record['user_id'] ) ) {
+				wp_set_current_user( (int) $member_record['user_id'] );
+				wp_set_auth_cookie( (int) $member_record['user_id'], true );
+			}
+
+			// Confirmation email — no payment instructions yet; the portal balance card handles recovery.
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'services/class-stsrc-email-service.php';
+			$email_service = new STSRC_Email_Service();
+			$email_service->send_email(
+				'registration-account-created.php',
+				array(
+					'first_name' => $data['first_name'],
+					'last_name'  => $data['last_name'],
+					'email'      => $data['email'],
+				),
+				$data['email'],
+				'Your Smoketree account has been created'
+			);
+
 			wp_send_json_success(
 				array(
 					'message'      => 'Redirecting to payment...',
@@ -895,7 +915,7 @@ class STSRC_Ajax_Handler {
 				'customer_name'        => $data['first_name'] . ' ' . $data['last_name'],
 				'customer_id'          => $stripe_customer_id,
 				'success_url'          => home_url( '/member-portal?payment=success&session_id={CHECKOUT_SESSION_ID}' ),
-				'cancel_url'           => home_url( '/register?payment=cancelled' ),
+				'cancel_url'           => home_url( '/member-portal?registration=stripe_abandoned' ),
 				'metadata'             => array(
 					'membership_type_id' => $data['membership_type_id'],
 					'payment_type'       => 'registration',

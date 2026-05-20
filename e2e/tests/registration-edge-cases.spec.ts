@@ -71,6 +71,53 @@ test.describe('Stripe Abandonment', () => {
     expect(status).toBe('pending');
   });
 
+  test('user is auto-logged in before being sent to Stripe checkout', async ({ page }) => {
+    const email = uniqueEmail('stripe-autologin');
+    await page.goto('/register');
+    await fillRegistrationForm(page, { email, paymentType: 'card' });
+    await page.locator('#auto_renewal_acknowledged').check();
+    await submitRegistrationForm(page);
+
+    await page.waitForURL(/checkout\.stripe\.com/, { timeout: 30_000 });
+
+    // Navigate back to the WordPress site — if auto-login fired, the portal loads directly.
+    await page.goto('/member-portal');
+    await expect(page).not.toHaveURL(/login/, { timeout: 10_000 });
+    await expect(page.locator('.stsrc-member-portal')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('account-created email is sent when Stripe registration creates an account', async ({ page }) => {
+    const email = uniqueEmail('stripe-email');
+    await page.goto('/register');
+    await fillRegistrationForm(page, { email, paymentType: 'card' });
+    await page.locator('#auto_renewal_acknowledged').check();
+    await submitRegistrationForm(page);
+
+    await page.waitForURL(/checkout\.stripe\.com/, { timeout: 30_000 });
+
+    const emailCount = dbQuery(
+      `SELECT COUNT(*) FROM wp_stsrc_email_logs WHERE recipient_email='${email}' LIMIT 1`
+    );
+    expect(Number(emailCount)).toBeGreaterThanOrEqual(1);
+  });
+
+  test('stripe_abandoned notice shows on member portal after backing out of Stripe', async ({ page }) => {
+    // Simulate landing on the cancel_url as a logged-in member with an outstanding balance.
+    await page.goto(`/member-portal?registration=stripe_abandoned`, { waitUntil: 'domcontentloaded' });
+
+    // If not logged in, log in as the balance test member first.
+    if (page.url().includes('/login')) {
+      await page.fill('#user_login', TEST_MEMBERS.withBalance.email);
+      await page.fill('#user_pass', TEST_MEMBERS.withBalance.password);
+      await page.locator('#wp-submit').click();
+      await page.waitForURL(/member-portal/, { timeout: 15_000 });
+      await page.goto(`/member-portal?registration=stripe_abandoned`);
+    }
+
+    const notice = page.locator('.stsrc-notice.warning').filter({ hasText: /account was created|didn.*t receive payment/i });
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+  });
+
   test('re-registering with a pending email is blocked with a clear message', async ({ page }) => {
     const email = uniqueEmail('stripe-reregister');
     seedMember(email, 'pending');
