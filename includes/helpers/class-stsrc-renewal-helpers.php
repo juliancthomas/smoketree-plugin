@@ -98,6 +98,18 @@ class STSRC_Renewal_Helpers {
 			return false;
 		}
 
+		// Members whose expiry already extends past the season renewal date have
+		// already paid for this season (e.g. new members who joined mid-season).
+		$season_renewal_date = self::get_season_renewal_date();
+		$membership_expiry   = sanitize_text_field( (string) ( $member['expiration_date'] ?? '' ) );
+		if ( ! empty( $season_renewal_date ) && ! empty( $membership_expiry ) ) {
+			$expiry_ts  = strtotime( $membership_expiry );
+			$renewal_ts = strtotime( $season_renewal_date );
+			if ( false !== $expiry_ts && false !== $renewal_ts && $expiry_ts > $renewal_ts ) {
+				return false;
+			}
+		}
+
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-renewal-db.php';
 		$season_key  = self::get_season_key();
 		$eligibility = STSRC_Renewal_DB::get_eligibility( $member_id, $season_key );
