@@ -3385,6 +3385,13 @@ class STSRC_Ajax_Handler {
 			update_option( 'stsrc_banner_link_url', esc_url_raw( $post_data['banner_link_url'] ) );
 		}
 
+		if ( isset( $post_data['banner_excluded_pages'] ) ) {
+			$lines = explode( "\n", $post_data['banner_excluded_pages'] );
+			$lines = array_map( 'sanitize_text_field', $lines );
+			$lines = array_filter( $lines );
+			update_option( 'stsrc_banner_excluded_pages', implode( "\n", $lines ) );
+		}
+
 		wp_send_json_success( array( 'message' => __( 'Banner saved successfully.', 'smoketree-plugin' ) ) );
 	}
 

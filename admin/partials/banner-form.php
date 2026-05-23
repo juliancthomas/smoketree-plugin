@@ -139,6 +139,13 @@ $banner = $data['banner'] ?? array();
 						</table>
 					</td>
 				</tr>
+				<tr>
+					<th><label for="banner_excluded_pages"><?php echo esc_html__( 'Excluded Pages', 'smoketree-plugin' ); ?></label></th>
+					<td>
+						<textarea name="banner_excluded_pages" id="banner_excluded_pages" rows="4" class="large-text" placeholder="/register/&#10;/member-portal/"><?php echo esc_textarea( $banner['excluded_pages'] ?? '' ); ?></textarea>
+						<p class="description"><?php echo esc_html__( 'One URL path per line. The banner will not appear on these pages. Example: /register/', 'smoketree-plugin' ); ?></p>
+					</td>
+				</tr>
 			</table>
 
 			<p class="submit">

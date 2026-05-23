@@ -36,7 +36,21 @@ if ( '1' === get_option( 'stsrc_banner_enabled', '0' ) ) {
 		( 'public' === $stsrc_banner_audience && ! is_user_logged_in() )
 	);
 
-	if ( ! empty( $stsrc_banner_message ) && ! $stsrc_banner_expired && $stsrc_audience_match ) {
+	$stsrc_banner_excluded   = get_option( 'stsrc_banner_excluded_pages', '' );
+	$stsrc_page_excluded     = false;
+	if ( ! empty( $stsrc_banner_excluded ) ) {
+		$stsrc_current_path  = parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+		$stsrc_current_path  = rtrim( $stsrc_current_path ?? '', '/' );
+		foreach ( explode( "\n", $stsrc_banner_excluded ) as $stsrc_excluded_path ) {
+			$stsrc_excluded_path = rtrim( trim( $stsrc_excluded_path ), '/' );
+			if ( '' !== $stsrc_excluded_path && $stsrc_current_path === $stsrc_excluded_path ) {
+				$stsrc_page_excluded = true;
+				break;
+			}
+		}
+	}
+
+	if ( ! empty( $stsrc_banner_message ) && ! $stsrc_banner_expired && $stsrc_audience_match && ! $stsrc_page_excluded ) {
 		$stsrc_banner_active = true;
 		$stsrc_banner        = array(
 			'message'         => $stsrc_banner_message,

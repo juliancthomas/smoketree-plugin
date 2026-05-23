@@ -36,6 +36,7 @@ class STSRC_Banner_Page {
 			'star_text'        => get_option( 'stsrc_banner_star_text', '' ),
 			'star_bg_color'    => get_option( 'stsrc_banner_star_bg_color', '#facc15' ),
 			'star_text_color'  => get_option( 'stsrc_banner_star_text_color', '#1a1a1a' ),
+			'excluded_pages'   => get_option( 'stsrc_banner_excluded_pages', '' ),
 		);
 	}
 }
