@@ -194,7 +194,9 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 		<?php if ( ! $is_renewal_active ) : ?>
 			<!-- Guest Pass Balance Section -->
-			<?php include plugin_dir_path( __FILE__ ) . '../partials/guest-pass-balance.php'; ?>
+			<?php if ( 'active' === $member['status'] ) : ?>
+				<?php include plugin_dir_path( __FILE__ ) . '../partials/guest-pass-balance.php'; ?>
+			<?php endif; ?>
 
 			<!-- Family Members Section (Household & Duo only) -->
 			<?php if ( ! empty( $membership_type ) && in_array( strtolower( $membership_type['name'] ), array( 'household', 'duo' ), true ) ) : ?>
