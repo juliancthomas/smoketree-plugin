@@ -144,6 +144,22 @@ test.describe('Member Portal', () => {
       // Should NOT see premium pool code
       await expect(pageContent).not.toContainText('POOLCODE2026');
     });
+
+    test('Active member with outstanding balance does not see access codes', async ({ page }) => {
+      await loginAsMember(page, TEST_MEMBERS.withBalance.email, TEST_MEMBERS.withBalance.password);
+
+      const pageContent = page.locator('.stsrc-member-portal');
+      await expect(pageContent).not.toContainText('TESTCODE2026');
+      await expect(pageContent).not.toContainText('POOLCODE2026');
+    });
+
+    test('Pending member does not see access codes', async ({ page }) => {
+      await loginAsMember(page, TEST_MEMBERS.inactiveReferrer.email, TEST_MEMBERS.inactiveReferrer.password);
+
+      const pageContent = page.locator('.stsrc-member-portal');
+      await expect(pageContent).not.toContainText('TESTCODE2026');
+      await expect(pageContent).not.toContainText('POOLCODE2026');
+    });
   });
 
   test.describe('Balance Display', () => {

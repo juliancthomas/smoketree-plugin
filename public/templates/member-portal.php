@@ -263,7 +263,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 			</div>
 		<?php endif; ?>
 
-		<?php if ( ! $is_renewal_active ) : ?>
+		<?php if ( ! $is_renewal_active && 'active' === $member['status'] && (float) ( $member['balance_owed'] ?? 0 ) <= 0 ) : ?>
 			<!-- Access Codes Section -->
 			<?php include plugin_dir_path( __FILE__ ) . '../partials/member-access-codes.php'; ?>
 
