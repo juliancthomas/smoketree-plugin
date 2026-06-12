@@ -2555,9 +2555,31 @@ class STSRC_Ajax_Handler {
 		}
 		$filters['is_demo'] = 0;
 
-		// Get members
+		// Get members and supporting data
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-family-member-db.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-extra-member-db.php';
+
 		$members = STSRC_Member_DB::get_members( $filters );
+
+		$membership_types = array();
+		foreach ( STSRC_Membership_DB::get_all_membership_types() as $type ) {
+			$membership_types[ $type['membership_type_id'] ] = $type['name'];
+		}
+
+		$payment_type_labels = array(
+			'card'            => 'Credit Card',
+			'check'           => 'Check',
+			'us_bank_account' => 'Bank Transfer',
+			'zelle'           => 'Zelle',
+		);
+
+		$status_labels = array(
+			'active'    => 'Active',
+			'pending'   => 'Pending',
+			'cancelled' => 'Cancelled',
+		);
 
 		// Generate CSV
 		$filename = 'members-export-' . date( 'Y-m-d-H-i-s' ) . '.csv';
@@ -2569,59 +2591,93 @@ class STSRC_Ajax_Handler {
 		$output = fopen( 'php://output', 'w' );
 
 		// CSV headers
-		fputcsv(
-			$output,
-			array(
-				'Member ID',
-				'Name',
-				'Email',
-				'Phone',
-				'Address',
-				'City',
-				'State',
-				'ZIP',
-				'Membership Type',
-				'Status',
-				'Payment Type',
-				'Created Date',
-				'Expiration Date',
-			)
+		$headers = array(
+			'Member ID',
+			'First Name',
+			'Last Name',
+			'Email',
+			'Phone',
+			'Address',
+			'City',
+			'State',
+			'ZIP',
+			'Country',
+			'Membership Type',
+			'Status',
+			'Payment Type',
+			'Auto Renewal',
+			'Season Membership Price',
+			'Balance Owed',
+			'Waiver Full Name',
+			'Waiver Signed Date',
+			'Referral Source',
+			'Affiliate Code',
+			'Stripe Customer ID',
+			'Registered Date',
+			'Expiration Date',
 		);
 
-		// Get membership types for lookup
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'database/class-stsrc-membership-db.php';
-		$membership_types = array();
-		$all_types = STSRC_Membership_DB::get_all_membership_types();
-		foreach ( $all_types as $type ) {
-			$membership_types[ $type['membership_type_id'] ] = $type['name'];
+		for ( $i = 1; $i <= 4; $i++ ) {
+			$headers[] = 'Family Member ' . $i;
 		}
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$headers[] = 'Extra Member ' . $i;
+		}
+
+		fputcsv( $output, $headers );
 
 		// CSV rows
 		foreach ( $members as $member ) {
-			$membership_type_name = $membership_types[ $member['membership_type_id'] ] ?? 'Unknown';
 			$address = $member['street_1'];
 			if ( ! empty( $member['street_2'] ) ) {
 				$address .= ', ' . $member['street_2'];
 			}
 
-			fputcsv(
-				$output,
-				array(
-					$member['member_id'],
-					$member['first_name'] . ' ' . $member['last_name'],
-					$member['email'],
-					$member['phone'],
-					$address,
-					$member['city'],
-					$member['state'],
-					$member['zip'],
-					$membership_type_name,
-					$member['status'],
-					$member['payment_type'],
-					$member['created_at'],
-					$member['expiration_date'] ?? '',
-				)
+			$family_members = STSRC_Family_Member_DB::get_by_member_id( (int) $member['member_id'] );
+			$family_cols    = array_fill( 0, 4, '' );
+			foreach ( array_values( $family_members ) as $idx => $fm ) {
+				if ( $idx >= 4 ) {
+					break;
+				}
+				$family_cols[ $idx ] = trim( $fm['first_name'] . ' ' . $fm['last_name'] );
+			}
+
+			$extra_members = STSRC_Extra_Member_DB::get_by_member_id( (int) $member['member_id'] );
+			$extra_cols    = array_fill( 0, 3, '' );
+			foreach ( array_values( $extra_members ) as $idx => $em ) {
+				if ( $idx >= 3 ) {
+					break;
+				}
+				$extra_cols[ $idx ] = trim( $em['first_name'] . ' ' . $em['last_name'] );
+			}
+
+			$row = array(
+				$member['member_id'],
+				$member['first_name'],
+				$member['last_name'],
+				$member['email'],
+				$member['phone'],
+				$address,
+				$member['city'],
+				$member['state'],
+				$member['zip'],
+				$member['country'] ?? 'US',
+				$membership_types[ $member['membership_type_id'] ] ?? 'Unknown',
+				$status_labels[ $member['status'] ] ?? ucfirst( $member['status'] ),
+				$payment_type_labels[ $member['payment_type'] ] ?? ucwords( str_replace( '_', ' ', $member['payment_type'] ) ),
+				! empty( $member['auto_renewal_enabled'] ) ? 'Yes' : 'No',
+				! empty( $member['season_membership_price'] ) ? '$' . number_format( (float) $member['season_membership_price'], 2 ) : '',
+				isset( $member['balance_owed'] ) ? '$' . number_format( (float) $member['balance_owed'], 2 ) : '$0.00',
+				$member['waiver_full_name'] ?? '',
+				! empty( $member['waiver_signed_date'] ) ? date( 'Y-m-d', strtotime( $member['waiver_signed_date'] ) ) : '',
+				$member['referral_source'] ?? '',
+				$member['affiliate_code'] ?? '',
+				$member['stripe_customer_id'] ?? '',
+				! empty( $member['created_at'] ) ? date( 'Y-m-d', strtotime( $member['created_at'] ) ) : '',
+				$member['expiration_date'] ?? '',
 			);
+
+			fputcsv( $output, array_merge( $row, $family_cols, $extra_cols ) );
 		}
 
 		fclose( $output );
