@@ -38,8 +38,6 @@ if ( $start_ts ) {
 	}
 }
 
-<?php
-// JSON-LD Event schema.
 $schema = [
 	'@context'  => 'https://schema.org',
 	'@type'     => 'Event',
