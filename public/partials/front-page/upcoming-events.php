@@ -46,7 +46,7 @@ if ( ! $events->have_posts() ) {
 
 										echo esc_html(
 											$start->format( 'Y-m-d' ) === $end->format( 'Y-m-d' )
-												? $start->format( 'F j, Y \u{2022} g:i A' ) . ' - ' . $end->format( 'g:i A' )
+												? $start->format( 'F j, Y' ) . ' • ' . $start->format( 'g:i A' ) . ' - ' . $end->format( 'g:i A' )
 												: $start->format( 'F j, Y g:i A' ) . ' - ' . $end->format( 'F j, Y g:i A' )
 										);
 									?>

@@ -45,7 +45,19 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 	<!-- Hero -->
 	<div class="stsrc-event-single__hero">
 		<?php if ( has_post_thumbnail() ) : ?>
-			<?php the_post_thumbnail( 'full', array( 'class' => 'stsrc-event-single__hero-img', 'alt' => get_the_title() ) ); ?>
+			<button class="stsrc-event-single__hero-btn" aria-label="<?php echo esc_attr( sprintf( __( 'Expand image: %s' ), get_the_title() ) ); ?>" onclick="document.getElementById('stsrc-hero-dialog').showModal()">
+				<?php the_post_thumbnail( 'full', array( 'class' => 'stsrc-event-single__hero-img', 'alt' => get_the_title() ) ); ?>
+				<span class="stsrc-event-single__hero-expand" aria-hidden="true">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+				</span>
+			</button>
+
+			<dialog id="stsrc-hero-dialog" class="stsrc-event-single__dialog" onclick="if(event.target===this)this.close()">
+				<button class="stsrc-event-single__dialog-close" onclick="this.closest('dialog').close()" aria-label="Close image">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+				<?php the_post_thumbnail( 'full', array( 'class' => 'stsrc-event-single__dialog-img', 'alt' => get_the_title() ) ); ?>
+			</dialog>
 		<?php else : ?>
 			<div class="stsrc-event-single__hero-placeholder"></div>
 		<?php endif; ?>
@@ -120,11 +132,100 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		background: #f3f4f6;
 		overflow: hidden;
 	}
+	/* Hero button wrapper */
+	.stsrc-event-single__hero-btn {
+		display: block;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		position: relative;
+	}
 	.stsrc-event-single__hero-img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 		display: block;
+		transition: filter 0.2s ease;
+	}
+	.stsrc-event-single__hero-btn:hover .stsrc-event-single__hero-img {
+		filter: brightness(0.88);
+	}
+
+	/* Expand icon hint */
+	.stsrc-event-single__hero-expand {
+		position: absolute;
+		bottom: 0.625rem;
+		right: 0.625rem;
+		width: 2rem;
+		height: 2rem;
+		background: rgba(0,0,0,0.55);
+		border-radius: 0.375rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+		pointer-events: none;
+	}
+	.stsrc-event-single__hero-expand svg {
+		width: 1rem;
+		height: 1rem;
+		color: #ffffff;
+	}
+	.stsrc-event-single__hero-btn:hover .stsrc-event-single__hero-expand {
+		opacity: 1;
+	}
+
+	/* Dialog */
+	.stsrc-event-single__dialog {
+		padding: 0;
+		border: none;
+		border-radius: 0.5rem;
+		background: transparent;
+		max-width: min(90vw, 1200px);
+		max-height: 90vh;
+		overflow: visible;
+	}
+	.stsrc-event-single__dialog::backdrop {
+		background: rgba(0,0,0,0.82);
+		backdrop-filter: blur(4px);
+		cursor: zoom-out;
+	}
+	.stsrc-event-single__dialog-img {
+		display: block;
+		max-width: 100%;
+		max-height: 90vh;
+		width: auto;
+		height: auto;
+		border-radius: 0.5rem;
+	}
+	.stsrc-event-single__dialog-close {
+		position: absolute;
+		top: -0.875rem;
+		right: -0.875rem;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		border: none;
+		background: #ffffff;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+		padding: 0;
+		z-index: 1;
+	}
+	.stsrc-event-single__dialog-close svg {
+		width: 1rem;
+		height: 1rem;
+		color: #1f2937;
+	}
+	.stsrc-event-single__dialog-close:hover {
+		background: #f3f4f6;
 	}
 	.stsrc-event-single__hero-placeholder {
 		width: 100%;
