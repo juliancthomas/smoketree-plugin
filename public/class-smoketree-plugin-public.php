@@ -467,6 +467,14 @@ class Smoketree_Plugin_Public {
 				return $plugin_template;
 			}
 		}
+
+		if ( is_singular( 'event' ) ) {
+			$plugin_template = plugin_dir_path( __FILE__ ) . 'templates/single-event.php';
+			if ( file_exists( $plugin_template ) ) {
+				return $plugin_template;
+			}
+		}
+
 		return $template;
 	}
 
