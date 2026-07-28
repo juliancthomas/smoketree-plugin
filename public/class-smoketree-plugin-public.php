@@ -390,6 +390,7 @@ class Smoketree_Plugin_Public {
 		$templates['member-portal.php'] = __( 'Smoketree Member Portal', 'smoketree-plugin' );
 		$templates['guest-pass-portal.php'] = __( 'Smoketree Guest Pass Portal', 'smoketree-plugin' );
 		$templates['default-v2.php'] = __( 'Smoketree Default V2', 'smoketree-plugin' );
+		$templates['page-events.php'] = __( 'Smoketree Events', 'smoketree-plugin' );
 		return $templates;
 	}
 
@@ -439,6 +440,10 @@ class Smoketree_Plugin_Public {
 		// Default V2 page
 		elseif ( 'default-v2.php' === $page_template ) {
 			$template = plugin_dir_path( __FILE__ ) . 'templates/default-v2.php';
+		}
+		// Events page
+		elseif ( 'page-events.php' === $page_template || 'events' === $page_slug ) {
+			$template = plugin_dir_path( __FILE__ ) . 'templates/page-events.php';
 		}
 
 		return $template;
