@@ -22,12 +22,13 @@ $event_cost  = get_field( 'event_cost' );
 $sign_up_url = get_field( 'sign_up_url' );
 
 $start_ts = $start_date ? strtotime( $start_date ) : false;
+$end_ts   = $end_date   ? strtotime( $end_date )   : false;
+$is_past  = $end_ts ? $end_ts < time() : ( $start_ts && $start_ts < time() );
 
 $date_display = '';
 if ( $start_ts ) {
 	$date_display = wp_date( 'F j, Y g:i a', $start_ts );
 	if ( $end_date ) {
-		$end_ts = strtotime( $end_date );
 		// Same day → show only time range on same line.
 		if ( wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts ) ) {
 			$date_display .= ' &ndash; ' . wp_date( 'g:i a', $end_ts );
@@ -37,6 +38,40 @@ if ( $start_ts ) {
 	}
 }
 
+<?php
+// JSON-LD Event schema.
+$schema = [
+	'@context'  => 'https://schema.org',
+	'@type'     => 'Event',
+	'name'      => get_the_title(),
+	'url'       => get_permalink(),
+	'eventStatus' => $is_past ? 'https://schema.org/EventScheduled' : 'https://schema.org/EventScheduled',
+];
+if ( $start_ts ) {
+	$schema['startDate'] = wp_date( 'c', $start_ts );
+}
+if ( $end_ts ) {
+	$schema['endDate'] = wp_date( 'c', $end_ts );
+}
+if ( $location ) {
+	$schema['location'] = [
+		'@type' => 'Place',
+		'name'  => $location,
+	];
+}
+if ( $event_cost ) {
+	$schema['offers'] = [
+		'@type' => 'Offer',
+		'price' => $event_cost,
+	];
+}
+if ( has_post_thumbnail() ) {
+	$schema['image'] = get_the_post_thumbnail_url( null, 'full' );
+}
+?>
+<script type="application/ld+json"><?php echo wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ); ?></script>
+
+<?php
 require_once plugin_dir_path( __FILE__ ) . 'header.php';
 ?>
 
@@ -45,7 +80,7 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 	<!-- Hero -->
 	<div class="stsrc-event-single__hero">
 		<?php if ( has_post_thumbnail() ) : ?>
-			<button class="stsrc-event-single__hero-btn" aria-label="<?php echo esc_attr( sprintf( __( 'Expand image: %s' ), get_the_title() ) ); ?>" onclick="document.getElementById('stsrc-hero-dialog').showModal()">
+			<button class="stsrc-event-single__hero-btn" aria-label="<?php echo esc_attr( 'Expand image: ' . get_the_title() ); ?>" onclick="document.getElementById('stsrc-hero-dialog').showModal()">
 				<?php the_post_thumbnail( 'full', array( 'class' => 'stsrc-event-single__hero-img', 'alt' => get_the_title() ) ); ?>
 				<span class="stsrc-event-single__hero-expand" aria-hidden="true">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
@@ -72,6 +107,12 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 
 	<!-- Body -->
 	<div class="stsrc-event-single__body">
+
+		<?php if ( $is_past ) : ?>
+		<div class="stsrc-event-single__past-notice" role="status">
+			This event has already taken place.
+		</div>
+		<?php endif; ?>
 
 		<h1 class="stsrc-event-single__title"><?php the_title(); ?></h1>
 
@@ -260,6 +301,30 @@ require_once plugin_dir_path( __FILE__ ) . 'header.php';
 		font-size: 1.4rem;
 		font-weight: 700;
 		color: #1f2937;
+	}
+
+	/* Past event notice */
+	.stsrc-event-single__past-notice {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #fef3c7;
+		border: 1px solid #fcd34d;
+		color: #92400e;
+		font-size: 0.875rem;
+		font-weight: 500;
+		padding: 0.625rem 1rem;
+		border-radius: 0.5rem;
+		margin-bottom: 1.25rem;
+	}
+	.stsrc-event-single__past-notice::before {
+		content: '';
+		display: inline-block;
+		width: 0.5rem;
+		height: 0.5rem;
+		background: #d97706;
+		border-radius: 50%;
+		flex-shrink: 0;
 	}
 
 	/* Body */
