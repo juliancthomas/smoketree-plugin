@@ -16,7 +16,7 @@
  * Plugin Name:       Smoketree Swim and Recreation Club
  * Plugin URI:        https://smoketree.us
  * Description:       Comprehensive membership management plugin for Smoketree Swim and Recreation Club. Handles member registration, payment processing via Stripe, guest pass management, batch email communications, and provides both member and admin portals.
- * Version:           1.24.1
+ * Version:           1.24.2
  * Author:            Smoketree Swim and Recreation Club
  * Author URI:        https://smoketree.us
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'SMOKETREE_PLUGIN_VERSION', '1.24.1' );
+define( 'SMOKETREE_PLUGIN_VERSION', '1.24.2' );
 
 require plugin_dir_path( __FILE__ ) . 'vendor/plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
