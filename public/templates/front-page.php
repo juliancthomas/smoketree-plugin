@@ -38,9 +38,9 @@ $events = new WP_Query( [
 	'posts_per_page' => 6,
 	'meta_query'     => [ [
 		'key'     => 'end_date',
-		'value'   => current_time( 'Y-m-d H:i:s' ),
+		'value'   => current_time( 'Y-m-d' ),
 		'compare' => '>=',
-		'type'    => 'DATETIME',
+		'type'    => 'DATE',
 	] ],
 ] );
 
